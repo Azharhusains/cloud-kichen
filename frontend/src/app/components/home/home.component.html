@@ -1,0 +1,43 @@
+<div class="home-container" @fadeInUp>
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="hero-content">
+      <div class="hero-text" @bounceIn>
+        <h1>Welcome to Our Cloud Kitchen</h1>
+        <p class="hero-subtitle">Delicious Biryani, Korma, and Tandoori dishes made fresh for you!</p>
+        <button mat-raised-button color="primary" class="order-btn" (click)="orderNow()">
+          <mat-icon>restaurant_menu</mat-icon>
+          Order Now
+        </button>
+      </div>
+      <div class="hero-visual" @pulseAnimation>
+        <mat-icon class="hero-icon">restaurant</mat-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="features-section" @staggerFadeIn>
+    <mat-card *ngFor="let feature of features; let i = index" class="feature-card animate-item">
+      <div class="feature-icon-wrapper">
+        <mat-icon class="feature-icon">{{ feature.icon }}</mat-icon>
+      </div>
+      <h3>{{ feature.title }}</h3>
+      <p>{{ feature.description }}</p>
+    </mat-card>
+  </div>
+
+  <!-- Call to Action Section -->
+  <div class="cta-section">
+    <mat-card class="cta-card">
+      <mat-card-content>
+        <h2>Ready to Taste the Best?</h2>
+        <p>Browse our menu and order your favorite dishes today!</p>
+        <button mat-stroked-button color="primary" (click)="orderNow()">
+          <mat-icon>menu_book</mat-icon>
+          View Menu
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,107 @@
+<div class="confirmation-container" @fadeInUp>
+  <div class="confirmation-header">
+    <div class="success-icon-wrapper">
+      <div class="success-icon">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="success-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+      </div>
+    </div>
+    <h1>Order Confirmed!</h1>
+    <p>Thank you for your order. Your delicious food will be prepared and delivered soon.</p>
+  </div>
+
+  <mat-card class="confirmation-card" *ngIf="orderId">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>receipt</mat-icon>
+        Order Details
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <div class="order-info">
+        <div class="info-row">
+          <span class="label">
+            <mat-icon>tag</mat-icon>
+            Order ID
+          </span>
+          <span class="value">#{{ customOrderId || order?.order_id || order?.orderId || 'N/A' }}</span>
+        </div>
+        <div class="info-row" *ngIf="orderDate || order?.createdAt">
+          <span class="label">
+            <mat-icon>calendar_today</mat-icon>
+            Order Date
+          </span>
+          <span class="value">{{ (orderDate || order?.createdAt) | date:'medium' }}</span>
+        </div>
+        <div class="info-row" *ngIf="estimatedDelivery">
+          <span class="label">
+            <mat-icon>schedule</mat-icon>
+            Estimated Delivery
+          </span>
+          <span class="value delivery-time">{{ estimatedDelivery | date:'short' }}</span>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="delivery-section" *ngIf="deliveryAddress">
+        <h4>
+          <mat-icon>location_on</mat-icon>
+          Delivery Address
+        </h4>
+        <div class="address-box">
+          <p>{{ deliveryAddress.street }}</p>
+          <p>{{ deliveryAddress.city }}, {{ deliveryAddress.state }} {{ deliveryAddress.zipCode }}</p>
+          <p>{{ deliveryAddress.country }}</p>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="items-section">
+        <h4>
+          <mat-icon>restaurant_menu</mat-icon>
+          Order Items
+        </h4>
+        <div class="order-items">
+          <div *ngFor="let item of orderItems" class="order-item">
+            <div class="item-image">
+              <mat-icon>restaurant</mat-icon>
+            </div>
+            <span class="item-name">{{ item.menuItem.name }} x {{ item.quantity }}</span>
+            <span class="item-price">₹{{ (item.menuItem.price * item.quantity).toFixed(2) }}</span>
+          </div>
+        </div>
+        <div class="order-total">
+          <span>Total Amount</span>
+          <span class="total-amount">₹{{ totalAmount.toFixed(2) }}</span>
+        </div>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-stroked-button (click)="trackOrder()" class="track-btn">
+        <mat-icon>local_shipping</mat-icon>
+        Track Order
+      </button>
+      <button mat-raised-button color="primary" (click)="goHome()" class="home-btn">
+        <mat-icon>home</mat-icon>
+        Back to Home
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Decorative elements -->
+  <div class="confetti-container">
+    <div class="confetti confetti-1"></div>
+    <div class="confetti confetti-2"></div>
+    <div class="confetti confetti-3"></div>
+    <div class="confetti confetti-4"></div>
+    <div class="confetti confetti-5"></div>
+  </div>
+</div>

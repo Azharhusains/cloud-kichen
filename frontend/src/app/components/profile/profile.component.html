@@ -1,0 +1,188 @@
+<div class="profile-container" @fadeInUp>
+  <!-- Header -->
+  <div class="profile-header">
+    <div class="header-content">
+      <div class="avatar">
+        <mat-icon>person</mat-icon>
+      </div>
+      <div class="user-info" *ngIf="user">
+        <h1>{{ user.name }}</h1>
+        <p>{{ user.email }}</p>
+        <mat-chip-set>
+          <mat-chip [class]="user.role === 'admin' ? 'admin-chip' : 'customer-chip'">
+            {{ user.role | titlecase }}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+      <button mat-raised-button color="warn" class="logout-btn" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        Logout
+      </button>
+    </div>
+  </div>
+
+  <div class="profile-content">
+    <!-- Addresses Section -->
+    <div class="section">
+      <mat-card class="section-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>location_on</mat-icon>
+            Saved Addresses
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <!-- Address List -->
+          <div class="addresses-list" *ngIf="addresses.length > 0">
+            <div *ngFor="let address of addresses; let i = index" class="address-card animate-item">
+              <div class="address-icon">
+                <mat-icon>home</mat-icon>
+              </div>
+              <div class="address-details">
+                <p class="street">{{ address.street }}</p>
+                <p class="city">{{ address.city }}, {{ address.state }} {{ address.zipCode }}</p>
+                <p class="country">{{ address.country }}</p>
+              </div>
+              <button mat-icon-button color="warn" (click)="removeAddress(i)" matTooltip="Remove">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="no-addresses" *ngIf="addresses.length === 0 && !showAddressForm">
+            <mat-icon>location_off</mat-icon>
+            <p>No saved addresses</p>
+          </div>
+
+          <!-- Add Address Form -->
+          <div class="add-address-form" *ngIf="showAddressForm">
+            <h4>Add New Address</h4>
+            <form [formGroup]="addressForm" (ngSubmit)="addAddress()">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Street Address</mat-label>
+                <input matInput formControlName="street" placeholder="Enter your street address">
+                <mat-icon matPrefix>home</mat-icon>
+              </mat-form-field>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>City</mat-label>
+                  <input matInput formControlName="city">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>State</mat-label>
+                  <input matInput formControlName="state">
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>ZIP Code</mat-label>
+                  <input matInput formControlName="zipCode">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Country</mat-label>
+                  <input matInput formControlName="country">
+                </mat-form-field>
+              </div>
+
+              <div class="form-actions">
+                <button mat-button type="button" (click)="toggleAddressForm()">Cancel</button>
+                <button mat-raised-button color="primary" type="submit" [disabled]="!addressForm.valid">
+                  <mat-icon>save</mat-icon>
+                  Save Address
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Add Address Button -->
+          <button mat-stroked-button *ngIf="!showAddressForm" (click)="toggleAddressForm()" class="add-address-btn">
+            <mat-icon>add</mat-icon>
+            Add New Address
+          </button>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Orders Section -->
+    <div class="section">
+      <mat-card class="section-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>receipt_long</mat-icon>
+            Order History
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <!-- Order Search Bar -->
+          <div class="search-container" style="margin-bottom: 20px;">
+            <div class="search-wrapper">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search orders by ID or status..." 
+                [(ngModel)]="searchTerm"
+                (input)="searchOrders()">
+              <button 
+                class="search-clear" 
+                *ngIf="searchTerm" 
+                (click)="clearSearch()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="search-results-info" *ngIf="searchTerm">
+            <span>Found <span class="search-results-count">{{ filteredOrders.length }}</span> orders</span>
+          </div>
+
+          <div class="orders-list" *ngIf="filteredOrders.length > 0">
+            <div *ngFor="let order of filteredOrders" class="order-card animate-item">
+              <div class="order-header">
+                <div class="order-id">
+                  <mat-icon>receipt</mat-icon>
+                  <span>Order #{{ order.order_id }}</span>
+                </div>
+                <div class="order-status" [ngClass]="getStatusClass(order.orderStatus)">
+                  {{ order.orderStatus | titlecase }}
+                </div>
+              </div>
+              
+              <div class="order-date">
+                <mat-icon>schedule</mat-icon>
+                {{ order.createdAt | date:'medium' }}
+              </div>
+
+              <div class="order-items">
+                <div *ngFor="let item of order.items" class="order-item">
+                  {{ item.menuItem.name }} x {{ item.quantity }}
+                </div>
+              </div>
+
+              <div class="order-footer">
+                <div class="order-total">
+                  <strong>Total: ₹{{ order.totalAmount.toFixed(2) }}</strong>
+                </div>
+              <button mat-stroked-button color="primary" (click)="trackOrder(order.order_id)">
+                  <mat-icon>local_shipping</mat-icon>
+                  Track Order
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="no-orders" *ngIf="orders.length === 0">
+            <mat-icon>receipt_long</mat-icon>
+            <p>No orders yet</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

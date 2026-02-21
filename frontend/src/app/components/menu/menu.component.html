@@ -1,0 +1,92 @@
+<div class="menu-container" @fadeInUp>
+  <!-- Header Section -->
+  <div class="menu-header">
+    <h1>Our Menu</h1>
+    <p>Discover our delicious selection of dishes</p>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-container">
+    <div class="search-wrapper">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input 
+        type="text" 
+        class="search-input" 
+        placeholder="Search for dishes..." 
+        [(ngModel)]="searchTerm"
+        (input)="searchMenuItems()">
+      <button 
+        class="search-clear" 
+        *ngIf="searchTerm" 
+        (click)="clearSearch()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Category Filter -->
+  <div class="categories-section">
+    <mat-chip-listbox class="category-chips" (change)="selectCategory($event.value)">
+      <mat-chip-option *ngFor="let category of categories" [value]="category.name" [selected]="category.name === selectedCategory">
+        {{ category.displayName }}
+      </mat-chip-option>
+    </mat-chip-listbox>
+  </div>
+
+  <!-- Search Results Info -->
+  <div class="search-results-info" *ngIf="searchTerm">
+    <span>Found <span class="search-results-count">{{ filteredItems.length }}</span> items</span>
+  </div>
+
+  <!-- Menu Items Grid -->
+  <div class="menu-items-grid" @staggerList>
+    <mat-card *ngFor="let item of filteredItems" class="menu-item-card" [class.unavailable]="!item.isAvailable">
+      <div class="item-image-section">
+        <mat-icon class="food-icon">restaurant</mat-icon>
+        <span class="unavailable-badge" *ngIf="!item.isAvailable">Unavailable</span>
+      </div>
+      
+      <mat-card-content>
+        <div class="item-header">
+          <h3>{{ item.name }}</h3>
+          <span class="category-label">{{ getCategoryDisplayName(item.category) }}</span>
+        </div>
+        
+        <p class="item-description">{{ item.description }}</p>
+        
+        <div class="item-footer">
+          <span class="price">₹{{ item.price.toFixed(2) }}</span>
+          <button mat-raised-button color="primary" (click)="addToCart(item)" [disabled]="!item.isAvailable">
+            <mat-icon>add_shopping_cart</mat-icon>
+            Add
+          </button>
+        </div>
+      </mat-card-content>
+      
+      <button mat-icon-button class="details-btn" (click)="openItemDetails(item)">
+        <mat-icon>visibility</mat-icon>
+      </button>
+    </mat-card>
+  </div>
+
+<!-- Empty State -->
+  <div class="empty-state" *ngIf="filteredItems.length === 0">
+    <mat-icon>no_meals</mat-icon>
+    <h3>No items found</h3>
+    <p>Try selecting a different category</p>
+  </div>
+
+  <!-- Floating Cart Summary -->
+  <div class="cart-fab" *ngIf="cart.length > 0" @slideIn>
+    <mat-card class="cart-summary-card">
+      <div class="cart-info" (click)="router.navigate(['/cart'])">
+        <mat-icon>shopping_cart</mat-icon>
+        <span class="cart-count">{{ cartItemCount }} items</span>
+        <span class="cart-total">₹{{ getTotalPrice().toFixed(2) }}</span>
+      </div>
+      <button mat-mini-fab color="accent" (click)="checkout()">
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,84 @@
+<div class="menu-management-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <h1>Menu Management</h1>
+      <p class="subtitle">Manage your restaurant menu items</p>
+    </div>
+    <div class="header-actions">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search menu items</mat-label>
+        <input matInput [(ngModel)]="searchTerm" (input)="filterItems()" placeholder="Search...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-raised-button color="primary" (click)="showAddForm()" class="add-button">
+        <mat-icon>add</mat-icon>
+        Add Item
+      </button>
+    </div>
+  </div>
+
+  <!-- Menu Items Grid -->
+  <div class="menu-grid">
+    <div *ngIf="filteredItems.length === 0" class="empty-state">
+      <mat-card class="empty-card">
+        <mat-icon class="empty-icon">restaurant_menu</mat-icon>
+        <h3>No Menu Items Found</h3>
+        <p>Add your first menu item to get started!</p>
+        <button mat-raised-button color="primary" (click)="showAddForm()">
+          <mat-icon>add</mat-icon>
+          Add Item
+        </button>
+      </mat-card>
+    </div>
+
+    <mat-card *ngFor="let item of filteredItems" class="menu-item-card">
+      <mat-card-header>
+        <mat-card-title>{{ item.name }}</mat-card-title>
+        <mat-card-subtitle>
+          <mat-chip-set>
+            <mat-chip>{{ item.category }}</mat-chip>
+          </mat-chip-set>
+        </mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <p class="description">{{ item.description }}</p>
+        
+        <div class="item-details">
+          <div class="price-info">
+            <div class="price">
+              <mat-icon>attach_money</mat-icon>
+              <span class="amount">{{ item.price.toFixed(2) }}</span>
+            </div>
+            <div class="cost-price">
+              <span class="label">Cost:</span>
+              <span class="amount">₹{{ item.costPrice.toFixed(2) }}</span>
+            </div>
+          </div>
+          
+          <div class="availability-toggle">
+            <mat-slide-toggle 
+              [checked]="item.isAvailable" 
+              (change)="toggleAvailability(item)"
+              color="primary">
+              {{ item.isAvailable ? 'Available' : 'Unavailable' }}
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </mat-card-content>
+      
+      <mat-card-actions align="end">
+        <button mat-button color="primary" (click)="editItem(item)">
+          <mat-icon>edit</mat-icon>
+          Edit
+        </button>
+        <button mat-button color="warn" (click)="deleteItem(item)">
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+</div>

@@ -1,0 +1,160 @@
+<div class="checkout-container" @fadeInUp>
+  <div class="checkout-header">
+    <h1>Checkout</h1>
+    <p>Complete your order</p>
+  </div>
+
+  <div class="checkout-content" *ngIf="cart.length > 0">
+    <!-- Order Summary -->
+    <div class="order-summary-section">
+      <mat-card class="summary-card">
+        <mat-card-header>
+          <mat-card-title>Order Summary</mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="order-items">
+            <div *ngFor="let item of cart" class="order-item animate-item">
+              <div class="item-info">
+                <span class="item-name">{{ item.menuItem.name }}</span>
+                <span class="item-qty">x{{ item.quantity }}</span>
+              </div>
+              <span class="item-price">₹{{ (item.menuItem.price * item.quantity).toFixed(2) }}</span>
+            </div>
+          </div>
+          
+          <mat-divider></mat-divider>
+          
+          <div class="order-totals">
+            <div class="total-row">
+              <span>Subtotal</span>
+              <span>₹{{ getSubtotal().toFixed(2) }}</span>
+            </div>
+            <div class="total-row">
+              <span>Tax (5%)</span>
+              <span>₹{{ getTax().toFixed(2) }}</span>
+            </div>
+            <div class="total-row">
+              <span>Delivery</span>
+              <span>₹{{ deliveryCharge.toFixed(2) }}</span>
+            </div>
+            <div class="total-row grand-total">
+              <span>Total</span>
+              <span>₹{{ getTotal().toFixed(2) }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Delivery Address -->
+    <div class="delivery-section">
+      <mat-card class="delivery-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>location_on</mat-icon>
+            Delivery Address
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <!-- Saved Addresses -->
+          <div class="saved-addresses" *ngIf="addresses.length > 0">
+            <h4>Saved Addresses</h4>
+            <mat-radio-group [(ngModel)]="selectedAddressIndex" (change)="selectAddress($event.value)">
+              <div *ngFor="let address of addresses; let i = index" class="address-option" (click)="selectAddress(i)">
+                <mat-radio-button [value]="i">
+                  <div class="address-details">
+                    <p class="street">{{ address.street }}</p>
+                    <p class="city">{{ address.city }}, {{ address.state }} {{ address.zipCode }}</p>
+                    <p class="country">{{ address.country }}</p>
+                  </div>
+                </mat-radio-button>
+              </div>
+            </mat-radio-group>
+            
+            <button mat-stroked-button (click)="clearSelection()" class="add-new-btn">
+              <mat-icon>add</mat-icon>
+              Add New Address
+            </button>
+          </div>
+
+          <!-- New Address Form -->
+          <form [formGroup]="checkoutForm" class="address-form" *ngIf="newAddreesActive">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Street Address</mat-label>
+              <input matInput formControlName="street" placeholder="Enter your street address">
+              <mat-icon matPrefix>home</mat-icon>
+            </mat-form-field>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>City</mat-label>
+                <input matInput formControlName="city">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>State</mat-label>
+                <input matInput formControlName="state">
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>ZIP Code</mat-label>
+                <input matInput formControlName="zipCode">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Country</mat-label>
+                <input matInput formControlName="country">
+              </mat-form-field>
+            </div>
+
+            <mat-checkbox [(ngModel)]="saveAddressForFuture" [ngModelOptions]="{standalone: true}">
+              Save this address for future orders
+            </mat-checkbox>
+          </form>
+
+          <!-- Payment Method -->
+          <div class="payment-section" *ngIf="isAddressSelected()">
+            <h4>
+              <mat-icon>payment</mat-icon>
+              Payment Method
+            </h4>
+            <mat-radio-group class="payment-options">
+              <mat-radio-button value="cod" [checked]="true">
+                <mat-icon>payments</mat-icon>
+                Cash on Delivery
+              </mat-radio-button>
+            </mat-radio-group>
+
+            <div class="form-actions">
+              <button mat-stroked-button (click)="goBack()">
+                <mat-icon>arrow_back</mat-icon>
+                Back to Cart
+              </button>
+              <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!checkoutForm.valid || loading">
+                <mat-icon>check_circle</mat-icon>
+                {{ loading ? 'Placing Order...' : 'Place Order' }}
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Empty Cart -->
+  <div class="empty-cart" *ngIf="cart.length === 0">
+    <mat-card class="empty-card">
+      <mat-icon>shopping_cart</mat-icon>
+      <h2>Your cart is empty</h2>
+      <p>Add some items to checkout</p>
+      <button mat-raised-button color="primary" (click)="goBack()">
+        <mat-icon>restaurant_menu</mat-icon>
+        Browse Menu
+      </button>
+    </mat-card>
+  </div>
+</div>

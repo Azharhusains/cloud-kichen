@@ -1,0 +1,387 @@
+// Variables
+$primary-color: #667eea;
+$secondary-color: #764ba2;
+$success-color: #28a745;
+$warn-color: #dc3545;
+$bg-color: #f8f9fa;
+
+// Dashboard Container
+.dashboard-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: $bg-color;
+  min-height: calc(100vh - 64px);
+}
+
+// Dashboard Header
+.dashboard-header {
+  margin-bottom: 32px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dashboard-subtitle {
+  margin: 4px 0 0;
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+// Stats Grid
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+// Stat Card
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .stat-icon-container {
+    flex-shrink: 0;
+    
+    .stat-icon {
+      background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+      color: white;
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+  }
+
+  .stat-content {
+    flex: 1;
+    
+    h3 {
+      margin: 0 0 8px 0;
+      color: #6c757d;
+      font-size: 13px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin: 0;
+    }
+  }
+}
+
+// Dashboard Sections
+.dashboard-sections {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+// Recent Orders Card
+.recent-orders-card {
+  margin: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  mat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0;
+
+    mat-card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0;
+    }
+
+    .view-all-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+
+  mat-card-content {
+    padding-top: 16px;
+  }
+}
+
+// Orders List
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #e9ecef;
+    transform: translateX(4px);
+  }
+
+  .order-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .order-id {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 15px;
+    }
+
+    .order-customer {
+      color: #6c757d;
+      font-size: 13px;
+    }
+  }
+
+  .order-details {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    mat-chip-set {
+      margin: -4px 0;
+    }
+  }
+
+  .order-amount {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 15px;
+    min-width: 70px;
+    text-align: right;
+  }
+}
+
+// Status Chips - Updated to match HTML dynamic classes
+.status-chip-received {
+  background-color: #17a2b8 !important;
+  color: white !important;
+}
+
+.status-chip-preparing {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.status-chip-ready {
+  background-color: #28a745 !important;
+  color: white !important;
+}
+
+.status-chip-delivered {
+  background-color: #6c757d !important;
+  color: white !important;
+}
+
+// No Data
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+
+  .no-data-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #dee2e6;
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 15px;
+  }
+}
+
+// Quick Actions Card
+.quick-actions-card {
+  margin: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  mat-card-header {
+    padding-bottom: 0;
+
+    mat-card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0;
+    }
+  }
+
+  mat-card-content {
+    padding-top: 16px;
+  }
+}
+
+// Action Buttons
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba($primary-color, 0.1) 0%, rgba($secondary-color, 0.1) 100%);
+  border: 1px solid rgba($primary-color, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 15px;
+  color: #495057;
+  text-decoration: none;
+
+  mat-icon {
+    color: $primary-color;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  span {
+    font-weight: 500;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+    color: white;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+
+    mat-icon {
+      color: white;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 992px) {
+  .dashboard-sections {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+
+    .stat-icon-container .stat-icon {
+      width: 48px;
+      height: 48px;
+      font-size: 20px;
+    }
+
+    .stat-content {
+      text-align: center;
+
+      .stat-value {
+        font-size: 1.5rem;
+      }
+    }
+  }
+
+  .order-item {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+
+    .order-details {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .order-amount {
+      text-align: left;
+    }
+  }
+}
+
+// Angular Material Theme Overrides
+::ng-deep {
+  .mat-mdc-card {
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .mat-mdc-raised-button.mat-primary {
+    background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%) !important;
+  }
+
+  .mat-mdc-chip {
+    font-weight: 500;
+    font-size: 12px;
+  }
+}

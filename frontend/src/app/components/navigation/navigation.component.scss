@@ -1,0 +1,177 @@
+.navbar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+}
+
+.nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.brand-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  margin-right: 0.5rem;
+  color: white;
+}
+
+.brand-text {
+  font-size: 24px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(45deg, #fff, #e0e7ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: transform 0.3s ease;
+}
+
+.nav-brand:hover .brand-text {
+  transform: scale(1.05);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.desktop-nav {
+  display: flex !important;
+  
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+/* Cart Badge - Yellow background with full circle */
+::ng-deep .mat-badge-content {
+  background-color: #FFD700 !important; /* Yellow color */
+  color: #000000 !important; /* Black text for contrast */
+  border-radius: 50% !important; /* Full circle */
+  font-weight: bold !important;
+  font-size: 12px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  left: 70px !important;
+    bottom: 30px !important;
+  line-height: 20px !important;
+}
+
+/* Ensure the badge is visible */
+::ng-deep .mat-badge-accent .mat-badge-content {
+  background-color: #FFD700 !important;
+  color: #000000 !important;
+}
+
+.nav-auth {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  color: white;
+  
+  @media (max-width: 768px) {
+    display: flex;
+  }
+}
+
+/* Mobile Navigation */
+.mobile-nav {
+  display: none;
+  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+  padding: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  
+  @media (max-width: 768px) {
+    display: none;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    
+    &.open {
+      display: block;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      width: 100%;
+      max-height: 70vh;
+      overflow: hidden;
+      z-index: 1001;
+    }
+  }
+}
+
+.mobile-nav mat-nav-list {
+  padding: 0;
+}
+
+.mobile-nav a {
+  color: white !important;
+}
+
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  
+  @media (max-width: 768px) {
+    &.active {
+      display: block;
+    }
+  }
+}
+
+/* Material overrides for mobile */
+.mobile-nav ::ng-deep .mat-mdc-list-item {
+  color: white !important;
+}
+
+.mobile-nav ::ng-deep .mat-mdc-divider {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Logout button styling in toolbar */
+.logout-btn {
+  color: #ffcdd2 !important;
+}
+
+.logout-btn mat-icon {
+  color: #ffcdd2;
+}

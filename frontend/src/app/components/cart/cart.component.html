@@ -1,0 +1,106 @@
+<div class="cart-container" @fadeInUp>
+  <div class="cart-header">
+    <h1>Your Cart</h1>
+    <p>{{ cart.length }} item(s) in your cart</p>
+  </div>
+
+  <!-- Empty Cart -->
+  <div class="empty-cart" *ngIf="cart.length === 0">
+    <mat-card class="empty-card">
+      <mat-icon class="empty-icon">shopping_cart</mat-icon>
+      <h2>Your cart is empty</h2>
+      <p>Looks like you haven't added any items yet.</p>
+      <button mat-raised-button color="primary" (click)="continueShopping()">
+        <mat-icon>restaurant_menu</mat-icon>
+        Browse Menu
+      </button>
+    </mat-card>
+  </div>
+
+  <!-- Cart Content -->
+  <div class="cart-content" *ngIf="cart.length > 0">
+    <div class="cart-items-section">
+      <mat-card class="items-card">
+        <mat-card-header>
+          <mat-card-title>Cart Items</mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="cart-items-list">
+            <div *ngFor="let item of cart" class="cart-item" @slideIn>
+              <div class="item-image">
+                <mat-icon>restaurant</mat-icon>
+              </div>
+              
+              <div class="item-details">
+                <h3>{{ item.menuItem.name }}</h3>
+                <p>{{ item.menuItem.description }}</p>
+                <span class="item-price">₹{{ item.menuItem.price.toFixed(2) }}</span>
+              </div>
+              
+              <div class="quantity-section">
+                <div class="quantity-controls">
+                  <button mat-icon-button color="primary" (click)="decreaseQuantity(item)" [disabled]="item.quantity <= 1">
+                    <mat-icon>remove</mat-icon>
+                  </button>
+                  <span class="quantity">{{ item.quantity }}</span>
+                  <button mat-icon-button color="primary" (click)="increaseQuantity(item)">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="item-total">
+                <span class="total-price">₹{{ (item.menuItem.price * item.quantity).toFixed(2) }}</span>
+                <button mat-icon-button color="warn" (click)="removeFromCart(item)" matTooltip="Remove item">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="cart-summary-section">
+      <mat-card class="summary-card">
+        <mat-card-header>
+          <mat-card-title>Order Summary</mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="summary-rows">
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <span>₹{{ getSubtotal().toFixed(2) }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Tax (5%)</span>
+              <span>₹{{ getTax().toFixed(2) }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Delivery Charge</span>
+              <span>₹{{ deliveryCharge.toFixed(2) }}</span>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="summary-row total">
+              <span>Total</span>
+              <span>₹{{ getTotal().toFixed(2) }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+        
+        <mat-card-actions>
+          <button mat-stroked-button (click)="continueShopping()" class="continue-btn">
+            <mat-icon>arrow_back</mat-icon>
+            Continue Shopping
+          </button>
+          <button mat-raised-button color="primary" (click)="checkout()" class="checkout-btn">
+            <mat-icon>shopping_cart_checkout</mat-icon>
+            Proceed to Checkout
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+</div>

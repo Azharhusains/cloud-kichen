@@ -1,0 +1,174 @@
+<div class="tracking-container" @fadeInUp>
+  <!-- Header -->
+  <div class="tracking-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>local_shipping</mat-icon>
+      </div>
+      <h1>Order Tracking</h1>
+      <p>Track your order status in real-time</p>
+    </div>
+  </div>
+
+  <div class="tracking-content" *ngIf="order">
+    <!-- Order Info Card -->
+    <mat-card class="order-info-card">
+      <div class="order-info-content">
+        <div class="order-id-section">
+          <div class="order-icon">
+            <mat-icon>receipt_long</mat-icon>
+          </div>
+          <div class="order-details">
+            <span class="order-label">Order</span>
+            <span class="order-id">#{{ order.order_id }}</span>
+          </div>
+        </div>
+        <div class="order-status-badge" [ngClass]="getStatusClass(order.orderStatus)">
+          <mat-icon>{{ getStatusIcon(order.orderStatus) }}</mat-icon>
+          <span>{{ order.orderStatus | titlecase }}</span>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Progress Timeline -->
+    <mat-card class="timeline-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>timeline</mat-icon>
+          Order Progress
+        </mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="timeline-wrapper">
+          <!-- Progress Line -->
+          <div class="progress-line">
+            <div class="progress-fill" [style.width.%]="getProgressPercentage()"></div>
+          </div>
+          
+          <!-- Timeline Steps -->
+          <div class="timeline-steps">
+            <div class="timeline-step" 
+                 *ngFor="let step of statusSteps; let i = index"
+                 [class.completed]="isStepCompleted(step)"
+                 [class.active]="step === order.orderStatus"
+                 [class.pending]="!isStepCompleted(step) && step !== order.orderStatus">
+              <div class="step-circle">
+                <mat-icon *ngIf="isStepCompleted(step)">check</mat-icon>
+                <mat-icon *ngIf="!isStepCompleted(step) && step === order.orderStatus">{{ getStepIcon(step) }}</mat-icon>
+                <mat-icon *ngIf="!isStepCompleted(step) && step !== order.orderStatus">{{ getStepIcon(step) }}</mat-icon>
+              </div>
+              <div class="step-info">
+                <span class="step-title">{{ step | titlecase }}</span>
+                <span class="step-time">{{ getEstimatedTime(step) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Status Message -->
+        <div class="status-message" [ngClass]="order.orderStatus">
+          <mat-icon>{{ getStatusMessageIcon(order.orderStatus) }}</mat-icon>
+          <span>{{ getStatusMessage(order.orderStatus) }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Order Details -->
+    <mat-card class="details-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>receipt</mat-icon>
+          Order Details
+        </mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="order-items">
+          <div *ngFor="let item of order.items" class="order-item">
+            <div class="item-image">
+              <mat-icon>restaurant</mat-icon>
+            </div>
+            <div class="item-info">
+              <span class="item-name">{{ item.menuItem.name }}</span>
+              <span class="item-qty">Qty: {{ item.quantity }}</span>
+            </div>
+            <span class="item-price">₹{{ (item.price * item.quantity).toFixed(2) }}</span>
+          </div>
+        </div>
+        
+        <mat-divider></mat-divider>
+        
+        <div class="order-total">
+          <span>Total Amount</span>
+          <span class="total-amount">₹{{ order.totalAmount.toFixed(2) }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Delivery Address -->
+    <mat-card class="address-card" *ngIf="order.deliveryAddress">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>location_on</mat-icon>
+          Delivery Address
+        </mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="address-content">
+          <div class="address-icon">
+            <mat-icon>home</mat-icon>
+          </div>
+          <div class="address-text">
+            <p>{{ order.deliveryAddress.street }}</p>
+            <p>{{ order.deliveryAddress.city }}, {{ order.deliveryAddress.state }} {{ order.deliveryAddress.zipCode }}</p>
+            <p>{{ order.deliveryAddress.country }}</p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Delivery Animation -->
+    <mat-card class="delivery-animation-card" *ngIf="order.orderStatus === 'preparing' || order.orderStatus === 'ready'">
+      <mat-card-content>
+        <div class="delivery-visual">
+          <div class="restaurant-icon">
+            <mat-icon>storefront</mat-icon>
+          </div>
+          <div class="delivery-route">
+            <div class="route-line">
+              <div class="moving-dot"></div>
+            </div>
+            <mat-icon class="delivery-bike">delivery_dining</mat-icon>
+          </div>
+          <div class="home-icon">
+            <mat-icon>home</mat-icon>
+          </div>
+        </div>
+        <p class="delivery-text" *ngIf="order.orderStatus === 'preparing'">Your order is being prepared with care...</p>
+        <p class="delivery-text" *ngIf="order.orderStatus === 'ready'">Your order is on its way!</p>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button mat-stroked-button (click)="goBack()" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+        Back to Profile
+      </button>
+      <button mat-raised-button color="primary" (click)="goHome()" class="home-btn">
+        <mat-icon>home</mat-icon>
+        Back to Home
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="!order">
+    <div class="loading-spinner">
+      <mat-spinner diameter="60"></mat-spinner>
+    </div>
+    <p>Loading order details...</p>
+  </div>
+</div>

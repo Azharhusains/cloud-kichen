@@ -1,0 +1,87 @@
+<div class="inventory-management-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <h1>Inventory Management</h1>
+      <p class="subtitle">Track and manage your stock levels</p>
+    </div>
+    <div class="header-actions">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search inventory</mat-label>
+        <input matInput [(ngModel)]="searchTerm" (input)="filterInventory()" placeholder="Search...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-raised-button color="primary" (click)="showAddForm()" class="add-button">
+        <mat-icon>add</mat-icon>
+        Add Item
+      </button>
+    </div>
+  </div>
+
+  <!-- Inventory Items Grid -->
+  <div class="inventory-grid">
+    <div *ngIf="filteredInventory.length === 0" class="empty-state">
+      <mat-card class="empty-card">
+        <mat-icon class="empty-icon">inventory_2</mat-icon>
+        <h3>No Inventory Items Found</h3>
+        <p>Add your first inventory item to get started!</p>
+        <button mat-raised-button color="primary" (click)="showAddForm()">
+          <mat-icon>add</mat-icon>
+          Add Item
+        </button>
+      </mat-card>
+    </div>
+
+    <mat-card *ngFor="let item of filteredInventory" class="inventory-item-card">
+      <mat-card-header>
+        <mat-card-title>{{ item.itemName }}</mat-card-title>
+        <mat-card-subtitle>
+          <mat-chip-set>
+            <mat-chip [class]="getStockClass(item.quantity)">
+              {{ getStockStatus(item.quantity) }}
+            </mat-chip>
+          </mat-chip-set>
+        </mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="item-details">
+          <div class="quantity-info">
+            <div class="quantity">
+              <mat-icon>scale</mat-icon>
+              <span class="amount">{{ item.quantity }} {{ item.unit }}</span>
+            </div>
+            <div class="stock-progress">
+              <mat-progress-bar 
+                mode="determinate" 
+                [value]="getStockPercentage(item.quantity)"
+                [color]="getStockColor(item.quantity)">
+              </mat-progress-bar>
+              <span class="percentage">{{ getStockPercentage(item.quantity) }}%</span>
+            </div>
+          </div>
+          
+          <div class="stock-toggle">
+            <mat-slide-toggle 
+              [checked]="item.isActive" 
+              (change)="toggleActive(item)"
+              color="primary">
+              {{ item.isActive ? 'Active' : 'Inactive' }}
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </mat-card-content>
+      
+      <mat-card-actions align="end">
+        <button mat-button color="primary" (click)="editItem(item)">
+          <mat-icon>edit</mat-icon>
+          Edit
+        </button>
+        <button mat-button color="warn" (click)="deleteItem(item)">
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

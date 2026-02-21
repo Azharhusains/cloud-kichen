@@ -1,0 +1,129 @@
+<mat-toolbar color="primary" class="navbar">
+  <div class="nav-container">
+    <div class="nav-brand" (click)="navigateTo('/home')">
+      <mat-icon class="brand-icon">restaurant</mat-icon>
+      <span class="brand-text">Cloud Kitchen</span>
+    </div>
+
+    <!-- Spacer -->
+    <span class="spacer"></span>
+
+    <!-- Desktop Navigation -->
+    <div class="nav-links desktop-nav" *ngIf="user">
+      <!-- Customer Navigation -->
+      <ng-container *ngIf="!isAdmin">
+        <button mat-button (click)="navigateTo('/menu')">
+          <mat-icon>restaurant_menu</mat-icon>
+          <span>Menu</span>
+        </button>
+        <button mat-button (click)="navigateTo('/cart')" [matBadge]="cartItemCount" [matBadgeHidden]="cartItemCount == 0" matBadgeColor="accent" matBadgeSize="small" id="cart-button">
+          <mat-icon>shopping_cart</mat-icon>
+          <span>Cart</span>
+        </button>
+        <button mat-button (click)="navigateTo('/profile')">
+          <mat-icon>person</mat-icon>
+          <span>Profile</span>
+        </button>
+        <button mat-icon-button (click)="logout()" color="warn" matTooltip="Logout">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </ng-container>
+
+      <!-- Admin Navigation -->
+      <ng-container *ngIf="isAdmin">
+        <button mat-button (click)="navigateTo('/admin/dashboard')">
+          <mat-icon>dashboard</mat-icon>
+          <span>Dashboard</span>
+        </button>
+        <button mat-button (click)="navigateTo('/admin/menu')">
+          <mat-icon>menu_book</mat-icon>
+          <span>Menu</span>
+        </button>
+        <button mat-button (click)="navigateTo('/admin/orders')">
+          <mat-icon>receipt_long</mat-icon>
+          <span>Orders</span>
+        </button>
+        <button mat-button (click)="navigateTo('/admin/inventory')">
+          <mat-icon>inventory</mat-icon>
+          <span>Inventory</span>
+        </button>
+        <button mat-icon-button (click)="logout()" color="warn" matTooltip="Logout">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </ng-container>
+    </div>
+
+    <!-- Auth Buttons (when not logged in) -->
+    <div class="nav-auth" *ngIf="!user">
+      <button mat-button (click)="navigateTo('/login')" *ngIf="currentUrl !== '/login'">
+        <mat-icon>login</mat-icon>
+        <span>Login</span>
+      </button>
+      <button mat-stroked-button (click)="navigateTo('/register')" *ngIf="currentUrl !== '/register'">
+        <mat-icon>person_add</mat-icon>
+        <span>Register</span>
+      </button>
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <button mat-icon-button class="mobile-menu-toggle" (click)="toggleMobileMenu()" *ngIf="user">
+      <mat-icon>{{ isMobileMenuOpen ? 'close' : 'menu' }}</mat-icon>
+    </button>
+  </div>
+
+  <!-- Mobile Navigation Menu -->
+  <div class="mobile-nav" [class.open]="isMobileMenuOpen" *ngIf="user">
+    <mat-nav-list>
+      <!-- Customer Navigation -->
+      <ng-container *ngIf="!isAdmin">
+        <a mat-list-item (click)="navigateTo('/menu')">
+          <mat-icon matListItemIcon>restaurant_menu</mat-icon>
+          <span matListItemTitle>Menu</span>
+        </a>
+        <a mat-list-item (click)="navigateTo('/cart')">
+          <mat-icon matListItemIcon>shopping_cart</mat-icon>
+          <span matListItemTitle>Cart</span>
+          <span matListItemMeta *ngIf="cartItemCount > 0">{{ cartItemCount }}</span>
+        </a>
+        <a mat-list-item (click)="navigateTo('/profile')">
+          <mat-icon matListItemIcon>person</mat-icon>
+          <span matListItemTitle>Profile</span>
+        </a>
+        <mat-divider></mat-divider>
+        <a mat-list-item (click)="logout()" color="warn">
+          <mat-icon matListItemIcon color="warn">logout</mat-icon>
+          <span matListItemTitle>Logout</span>
+        </a>
+      </ng-container>
+
+      <!-- Admin Navigation -->
+      <ng-container *ngIf="isAdmin">
+        <a mat-list-item (click)="navigateTo('/admin/dashboard')">
+          <mat-icon matListItemIcon>dashboard</mat-icon>
+          <span matListItemTitle>Dashboard</span>
+        </a>
+        <a mat-list-item (click)="navigateTo('/admin/menu')">
+          <mat-icon matListItemIcon>menu_book</mat-icon>
+          <span matListItemTitle>Menu Management</span>
+        </a>
+        <a mat-list-item (click)="navigateTo('/admin/orders')">
+          <mat-icon matListItemIcon>receipt_long</mat-icon>
+          <span matListItemTitle>Orders</span>
+        </a>
+        <a mat-list-item (click)="navigateTo('/admin/inventory')">
+          <mat-icon matListItemIcon>inventory</mat-icon>
+          <span matListItemTitle>Inventory</span>
+        </a>
+        <mat-divider></mat-divider>
+        <a mat-list-item (click)="logout()">
+          <mat-icon matListItemIcon color="warn">logout</mat-icon>
+          <span matListItemTitle>Logout</span>
+        </a>
+      </ng-container>
+    </mat-nav-list>
+  </div>
+
+</mat-toolbar>
+
+<!-- Mobile overlay - outside toolbar for proper full-screen coverage -->
+<div class="mobile-overlay" [class.active]="isMobileMenuOpen" (click)="closeMobileMenu()"></div>
