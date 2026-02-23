@@ -80,7 +80,10 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   getSubtotal(): number {
-    return this.cart.reduce((sum: number, item: CartItem) => sum + (item.menuItem.price * item.quantity), 0);
+    return this.cart.reduce((sum: number, item: CartItem) => {
+      const price = item.menuItem?.price || 0;
+      return sum + (price * item.quantity);
+    }, 0);
   }
 
   getTax(): number {
@@ -88,7 +91,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   getTotal(): number {
-    return this.getSubtotal() + this.getTax() + this.deliveryCharge;
+    return this.getSubtotal() + this.getTax() + (this.deliveryCharge || 0);
   }
 
   continueShopping(): void {

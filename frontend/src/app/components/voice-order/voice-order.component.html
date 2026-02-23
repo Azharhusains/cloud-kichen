@@ -1,0 +1,164 @@
+<div class="voice-order-container">
+  <!-- AI Mode Toggle -->
+  <div class="ai-mode-toggle">
+    <div class="toggle-wrapper">
+      <mat-slide-toggle
+        [checked]="isTextMode"
+        (change)="toggleAIMode()"
+        color="primary">
+        <span class="toggle-label">
+          {{ isTextMode ? 'Text Mode' : 'Voice Mode' }}
+        </span>
+      </mat-slide-toggle>
+      <span class="mode-badge" [class.text-mode]="isTextMode">
+        <mat-icon>{{ isTextMode ? 'keyboard' : 'mic' }}</mat-icon>
+        {{ isTextMode ? 'Text AI' : 'Voice AI' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Voice Order Panel -->
+  <div class="voice-panel" [class.active]="voiceState.isListening">
+    <!-- Mic Button -->
+    <div class="mic-container">
+      <button
+        mat-fab
+        class="mic-button"
+        [class.listening]="voiceState.isListening"
+        [class.processing]="voiceState.isProcessing"
+        [class.unsupported]="!voiceState.isSupported"
+        [disabled]="!voiceState.isSupported || voiceState.isProcessing || isTextMode"
+        (click)="voiceState.isListening ? stopVoiceRecognition() : startVoiceRecognition()"
+        [matTooltip]="!voiceState.isSupported ? 'Voice not supported in this browser' : (voiceState.isListening ? 'Click to stop' : 'Click to speak')">
+        
+        <!-- Processing Spinner -->
+        <mat-spinner *ngIf="voiceState.isProcessing" diameter="24" class="spinner-white"></mat-spinner>
+        
+        <!-- Mic Icons -->
+        <mat-icon *ngIf="!voiceState.isListening && !voiceState.isProcessing">
+          {{ voiceState.isSupported ? 'mic' : 'mic_off' }}
+        </mat-icon>
+        <mat-icon *ngIf="voiceState.isListening && !voiceState.isProcessing">
+          stop
+        </mat-icon>
+      </button>
+
+      <!-- Pulse Animation -->
+      <div class="pulse-ring" *ngIf="voiceState.isListening"></div>
+      <div class="pulse-ring delay-1" *ngIf="voiceState.isListening"></div>
+      <div class="pulse-ring delay-2" *ngIf="voiceState.isListening"></div>
+    </div>
+
+    <!-- Status Text -->
+    <div class="status-container">
+      <p class="status-text" [class.listening]="voiceState.isListening">
+        <span *ngIf="voiceState.isProcessing">Processing your order...</span>
+        <span *ngIf="voiceState.isListening && !voiceState.isProcessing">Listening...</span>
+        <span *ngIf="!voiceState.isListening && !voiceState.isProcessing && voiceState.isSupported">
+          Tap mic to start
+        </span>
+        <span *ngIf="!voiceState.isSupported">
+          Voice not supported
+        </span>
+      </p>
+      
+      <!-- Silence Timer Indicator -->
+      <div class="silence-indicator" *ngIf="voiceState.isListening">
+        <mat-icon>volume_up</mat-icon>
+        <span>Auto-stop in 5s of silence</span>
+      </div>
+    </div>
+
+    <!-- Live Transcript -->
+    <div class="transcript-container" *ngIf="displayTranscript || voiceState.isListening">
+      <div class="transcript-box">
+        <p class="transcript-text">
+          {{ displayTranscript || 'Speak now...' }}
+        </p>
+        <div class="transcript-cursor" *ngIf="voiceState.isListening"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Text Mode Input -->
+  <div class="text-mode-panel" *ngIf="isTextMode">
+    <div class="text-input-container">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Type your order</mat-label>
+        <input
+          matInput
+          [(ngModel)]="textInput"
+          placeholder="e.g., Order 2 pizzas and checkout"
+          (keyup.enter)="processTextInput()"
+          [disabled]="voiceState.isProcessing">
+        <mat-icon matPrefix>edit</mat-icon>
+        <button
+          mat-icon-button
+          matSuffix
+          [disabled]="!textInput.trim() || voiceState.isProcessing"
+          (click)="processTextInput()">
+          <mat-icon>send</mat-icon>
+        </button>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Response Summary Card -->
+  <mat-card class="response-card" *ngIf="lastResponse">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>{{ lastResponse.success ? 'check_circle' : 'error' }}</mat-icon>
+        Order Status
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="response-message">{{ lastResponse.message }}</p>
+      
+      <!-- Intents Detected -->
+      <div class="intents-list" *ngIf="lastResponse.intents?.length">
+        <span class="intent-label">Detected Actions:</span>
+        <mat-chip-set>
+          <mat-chip *ngFor="let intent of lastResponse.intents">
+            {{ intent.replace('_', ' ') }}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <!-- Cart Items -->
+      <div class="cart-summary" *ngIf="cartItems.length">
+        <span class="cart-label">Cart ({{ cartItemCount }} items):</span>
+        <ul class="cart-items">
+          <li *ngFor="let item of cartItems">
+            {{ item.quantity }}x {{ item.menuItem.name }} - ₹{{ item.menuItem.price * item.quantity }}
+          </li>
+        </ul>
+        <div class="cart-totals">
+          <p class="cart-subtotal">Subtotal: ₹{{ cartTotal.toFixed(2) }}</p>
+          <p class="cart-tax">Tax (5%): ₹{{ getTax().toFixed(2) }}</p>
+          <p class="cart-delivery">Delivery: ₹{{ deliveryCharge.toFixed(2) }}</p>
+          <p class="cart-total">Total: ₹{{ getTotal().toFixed(2) }}</p>
+        </div>
+      </div>
+
+      <!-- Order Details -->
+      <div class="order-details" *ngIf="lastResponse.order">
+        <p><strong>Order ID:</strong> {{ lastResponse.order._id }}</p>
+        <p><strong>Total:</strong> ₹{{ lastResponse.order.totalAmount }}</p>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-button color="primary" (click)="resetVoice()">
+        <mat-icon>refresh</mat-icon>
+        New Order
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="voiceState.isProcessing">
+    <div class="loading-content">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>AI is processing your order...</p>
+    </div>
+  </div>
+</div>

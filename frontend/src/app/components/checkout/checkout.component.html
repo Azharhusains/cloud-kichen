@@ -77,10 +77,8 @@
               <mat-icon>add</mat-icon>
               Add New Address
             </button>
-          </div>
-
-          <!-- New Address Form -->
-          <form [formGroup]="checkoutForm" class="address-form" *ngIf="newAddreesActive">
+          </div>          <!-- New Address Form -->
+          <form [formGroup]="checkoutForm" class="address-form" *ngIf="newAddreesActive || addresses.length == 0">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Street Address</mat-label>
               <input matInput formControlName="street" placeholder="Enter your street address">

@@ -21,10 +21,6 @@ export class OrderService {
     return this.http.get<any>(`${environment.apiUrl}/orders/${id}`);
   }
 
-  getOrderByOrderId(orderId: number): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/orders/by-order-id/${orderId}`);
-  }
-
   updateOrderStatus(id: string, status: string): Observable<any> {
     return this.http.put(`${environment.apiUrl}/orders/${id}/status`, { status });
   }

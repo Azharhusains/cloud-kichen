@@ -1,26 +1,8 @@
 const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
+const User = require('../models/User');
+const Counter = require('../models/Counter');
 const { deductStock, checkStockAvailability } = require('./inventoryController');
-
-// Helper function to generate order_id
-const generateOrderId = async () => {
-  try {
-    // Find the most recent order across all orders (not just last 24 hours)
-    const recentOrder = await Order.findOne({}).sort({ order_id: -1 });
-
-    if (recentOrder && recentOrder.order_id) {
-      // Increment the order_id by 1
-      return recentOrder.order_id + 1;
-    } else {
-      // No orders exist, start from 1
-      return 1;
-    }
-  } catch (error) {
-    // If any error, default to 1
-    console.error('Error generating order_id:', error);
-    return 1;
-  }
-};
 
 const getOrders = async (req, res) => {
   try {
@@ -53,29 +35,14 @@ const getOrder = async (req, res) => {
   }
 };
 
-const getOrderByOrderId = async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.orderId);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ message: 'Invalid order ID format' });
-    }
-    
-    const order = await Order.findOne({ order_id: orderId }).populate('user', 'name email').populate('items.menuItem');
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-    if (req.user.role === 'customer' && order.user._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 const createOrder = async (req, res) => {
   try {
-    const { items, deliveryAddress } = req.body;
+    const { items, deliveryAddress, saveAddress } = req.body;
+
+    console.log('=== CREATE ORDER DEBUG ===');
+    console.log('saveAddress:', saveAddress);
+    console.log('deliveryAddress:', deliveryAddress);
+    console.log('req.user._id:', req.user._id);
 
     // Validate items
     if (!items || items.length === 0) {
@@ -110,13 +77,19 @@ const createOrder = async (req, res) => {
 
     const profit = totalAmount - totalCost - deliveryCharge - tax;
 
-    // Generate order_id
-    const newOrderId = await generateOrderId();
+    // Get global order number using Counter
+    const counter = await Counter.findOneAndUpdate(
+      { name: 'orderNumber' },
+      { $inc: { sequence: 1 } },
+      { new: true, upsert: true }
+    );
 
-    // Create order
+    const orderNumber = counter.sequence;
+
+    // Create order with orderNumber
     const order = new Order({
-      order_id: newOrderId,
       user: req.user._id,
+      orderNumber,
       items,
       totalAmount,
       deliveryAddress,
@@ -128,12 +101,21 @@ const createOrder = async (req, res) => {
     // Deduct stock
     await deductStock(items);
 
-    // Ensure order_id is included in response
-    const response = createdOrder.toObject();
-    response.order_id = createdOrder.order_id;
+    // Save address to user profile if saveAddress is true
+    if (saveAddress && deliveryAddress) {
+      console.log('=== SAVING ADDRESS ===');
+      const user = await User.findById(req.user._id);
+      console.log('User found:', user ? 'yes' : 'no');
+      if (user) {
+        user.addresses.push(deliveryAddress);
+        await user.save();
+        console.log('Address saved! New addresses:', user.addresses);
+      }
+    }
     
-    res.status(201).json(response);
+    res.status(201).json(createdOrder);
   } catch (error) {
+    console.error('Error creating order:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -152,4 +134,4 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getOrder, getOrderByOrderId, createOrder, updateOrderStatus };
+module.exports = { getOrders, getOrder, createOrder, updateOrderStatus };

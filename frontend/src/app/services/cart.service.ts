@@ -42,6 +42,14 @@ export class CartService {
     return this.cartItemCountSubject.getValue();
   }
 
+  /**
+   * Reload cart from localStorage
+   * This is useful when cart is updated from external sources (e.g., AI voice service)
+   */
+  reloadCart(): void {
+    this.loadCartFromLocalStorage();
+  }
+
   addToCart(menuItem: any): void {
     const cart = this.getCart();
     const existingItem = cart.find((item: CartItem) => item.menuItem._id === menuItem._id);

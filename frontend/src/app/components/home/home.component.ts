@@ -10,6 +10,9 @@ import { MatCardModule } from '@angular/material/card';
 // Angular Animations
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 
+// Auth Service
+import { AuthService } from '../../services/auth.service';
+
 @Component({
   selector: 'app-home',
   standalone: true,

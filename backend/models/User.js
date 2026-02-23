@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
     zipCode: String,
     country: String,
   }],
+  orderCount: {
+    type: Number,
+    default: 0,
+  },
 }, {
   timestamps: true,
 });

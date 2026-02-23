@@ -55,7 +55,7 @@
         <div class="orders-list" *ngIf="todayOrders.length > 0; else noOrders">
           <div *ngFor="let order of todayOrders.slice(0, 5)" class="order-item">
             <div class="order-info">
-              <span class="order-id">#{{ order._id.slice(-6) }}</span>
+              <span class="order-id">#{{ order._id }}</span>
               <span class="order-customer">{{ order.customerName || 'Customer' }}</span>
             </div>
             <div class="order-details">

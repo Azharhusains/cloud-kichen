@@ -14,6 +14,7 @@ import { MenuManagementComponent } from './components/admin/menu-management/menu
 import { OrderManagementComponent } from './components/admin/order-management/order-management.component';
 import { InventoryManagementComponent } from './components/admin/inventory-management/inventory-management.component';
 import { CategoryManagementComponent } from './components/admin/category-management/category-management.component';
+import { VoiceOrderComponent } from './components/voice-order/voice-order.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -26,8 +27,9 @@ export const routes: Routes = [
   { path: 'order-confirmation/:id', component: OrderConfirmationComponent, canActivate: [AuthGuard] },
   { path: 'order-tracking/:id', component: OrderTrackingComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
+  { path: 'voice-order', component: VoiceOrderComponent, canActivate: [AuthGuard] },
   // Admin routes
-{ path: 'admin/dashboard', component: DashboardComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
+  { path: 'admin/dashboard', component: DashboardComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   { path: 'admin/menu', component: MenuManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   { path: 'admin/orders', component: OrderManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   { path: 'admin/inventory', component: InventoryManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },

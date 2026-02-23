@@ -357,6 +357,30 @@
   }
 }
 
+/* AI Voice Order FAB */
+.ai-fab {
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  z-index: 100;
+
+  button {
+    box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4) !important;
+    transition: all 0.3s ease !important;
+
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.6) !important;
+    }
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .menu-header {
@@ -380,6 +404,19 @@
     .cart-summary-card {
       width: 100%;
       justify-content: space-between;
+    }
+  }
+
+  .ai-fab {
+    bottom: 90px;
+    right: 16px;
+
+    button {
+      mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
     }
   }
 }

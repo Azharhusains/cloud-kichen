@@ -35,7 +35,7 @@
               <div class="item-details">
                 <h3>{{ item.menuItem.name }}</h3>
                 <p>{{ item.menuItem.description }}</p>
-                <span class="item-price">₹{{ item.menuItem.price.toFixed(2) }}</span>
+                <span class="item-price">₹{{ (item.menuItem?.price || 0).toFixed(2) }}</span>
               </div>
               
               <div class="quantity-section">
@@ -51,7 +51,7 @@
               </div>
               
               <div class="item-total">
-                <span class="total-price">₹{{ (item.menuItem.price * item.quantity).toFixed(2) }}</span>
+                <span class="total-price">₹{{ ((item.menuItem?.price || 0) * item.quantity).toFixed(2) }}</span>
                 <button mat-icon-button color="warn" (click)="removeFromCart(item)" matTooltip="Remove item">
                   <mat-icon>delete</mat-icon>
                 </button>
@@ -80,7 +80,7 @@
             </div>
             <div class="summary-row">
               <span>Delivery Charge</span>
-              <span>₹{{ deliveryCharge.toFixed(2) }}</span>
+              <span>₹{{ (deliveryCharge || 0).toFixed(2) }}</span>
             </div>
             <mat-divider></mat-divider>
             <div class="summary-row total">

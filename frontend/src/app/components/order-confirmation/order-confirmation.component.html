@@ -27,9 +27,16 @@
         <div class="info-row">
           <span class="label">
             <mat-icon>tag</mat-icon>
+            Order Number
+          </span>
+          <span class="value">#{{ customOrderId || 'N/A' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">
+            <mat-icon>receipt</mat-icon>
             Order ID
           </span>
-          <span class="value">#{{ customOrderId || order?.order_id || order?.orderId || 'N/A' }}</span>
+          <span class="value">#{{ orderId || 'N/A' }}</span>
         </div>
         <div class="info-row" *ngIf="orderDate || order?.createdAt">
           <span class="label">

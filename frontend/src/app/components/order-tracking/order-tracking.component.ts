@@ -65,27 +65,14 @@ export class OrderTrackingComponent implements OnInit {
   }
 
   loadOrder(orderId: string): void {
-    const orderIdNum = parseInt(orderId, 10);
-    if (!isNaN(orderIdNum)) {
-      this.orderService.getOrderByOrderId(orderIdNum).subscribe({
-        next: (order: any) => {
-          this.order = order;
-        },
-        error: (error: any) => {
-          console.error('Error loading order:', error);
-        }
-      });
-    } else {
-      // Fallback to MongoDB _id lookup for backwards compatibility
-      this.orderService.getOrder(orderId).subscribe({
-        next: (order: any) => {
-          this.order = order;
-        },
-        error: (error: any) => {
-          console.error('Error loading order:', error);
-        }
-      });
-    }
+    this.orderService.getOrder(orderId).subscribe({
+      next: (order: any) => {
+        this.order = order;
+      },
+      error: (error: any) => {
+        console.error('Error loading order:', error);
+      }
+    });
   }
 
   isStepCompleted(step: string): boolean {

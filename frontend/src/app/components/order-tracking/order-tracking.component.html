@@ -19,8 +19,8 @@
             <mat-icon>receipt_long</mat-icon>
           </div>
           <div class="order-details">
-            <span class="order-label">Order</span>
-            <span class="order-id">#{{ order.order_id }}</span>
+            <span class="order-label">Order Number</span>
+            <span class="order-id">#{{ order.orderNumber }}</span>
           </div>
         </div>
         <div class="order-status-badge" [ngClass]="getStatusClass(order.orderStatus)">

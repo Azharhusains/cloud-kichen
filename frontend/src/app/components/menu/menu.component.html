@@ -89,4 +89,11 @@
       </button>
     </mat-card>
   </div>
+
+  <!-- AI Voice Order Button (visible when logged in) -->
+  <div class="ai-fab" *ngIf="isLoggedIn" @slideIn>
+    <button mat-fab color="primary" (click)="openAIOrderDialog()" matTooltip="AI Voice Order">
+      <mat-icon>smart_toy</mat-icon>
+    </button>
+  </div>
 </div>

@@ -124,11 +124,8 @@ loadOrders(): void {
     }
 
     const searchLower = this.searchTerm.toLowerCase().trim();
-    const searchNum = !isNaN(Number(this.searchTerm)) ? Number(this.searchTerm) : null;
     
     this.filteredOrders = this.orders.filter(order =>
-      // Search by order_id (numeric)
-      (searchNum !== null && order.order_id === searchNum) ||
       // Search by MongoDB _id
       order._id.toLowerCase().includes(searchLower) ||
       // Search by order status

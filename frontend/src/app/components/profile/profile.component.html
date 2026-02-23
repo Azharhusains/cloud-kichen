@@ -147,7 +147,7 @@
               <div class="order-header">
                 <div class="order-id">
                   <mat-icon>receipt</mat-icon>
-                  <span>Order #{{ order.order_id }}</span>
+                  <span>Order #{{ order.orderNumber || order._id }}</span>
                 </div>
                 <div class="order-status" [ngClass]="getStatusClass(order.orderStatus)">
                   {{ order.orderStatus | titlecase }}
@@ -169,7 +169,7 @@
                 <div class="order-total">
                   <strong>Total: ₹{{ order.totalAmount.toFixed(2) }}</strong>
                 </div>
-              <button mat-stroked-button color="primary" (click)="trackOrder(order.order_id)">
+              <button mat-stroked-button color="primary" (click)="trackOrder(order._id)">
                   <mat-icon>local_shipping</mat-icon>
                   Track Order
                 </button>

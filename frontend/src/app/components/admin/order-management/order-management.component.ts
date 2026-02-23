@@ -145,12 +145,10 @@ export class OrderManagementComponent implements OnInit {
     // Apply search filter
     if (this.searchTerm) {
       const search = this.searchTerm.toLowerCase();
-      // Convert search term to number if it's a numeric string (for order_id search)
-      const searchNumber = !isNaN(Number(this.searchTerm)) ? Number(this.searchTerm) : null;
       
       result = result.filter(order => 
-        // Search by order_id (human-friendly number)
-        (searchNumber !== null && order.order_id === searchNumber) ||
+        // Search by MongoDB _id
+        order._id.toLowerCase().includes(search) ||
         // Search by user name
         (order.user?.name && order.user.name.toLowerCase().includes(search)) ||
         // Search by user email
@@ -252,7 +250,7 @@ export class OrderManagementComponent implements OnInit {
       const content = `
         <html>
           <head>
-            <title>Order #${order.order_id}</title>
+            <title>Order #${order._id}</title>
             <style>
               body { font-family: Arial, sans-serif; padding: 20px; }
               h1 { color: #333; }
@@ -264,7 +262,7 @@ export class OrderManagementComponent implements OnInit {
             </style>
           </head>
           <body>
-            <h1>Order #${order.order_id}</h1>
+            <h1>Order #${order._id}</h1>
             <div class="info"><strong>Customer:</strong> ${order.user?.name || 'N/A'} (${order.user?.email || 'N/A'})</div>
             <div class="info"><strong>Date:</strong> ${this.formatDate(order.createdAt)}</div>
             <div class="info"><strong>Status:</strong> <span class="status">${order.orderStatus}</span></div>

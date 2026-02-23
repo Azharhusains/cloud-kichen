@@ -75,47 +75,25 @@ export class OrderConfirmationComponent implements OnInit {
   }
 
   loadOrder(): void {
-    const orderIdNum = parseInt(this.orderId, 10);
-    if (!isNaN(orderIdNum)) {
-      this.orderService.getOrderByOrderId(orderIdNum).subscribe({
-        next: (order) => {
-          console.log('Order data received:', order);
-          this.order = order;
-          this.customOrderId = order.order_id || order.orderId || 0;
-          this.orderDate = order.createdAt;
-          this.estimatedDelivery = order.estimatedDelivery;
-          this.deliveryAddress = order.deliveryAddress;
-          this.orderItems = order.items;
-          this.totalAmount = order.totalAmount;
-          console.log('Custom Order ID set to:', this.customOrderId);
-        },
-        error: (error) => {
-          console.error('Error loading order:', error);
-        }
-      });
-    } else {
-      // Fallback to MongoDB _id lookup for backwards compatibility
-      this.orderService.getOrder(this.orderId).subscribe({
-        next: (order) => {
-          console.log('Order data received:', order);
-          this.order = order;
-          this.customOrderId = order.order_id || order.orderId || 0;
-          this.orderDate = order.createdAt;
-          this.estimatedDelivery = order.estimatedDelivery;
-          this.deliveryAddress = order.deliveryAddress;
-          this.orderItems = order.items;
-          this.totalAmount = order.totalAmount;
-          console.log('Custom Order ID set to:', this.customOrderId);
-        },
-        error: (error) => {
-          console.error('Error loading order:', error);
-        }
-      });
-    }
+    this.orderService.getOrder(this.orderId).subscribe({
+      next: (order) => {
+        console.log('Order data received:', order);
+        this.order = order;
+        this.orderDate = order.createdAt;
+        this.estimatedDelivery = order.estimatedDelivery;
+        this.deliveryAddress = order.deliveryAddress;
+        this.orderItems = order.items;
+        this.totalAmount = order.totalAmount;
+        this.customOrderId = order.orderNumber;
+      },
+      error: (error) => {
+        console.error('Error loading order:', error);
+      }
+    });
   }
 
   trackOrder(): void {
-    this.router.navigate(['/order-tracking', this.customOrderId]);
+    this.router.navigate(['/order-tracking', this.orderId]);
   }
 
   goHome(): void {

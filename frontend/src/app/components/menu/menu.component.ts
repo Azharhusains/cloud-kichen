@@ -27,6 +27,9 @@ import { CartService } from '../../services/cart.service';
 // Dialog Component
 import { MenuItemDialogComponent } from './menu-item-dialog.component';
 
+// Voice Order Component (for AI Modal)
+import { VoiceOrderComponent } from '../voice-order/voice-order.component';
+
 @Component({
   selector: 'app-menu',
   standalone: true,
@@ -41,7 +44,7 @@ import { MenuItemDialogComponent } from './menu-item-dialog.component';
     MatDividerModule,
     MatDialogModule,
     MatSnackBarModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   templateUrl: './menu.component.html',
   styleUrls: ['./menu.component.scss'],
@@ -232,6 +235,34 @@ export class MenuComponent implements OnInit, OnDestroy {
       if (result) {
         this.addToCart(item);
       }
+    });
+  }
+
+  /**
+   * Open AI Voice Order dialog
+   * Only accessible when user is logged in
+   */
+  openAIOrderDialog(): void {
+    if (!this.isLoggedIn) {
+      this.snackBar.open('Please login to use AI Voice Ordering', 'Login', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom'
+      }).onAction().subscribe(() => {
+        this.router.navigate(['/login']);
+      });
+      return;
+    }
+
+    const dialogRef = this.dialog.open(VoiceOrderComponent, {
+      width: '600px',
+      maxHeight: '80vh',
+      panelClass: 'ai-voice-dialog',
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      // Optional: handle dialog close
     });
   }
 }
