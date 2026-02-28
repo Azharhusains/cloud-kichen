@@ -85,6 +85,11 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
   // Loading state
   isLoading = false;
 
+  // Forced loading for minimum 10 second display
+  showForcedLoading = false;
+  private forcedLoadingTimer: any = null;
+  private readonly MIN_LOADING_DISPLAY_TIME = 10000; // 10 seconds
+
   // Destroy subject
   private destroy$ = new Subject<void>();
 
@@ -112,7 +117,17 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
     this.voiceService.voiceState$
       .pipe(takeUntil(this.destroy$))
       .subscribe(state => {
+        const previousState = this.voiceState;
         this.voiceState = state;
+        
+        // Track processing state changes for forced loading
+        if (!previousState.isProcessing && state.isProcessing) {
+          // Processing started - show forced loading for minimum 10 seconds
+          this.startForcedLoading();
+        } else if (previousState.isProcessing && !state.isProcessing) {
+          // Processing ended - check if we should still show loading
+          this.handleProcessingComplete();
+        }
         
         // Show error messages
         if (state.error) {
@@ -266,5 +281,37 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
    */
   getTotal(): number {
     return this.cartTotal + this.getTax() + this.deliveryCharge;
+  }
+
+  /**
+   * Start forced loading - ensures loading overlay shows for minimum 10 seconds
+   */
+  private startForcedLoading(): void {
+    // Clear any existing timer
+    if (this.forcedLoadingTimer) {
+      clearTimeout(this.forcedLoadingTimer);
+    }
+    
+    // Show forced loading
+    this.showForcedLoading = true;
+    
+    // Set timer to hide forced loading after 10 seconds
+    this.forcedLoadingTimer = setTimeout(() => {
+      this.showForcedLoading = false;
+      this.forcedLoadingTimer = null;
+    }, this.MIN_LOADING_DISPLAY_TIME);
+  }
+
+  /**
+   * Handle processing completion - only hide forced loading if 10 seconds have passed
+   */
+  private handleProcessingComplete(): void {
+    // If the timer is still running (less than 10 seconds have passed),
+    // the loading will stay visible until the timer completes
+    // If the timer has already completed, showForcedLoading is already false
+    if (!this.forcedLoadingTimer) {
+      this.showForcedLoading = false;
+    }
+    // If timer is still running, keep showing the loading until 10 seconds
   }
 }

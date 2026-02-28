@@ -155,7 +155,7 @@
   </mat-card>
 
   <!-- Loading Overlay -->
-  <div class="loading-overlay" *ngIf="voiceState.isProcessing">
+  <div class="loading-overlay" *ngIf="showForcedLoading">
     <div class="loading-content">
       <mat-spinner diameter="48"></mat-spinner>
       <p>AI is processing your order...</p>
