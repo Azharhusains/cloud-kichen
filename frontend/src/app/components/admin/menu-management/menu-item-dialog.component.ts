@@ -44,7 +44,7 @@ export interface MenuItemDialogData {
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Item Name</mat-label>
             <input matInput formControlName="name" placeholder="Enter item name">
-            <mat-error *ngIf="menuForm.get('name')?.hasError('required')">
+            <mat-error *ngIf="menuForm.get('name')?.hasError('required')" class="error-text">
               Name is required
             </mat-error>
           </mat-form-field>
@@ -56,7 +56,7 @@ export interface MenuItemDialogData {
                 {{ category.displayName }}
               </mat-option>
             </mat-select>
-            <mat-error *ngIf="menuForm.get('category')?.hasError('required')">
+            <mat-error *ngIf="menuForm.get('category')?.hasError('required')" class="error-text">
               Category is required
             </mat-error>
           </mat-form-field>
@@ -64,7 +64,7 @@ export interface MenuItemDialogData {
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Description</mat-label>
             <textarea matInput formControlName="description" rows="3" placeholder="Enter item description"></textarea>
-            <mat-error *ngIf="menuForm.get('description')?.hasError('required')">
+            <mat-error *ngIf="menuForm.get('description')?.hasError('required')" class="error-text">
               Description is required
             </mat-error>
           </mat-form-field>
@@ -72,24 +72,24 @@ export interface MenuItemDialogData {
           <div class="form-row">
             <mat-form-field appearance="outline">
               <mat-label>Price (₹)</mat-label>
-              <input matInput type="number" formControlName="price" step="0.01" min="0">
+              <input matInput type="number" formControlName="price" step="0.01" min="0.01">
               <mat-icon matPrefix>attach_money</mat-icon>
-              <mat-error *ngIf="menuForm.get('price')?.hasError('required')">
+              <mat-error *ngIf="menuForm.get('price')?.hasError('required')" class="error-text">
                 Price is required
               </mat-error>
-              <mat-error *ngIf="menuForm.get('price')?.hasError('min')">
+              <mat-error *ngIf="menuForm.get('price')?.hasError('min')" class="error-text">
                 Price must be positive
               </mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Cost Price (₹)</mat-label>
-              <input matInput type="number" formControlName="costPrice" step="0.01" min="0">
+              <input matInput type="number" formControlName="costPrice" step="0.01" min="0.01">
               <mat-icon matPrefix>money</mat-icon>
-              <mat-error *ngIf="menuForm.get('costPrice')?.hasError('required')">
+              <mat-error *ngIf="menuForm.get('costPrice')?.hasError('required')" class="error-text">
                 Cost price is required
               </mat-error>
-              <mat-error *ngIf="menuForm.get('costPrice')?.hasError('min')">
+              <mat-error *ngIf="menuForm.get('costPrice')?.hasError('min')" class="error-text">
                 Cost price must be positive
               </mat-error>
             </mat-form-field>
@@ -144,6 +144,10 @@ export interface MenuItemDialogData {
       }
     }
 
+    ::ng-deep .error-text {
+      color: #f44336 !important;
+    }
+
     @media (max-width: 600px) {
       .menu-item-dialog {
         min-width: auto;
@@ -167,8 +171,8 @@ export class MenuItemDialogComponent implements OnInit {
       name: ['', Validators.required],
       category: ['', Validators.required],
       description: ['', Validators.required],
-      price: [0, [Validators.required, Validators.min(0)]],
-      costPrice: [0, [Validators.required, Validators.min(0)]],
+      price: [null, [Validators.required, Validators.min(0.01)]],
+      costPrice: [null, [Validators.required, Validators.min(0.01)]],
       isAvailable: [true]
     });
   }
@@ -180,9 +184,11 @@ export class MenuItemDialogComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.menuForm.valid) {
-      this.dialogRef.close(this.menuForm.value);
+    if (this.menuForm.invalid) {
+      this.menuForm.markAllAsTouched();
+      return;
     }
+    this.dialogRef.close(this.menuForm.value);
   }
 
   onCancel(): void {

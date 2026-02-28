@@ -50,7 +50,7 @@ export interface InventoryDialogData {
             <mat-label>Item Name</mat-label>
             <input matInput formControlName="itemName" placeholder="Enter item name">
             <mat-icon matPrefix>inventory_2</mat-icon>
-            <mat-error *ngIf="inventoryForm.get('itemName')?.hasError('required')">
+            <mat-error *ngIf="inventoryForm.get('itemName')?.hasError('required')" class="error-text">
               Item name is required
             </mat-error>
           </mat-form-field>
@@ -60,10 +60,10 @@ export interface InventoryDialogData {
               <mat-label>Quantity</mat-label>
               <input matInput type="number" formControlName="quantity" min="0" step="0.1">
               <mat-icon matPrefix>scale</mat-icon>
-              <mat-error *ngIf="inventoryForm.get('quantity')?.hasError('required')">
+              <mat-error *ngIf="inventoryForm.get('quantity')?.hasError('required')" class="error-text">
                 Quantity is required
               </mat-error>
-              <mat-error *ngIf="inventoryForm.get('quantity')?.hasError('min')">
+              <mat-error *ngIf="inventoryForm.get('quantity')?.hasError('min')" class="error-text">
                 Quantity must be positive
               </mat-error>
             </mat-form-field>
@@ -77,7 +77,7 @@ export interface InventoryDialogData {
                 <mat-option value="ml">Milliliters (ml)</mat-option>
                 <mat-option value="pcs">Pieces (pcs)</mat-option>
               </mat-select>
-              <mat-error *ngIf="inventoryForm.get('unit')?.hasError('required')">
+              <mat-error *ngIf="inventoryForm.get('unit')?.hasError('required')" class="error-text">
                 Unit is required
               </mat-error>
             </mat-form-field>
@@ -139,6 +139,10 @@ export interface InventoryDialogData {
       }
     }
 
+    ::ng-deep .error-text {
+      color: #f44336 !important;
+    }
+
     @media (max-width: 600px) {
       .inventory-dialog {
         min-width: auto;
@@ -160,9 +164,9 @@ export class InventoryDialogComponent implements OnInit {
   ) {
     this.inventoryForm = this.fb.group({
       itemName: ['', Validators.required],
-      quantity: [0, [Validators.required, Validators.min(0)]],
+      quantity: [null, [Validators.required, Validators.min(0.01)]],
       unit: ['kg', Validators.required],
-      minStockLevel: [10, [Validators.required, Validators.min(0)]],
+      minStockLevel: [null, [Validators.required, Validators.min(0.01)]],
       isActive: [true]
     });
   }
@@ -180,9 +184,11 @@ export class InventoryDialogComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.inventoryForm.valid) {
-      this.dialogRef.close(this.inventoryForm.value);
+    if (this.inventoryForm.invalid) {
+      this.inventoryForm.markAllAsTouched();
+      return;
     }
+    this.dialogRef.close(this.inventoryForm.value);
   }
 
   onCancel(): void {

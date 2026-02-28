@@ -48,7 +48,7 @@ export interface CategoryDialogData {
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Display Name</mat-label>
             <input matInput formControlName="displayName" placeholder="e.g., Birani, Korma, Tandoori">
-            <mat-error *ngIf="categoryForm.get('displayName')?.hasError('required')">
+            <mat-error *ngIf="categoryForm.get('displayName')?.hasError('required')" class="error-text">
               Display name is required
             </mat-error>
           </mat-form-field>
@@ -57,10 +57,10 @@ export interface CategoryDialogData {
             <mat-label>Name (URL-friendly)</mat-label>
             <input matInput formControlName="name" placeholder="e.g., birani, korma, tandoori">
             <mat-hint>Use lowercase letters, numbers, and hyphens only</mat-hint>
-            <mat-error *ngIf="categoryForm.get('name')?.hasError('required')">
+            <mat-error *ngIf="categoryForm.get('name')?.hasError('required')" class="error-text">
               Name is required
             </mat-error>
-            <mat-error *ngIf="categoryForm.get('name')?.hasError('pattern')">
+            <mat-error *ngIf="categoryForm.get('name')?.hasError('pattern')" class="error-text">
               Only lowercase letters, numbers, and hyphens allowed
             </mat-error>
           </mat-form-field>
@@ -115,6 +115,10 @@ export interface CategoryDialogData {
       }
     }
 
+    ::ng-deep .error-text {
+      color: #f44336 !important;
+    }
+
     @media (max-width: 600px) {
       .category-dialog {
         min-width: auto;
@@ -152,9 +156,11 @@ export class CategoryDialogComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.categoryForm.valid) {
-      this.dialogRef.close(this.categoryForm.value);
+    if (this.categoryForm.invalid) {
+      this.categoryForm.markAllAsTouched();
+      return;
     }
+    this.dialogRef.close(this.categoryForm.value);
   }
 
   onCancel(): void {
