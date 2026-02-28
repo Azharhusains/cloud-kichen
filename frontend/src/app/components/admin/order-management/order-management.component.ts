@@ -304,7 +304,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       const content = `
         <html>
           <head>
-            <title>Order #${order._id}</title>
+            <title>Order #${order.orderNumber}</title>
             <style>
               body { font-family: Arial, sans-serif; padding: 20px; }
               h1 { color: #333; }
@@ -316,7 +316,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
             </style>
           </head>
           <body>
-            <h1>Order #${order._id}</h1>
+            <h1>Order #${order.orderNumber}</h1>
             <div class="info"><strong>Customer:</strong> ${order.user?.name || 'N/A'} (${order.user?.email || 'N/A'})</div>
             <div class="info"><strong>Date:</strong> ${this.formatDate(order.createdAt)}</div>
             <div class="info"><strong>Status:</strong> <span class="status">${order.orderStatus}</span></div>
