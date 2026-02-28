@@ -32,6 +32,25 @@ const orderSchema = new mongoose.Schema({
       min: 0,
     },
   }],
+  subtotal: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  deliveryCharge: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  taxRate: {
+    type: Number,
+    default: 0.18,
+  },
+  taxAmount: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
   totalAmount: {
     type: Number,
     required: true,

@@ -444,6 +444,71 @@ mat-card {
   }
 }
 
+/* Price Breakdown */
+.price-breakdown {
+  padding-top: 16px;
+
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 1rem;
+    color: #555;
+
+    .price-label {
+      font-weight: 500;
+    }
+
+    .price-value {
+      font-weight: 600;
+      color: #333;
+    }
+
+    &.grand-total {
+      padding-top: 16px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #333;
+
+      .price-label {
+        color: #333;
+      }
+
+      .price-value {
+        color: #667eea;
+        font-size: 1.5rem;
+      }
+    }
+  }
+
+  .breakdown-divider {
+    margin: 8px 0 !important;
+  }
+
+  .price-explanation {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 14px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.5;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #667eea;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  }
+}
+
 mat-divider {
   margin: 20px 0 !important;
 }

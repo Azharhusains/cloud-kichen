@@ -6,10 +6,13 @@
 
   <div class="checkout-content" *ngIf="cart.length > 0">
     <!-- Order Summary -->
-    <div class="order-summary-section">
+    <div class="order-summary-section delivery-card">
       <mat-card class="summary-card">
         <mat-card-header>
-          <mat-card-title>Order Summary</mat-card-title>
+          <mat-card-title>
+            <mat-icon>receipt_long</mat-icon>
+            Order Summary
+          </mat-card-title>
         </mat-card-header>
         
         <mat-card-content>

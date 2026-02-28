@@ -167,4 +167,48 @@ export class OrderTrackingComponent implements OnInit {
   goHome(): void {
     this.router.navigate(['/home']);
   }
+
+  // Helper methods for price breakdown
+  getSubtotal(): number {
+    if (!this.order) return 0;
+    return typeof this.order.subtotal === 'number' ? this.order.subtotal : 0;
+  }
+
+  getDeliveryCharge(): number {
+    if (!this.order) return 0;
+    return typeof this.order.deliveryCharge === 'number' ? this.order.deliveryCharge : 0;
+  }
+
+  getTaxAmount(): number {
+    if (!this.order) return 0;
+    return typeof this.order.taxAmount === 'number' ? this.order.taxAmount : 0;
+  }
+
+  getTaxRate(): number {
+    if (!this.order) return 0;
+    const taxRate = this.order.taxRate;
+    return typeof taxRate === 'number' ? (taxRate * 100) : 18; // Default to 18% if not set
+  }
+
+  getTotalAmount(): number {
+    if (!this.order) return 0;
+    return typeof this.order.totalAmount === 'number' ? this.order.totalAmount : 0;
+  }
+
+  hasPriceBreakdown(): boolean {
+    if (!this.order) return false;
+    // Check if price-related properties exist and are valid numbers
+    const subtotal = this.order.subtotal;
+    const deliveryCharge = this.order.deliveryCharge;
+    const taxAmount = this.order.taxAmount;
+    const totalAmount = this.order.totalAmount;
+    
+    return (
+      typeof subtotal === 'number' && 
+      typeof deliveryCharge === 'number' && 
+      typeof taxAmount === 'number' &&
+      typeof totalAmount === 'number' &&
+      subtotal > 0
+    );
+  }
 }

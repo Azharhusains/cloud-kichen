@@ -56,9 +56,36 @@
         
         <div class="item-footer">
           <span class="price">₹{{ item.price.toFixed(2) }}</span>
-          <button mat-raised-button color="primary" (click)="addToCart(item)" [disabled]="!item.isAvailable">
-            <mat-icon>add_shopping_cart</mat-icon>
-            Add
+          
+          <!-- Enhanced Add to Cart Button -->
+          <div class="add-to-cart-container" *ngIf="item.isAvailable">
+            <!-- Quantity Controls (when item is in cart) -->
+            <div class="quantity-controls" *ngIf="getItemQuantity(item) > 0">
+              <button mat-mini-fab class="qty-btn qty-decrease" (click)="decreaseQuantity(item); $event.stopPropagation()">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span class="qty-badge">{{ getItemQuantity(item) }}</span>
+              <button mat-mini-fab class="qty-btn qty-increase" (click)="increaseQuantity(item); $event.stopPropagation()">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+            
+            <!-- Add Button (when item not in cart) -->
+            <button 
+              mat-raised-button 
+              class="add-btn" 
+              *ngIf="getItemQuantity(item) === 0"
+              (click)="addToCart(item); $event.stopPropagation()">
+              <mat-icon class="cart-icon">add_shopping_cart</mat-icon>
+              <span class="btn-text">Add</span>
+              <span class="btn-price">₹{{ item.price.toFixed(0) }}</span>
+            </button>
+          </div>
+          
+          <!-- Unavailable Item Button -->
+          <button mat-raised-button class="unavailable-btn" *ngIf="!item.isAvailable" disabled>
+            <mat-icon>block</mat-icon>
+            Unavailable
           </button>
         </div>
       </mat-card-content>

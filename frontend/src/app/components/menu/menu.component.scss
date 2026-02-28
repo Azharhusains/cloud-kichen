@@ -276,8 +276,103 @@
         color: #667eea;
       }
 
-      button {
+      .add-to-cart-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .add-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         border-radius: 20px !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        padding: 0 16px !important;
+        height: 36px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5) !important;
+        }
+
+        .cart-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+
+        .btn-text {
+          font-weight: 600;
+          font-size: 0.9rem;
+        }
+
+        .btn-price {
+          background: rgba(255, 255, 255, 0.2);
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 0.8rem;
+          font-weight: 600;
+        }
+      }
+
+      .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 4px 8px;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+
+        .qty-btn {
+          width: 28px !important;
+          height: 28px !important;
+          box-shadow: none !important;
+          
+          &.qty-decrease {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+          }
+
+          &.qty-increase {
+            background: white !important;
+            color: #667eea !important;
+          }
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+
+        .qty-badge {
+          color: white;
+          font-weight: 700;
+          min-width: 24px;
+          text-align: center;
+          font-size: 1rem;
+        }
+      }
+
+      .unavailable-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 20px !important;
+        background: #e0e0e0 !important;
+        color: #9e9e9e !important;
+        padding: 0 16px !important;
+        height: 36px !important;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
       }
     }
   }

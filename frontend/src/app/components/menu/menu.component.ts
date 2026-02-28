@@ -206,6 +206,11 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.cartService.decreaseQuantity(menuItem._id);
   }
 
+  getItemQuantity(item: MenuItem): number {
+    const cartItem = this.cart.find((c: any) => c.menuItem._id === item._id);
+    return cartItem ? cartItem.quantity : 0;
+  }
+
   removeFromCart(menuItem: any): void {
     this.cartService.removeFromCart(menuItem._id);
   }

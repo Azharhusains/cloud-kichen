@@ -55,8 +55,8 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ message: 'Insufficient stock for some items' });
     }
 
-    // Calculate total and profit
-    let totalAmount = 0;
+    // Calculate subtotal and cost
+    let subtotal = 0;
     let totalCost = 0;
     for (const item of items) {
       const menuItem = await MenuItem.findById(item.menuItem);
@@ -65,17 +65,17 @@ const createOrder = async (req, res) => {
       }
       item.price = menuItem.price;
       item.costPrice = menuItem.costPrice;
-      totalAmount += item.price * item.quantity;
+      subtotal += item.price * item.quantity;
       totalCost += item.costPrice * item.quantity;
     }
 
-    // Add delivery charge and tax (configurable)
-    const deliveryCharge = 50; // Flat delivery charge
-    const taxRate = 0.18; // 18% tax
-    const tax = totalAmount * taxRate;
-    totalAmount += deliveryCharge + tax;
+    // Add delivery charge and tax (configurable) - matching frontend checkout
+    const deliveryCharge = 2.99; // Flat delivery charge
+    const taxRate = 0.05; // 5% tax
+    const taxAmount = subtotal * taxRate;
+    const totalAmount = subtotal + deliveryCharge + taxAmount;
 
-    const profit = totalAmount - totalCost - deliveryCharge - tax;
+    const profit = totalAmount - totalCost - deliveryCharge - taxAmount;
 
     // Get global order number using Counter
     const counter = await Counter.findOneAndUpdate(
@@ -86,11 +86,15 @@ const createOrder = async (req, res) => {
 
     const orderNumber = counter.sequence;
 
-    // Create order with orderNumber
+    // Create order with orderNumber and charge breakdown
     const order = new Order({
       user: req.user._id,
       orderNumber,
       items,
+      subtotal,
+      deliveryCharge,
+      taxRate,
+      taxAmount,
       totalAmount,
       deliveryAddress,
       profit,

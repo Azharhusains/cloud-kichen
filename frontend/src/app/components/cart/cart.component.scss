@@ -35,7 +35,7 @@
 
     .empty-icon {
       font-size: 80px;
-      width: 80px;
+      width: 100%;
       height: 80px;
       color: #ccc;
       margin-bottom: 20px;
@@ -54,9 +54,25 @@
     button {
       border-radius: 30px !important;
       padding: 12px 32px !important;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      border: none !important;
+      transition: all 0.3s ease !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
 
       mat-icon {
         margin-right: 8px;
+      }
+
+      &:hover {
+        transform: translateY(-2px) scale(1.02) !important;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6) !important;
+        filter: brightness(1.1) !important;
+      }
+
+      &:active {
+        transform: translateY(0) scale(0.98) !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
       }
     }
   }
@@ -240,10 +256,32 @@
     .continue-btn {
       border-color: #667eea !important;
       color: #667eea !important;
+      transition: all 0.3s ease !important;
+
+      &:hover {
+        background: #667eea !important;
+        color: white !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+      }
     }
 
     .checkout-btn {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      transition: all 0.3s ease !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+      color: #fff;
+
+      &:hover {
+        transform: translateY(-2px) scale(1.02) !important;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6) !important;
+        filter: brightness(1.1) !important;
+      }
+
+      &:active {
+        transform: translateY(0) scale(0.98) !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+      }
     }
   }
 }

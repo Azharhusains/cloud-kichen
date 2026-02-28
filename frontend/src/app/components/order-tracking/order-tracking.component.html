@@ -99,7 +99,31 @@
         
         <mat-divider></mat-divider>
         
-        <div class="order-total">
+        <!-- Price Breakdown Section -->
+        <div class="price-breakdown" *ngIf="hasPriceBreakdown()">
+          <div class="price-row">
+            <span class="price-label">Subtotal</span>
+            <span class="price-value">₹{{ getSubtotal().toFixed(2) }}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">Tax ({{ getTaxRate().toFixed(0) }}%)</span>
+            <span class="price-value">₹{{ getTaxAmount().toFixed(2) }}</span>
+          </div>
+          <mat-divider class="breakdown-divider"></mat-divider>
+          <div class="price-row grand-total">
+            <span class="price-label">Total Amount</span>
+            <span class="price-value">₹{{ getTotalAmount().toFixed(2) }}</span>
+          </div>
+          
+          <!-- Explanation for extra charges -->
+          <div class="price-explanation">
+            <mat-icon>info</mat-icon>
+            <span>Subtotal is the sum of item prices. Additional charges include GST ({{ getTaxRate().toFixed(0) }}%) and delivery fee.</span>
+          </div>
+        </div>
+        
+        <!-- Fallback for orders without breakdown (legacy orders) -->
+        <div class="order-total" *ngIf="!hasPriceBreakdown()">
           <span>Total Amount</span>
           <span class="total-amount">₹{{ order.totalAmount.toFixed(2) }}</span>
         </div>
