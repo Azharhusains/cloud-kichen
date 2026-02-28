@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { OrderService } from '../../../services/order.service';
+import { SocketService } from '../../../services/socket.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -41,7 +42,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
   templateUrl: './order-management.component.html',
   styleUrls: ['./order-management.component.scss']
 })
-export class OrderManagementComponent implements OnInit {
+export class OrderManagementComponent implements OnInit, OnDestroy {
   orders: any[] = [];
   filteredOrders: any[] = [];
   statusFilter = '';
@@ -68,11 +69,64 @@ export class OrderManagementComponent implements OnInit {
 
   constructor(
     private orderService: OrderService,
-    private snackBar: MatSnackBar
+    private socketService: SocketService,
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadOrders();
+    this.setupSocketListeners();
+  }
+
+  ngOnDestroy(): void {
+    this.socketService.disconnect();
+  }
+
+  setupSocketListeners(): void {
+    // Join admin room for real-time updates
+    this.socketService.joinAdminRoom();
+
+    // Listen for new orders
+    this.socketService.onNewOrder().subscribe({
+      next: (order) => {
+        this.orders.unshift(order);
+        this.calculateStatistics();
+        this.applyFilters();
+        this.cdr.detectChanges();
+        this.snackBar.open(`New order received! Order #${order.orderNumber}`, 'View', { duration: 5000 });
+      },
+      error: (err) => console.error('Socket error:', err)
+    });
+
+    // Listen for order updates
+    this.socketService.onOrderUpdated().subscribe({
+      next: (updatedOrder) => {
+        const index = this.orders.findIndex(o => o._id === updatedOrder._id);
+        if (index !== -1) {
+          this.orders[index] = { ...updatedOrder };
+          this.calculateStatistics();
+          this.applyFilters();
+          this.cdr.detectChanges();
+          this.snackBar.open(`Order #${updatedOrder.orderNumber} updated to ${updatedOrder.orderStatus}`, 'Close', { duration: 3000 });
+        }
+      },
+      error: (err) => console.error('Socket error:', err)
+    });
+
+    // Also listen for broadcast as fallback
+    this.socketService.onOrderStatusBroadcast().subscribe({
+      next: (updatedOrder) => {
+        const index = this.orders.findIndex(o => o._id === updatedOrder._id);
+        if (index !== -1) {
+          this.orders[index] = { ...updatedOrder };
+          this.calculateStatistics();
+          this.applyFilters();
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => console.error('Socket broadcast error:', err)
+    });
   }
 
   loadOrders(): void {

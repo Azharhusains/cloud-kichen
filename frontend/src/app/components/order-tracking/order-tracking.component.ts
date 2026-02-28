@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -10,12 +10,14 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 // Angular Animations
 import { trigger, transition, style, animate } from '@angular/animations';
 
 // Services
 import { OrderService } from '../../services/order.service';
+import { SocketService } from '../../services/socket.service';
 
 @Component({
   selector: 'app-order-tracking',
@@ -28,7 +30,8 @@ import { OrderService } from '../../services/order.service';
     MatDividerModule,
     MatStepperModule,
     MatProgressSpinnerModule,
-    MatChipsModule
+    MatChipsModule,
+    MatSnackBarModule
   ],
   templateUrl: './order-tracking.component.html',
   styleUrls: ['./order-tracking.component.scss'],
@@ -47,30 +50,89 @@ import { OrderService } from '../../services/order.service';
     ])
   ]
 })
-export class OrderTrackingComponent implements OnInit {
+export class OrderTrackingComponent implements OnInit, OnDestroy {
   order: any = null;
   statusSteps: string[] = ['received', 'preparing', 'ready', 'delivered'];
+  private orderId: string | null = null;
+  private socketConnected: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
     private orderService: OrderService,
-    private router: Router
+    private socketService: SocketService,
+    private router: Router,
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    const orderId = this.route.snapshot.paramMap.get('id');
-    if (orderId) {
-      this.loadOrder(orderId);
-    }
+    console.log('OrderTrackingComponent: ngOnInit called');
+    
+    // Use paramMap observable to get the order ID
+    this.route.paramMap.subscribe(params => {
+      this.orderId = params.get('id');
+      console.log('OrderTrackingComponent: orderId from params =', this.orderId);
+      
+      if (this.orderId) {
+        this.loadOrder(this.orderId);
+        this.setupSocketListeners();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Don't disconnect socket here as it's a singleton service
+    // Just leave the order room
+    console.log('OrderTrackingComponent: ngOnDestroy called, leaving order room');
+  }
+
+  setupSocketListeners(): void {
+    if (!this.orderId) return;
+
+    console.log('OrderTrackingComponent: Setting up socket listeners for order:', this.orderId);
+    
+    // Join specific order room for real-time status updates
+    this.socketService.joinOrderRoom(this.orderId);
+
+    // Listen for order status changes via room
+    this.socketService.onOrderStatusChanged().subscribe({
+      next: (updatedOrder) => {
+        console.log('OrderTrackingComponent: Received orderStatusChanged:', updatedOrder);
+        console.log('OrderTrackingComponent: Comparing IDs - received:', updatedOrder._id, 'current:', this.orderId);
+        
+        if (updatedOrder._id === this.orderId || updatedOrder._id === this.orderId?.toString()) {
+          this.order = { ...updatedOrder };
+          this.cdr.detectChanges();
+          this.snackBar.open(`Order status updated to: ${updatedOrder.orderStatus}`, 'Close', { duration: 5000 });
+        }
+      },
+      error: (err) => console.error('OrderTrackingComponent: Socket error:', err)
+    });
+
+    // Listen for broadcast (fallback)
+    this.socketService.onOrderStatusBroadcast().subscribe({
+      next: (updatedOrder) => {
+        console.log('OrderTrackingComponent: Received orderStatusBroadcast:', updatedOrder);
+        console.log('OrderTrackingComponent: Comparing IDs - received:', updatedOrder._id, 'current:', this.orderId);
+        
+        if (updatedOrder._id === this.orderId || updatedOrder._id === this.orderId?.toString()) {
+          this.order = { ...updatedOrder };
+          this.cdr.detectChanges();
+          this.snackBar.open(`Order status updated to: ${updatedOrder.orderStatus}`, 'Close', { duration: 5000 });
+        }
+      },
+      error: (err) => console.error('OrderTrackingComponent: Broadcast Socket error:', err)
+    });
   }
 
   loadOrder(orderId: string): void {
     this.orderService.getOrder(orderId).subscribe({
       next: (order: any) => {
         this.order = order;
+        console.log('OrderTrackingComponent: Loaded order:', order);
       },
       error: (error: any) => {
-        console.error('Error loading order:', error);
+        console.error('OrderTrackingComponent: Error loading order:', error);
       }
     });
   }

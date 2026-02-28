@@ -116,6 +116,17 @@ const createOrder = async (req, res) => {
         console.log('Address saved! New addresses:', user.addresses);
       }
     }
+
+    // Populate the order for Socket.IO emission
+    const populatedOrder = await Order.findById(createdOrder._id)
+      .populate('user', 'name email')
+      .populate('items.menuItem');
+
+    console.log('Emitting newOrder event to adminRoom');
+    
+    // Emit real-time event to admin
+    const io = req.app.get('io');
+    io.to('adminRoom').emit('newOrder', populatedOrder);
     
     res.status(201).json(createdOrder);
   } catch (error) {
@@ -130,10 +141,39 @@ const updateOrderStatus = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
+    
+    console.log('=== UPDATE ORDER STATUS DEBUG ===');
+    console.log('Order ID:', req.params.id);
+    console.log('Order _id:', order._id.toString());
+    console.log('New Status:', req.body.status);
+    
     order.orderStatus = req.body.status;
     const updatedOrder = await order.save();
+
+    // Populate the order for Socket.IO emission
+    const populatedOrder = await Order.findById(updatedOrder._id)
+      .populate('user', 'name email')
+      .populate('items.menuItem');
+
+    const orderRoom = `order_${order._id.toString()}`;
+    console.log('Emitting to room:', orderRoom);
+    console.log('Emitting to adminRoom');
+    
+    // Emit real-time events
+    const io = req.app.get('io');
+    
+    // 1. Emit to admin room
+    io.to('adminRoom').emit('orderUpdated', populatedOrder);
+    
+    // 2. Emit to specific order room
+    io.to(orderRoom).emit('orderStatusChanged', populatedOrder);
+    
+    // 3. BROADCAST to all clients as fallback (for debugging)
+    io.emit('orderStatusBroadcast', populatedOrder);
+    
     res.json(updatedOrder);
   } catch (error) {
+    console.error('Error updating order status:', error);
     res.status(500).json({ message: error.message });
   }
 };

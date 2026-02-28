@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const http = require('http');
+const { Server } = require('socket.io');
 const connectDB = require('./config/database');
 
 // Load environment variables
@@ -12,6 +14,38 @@ dotenv.config();
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+
+// Socket.IO setup
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Make io accessible to routes
+app.set('io', io);
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('A client connected:', socket.id);
+
+  // Join rooms based on user role
+  socket.on('joinAdmin', () => {
+    socket.join('adminRoom');
+    console.log('Client joined admin room:', socket.id);
+  });
+
+  socket.on('joinOrder', (orderId) => {
+    socket.join(`order_${orderId}`);
+    console.log(`Client joined order room: order_${orderId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
 // Middleware
 app.use(helmet());
@@ -41,6 +75,6 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
