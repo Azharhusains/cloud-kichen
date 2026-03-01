@@ -738,7 +738,7 @@ mat-divider {
 
   .order-info-card {
     .order-info-content {
-      flex-direction: column;
+      flex-direction: row;
       gap: 16px;
       text-align: center;
     }
@@ -799,7 +799,7 @@ mat-divider {
 
   .delivery-animation-card {
     .delivery-visual {
-      flex-direction: column;
+      flex-direction: row;
       gap: 16px;
     }
 
