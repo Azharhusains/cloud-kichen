@@ -20,6 +20,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { MenuItemDialogComponent } from './menu-item-dialog.component';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-menu-management',
@@ -150,19 +151,32 @@ export class MenuManagementComponent implements OnInit {
   }
 
   deleteItem(item: any): void {
-    if (confirm('Are you sure you want to delete this item?')) {
-      this.menuService.deleteMenuItem(item._id).subscribe({
-        next: () => {
-          this.loadMenuItems();
-          this.toastService.success('Menu item deleted successfully!');
-        },
-        error: (error) => {
-          console.error('Error deleting item:', error);
-          const errorMsg = error.error?.message || 'Error deleting menu item';
-          this.toastService.error(errorMsg);
-        }
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Menu Item',
+        message: 'Are you sure you want to delete this menu item? This action cannot be undone.',
+        itemName: item.name,
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.menuService.deleteMenuItem(item._id).subscribe({
+          next: () => {
+            this.loadMenuItems();
+            this.toastService.success('Menu item deleted successfully!');
+          },
+          error: (error) => {
+            console.error('Error deleting item:', error);
+            const errorMsg = error.error?.message || 'Error deleting menu item';
+            this.toastService.error(errorMsg);
+          }
+        });
+      }
+    });
   }
 
   toggleAvailability(item: any): void {

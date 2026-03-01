@@ -19,6 +19,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { InventoryDialogComponent } from './inventory-dialog.component';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 interface InventoryItem {
   _id?: string;
@@ -144,23 +145,36 @@ export class InventoryManagementComponent implements OnInit {
   }
 
   deleteItem(item: InventoryItem): void {
-    if (confirm(`Are you sure you want to delete ${item.itemName}?`)) {
-      if (!item._id) {
-        this.toastService.error('Cannot delete item: ID not found.');
-        return;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Inventory Item',
+        message: 'Are you sure you want to delete this inventory item? This action cannot be undone.',
+        itemName: item.itemName,
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
       }
-      
-      this.inventoryService.deleteInventory(item._id).subscribe({
-        next: () => {
-          this.loadInventory();
-          this.toastService.success(`${item.itemName} deleted successfully!`);
-        },
-        error: (error) => {
-          console.error('Error deleting inventory:', error);
-          this.toastService.error('Failed to delete inventory item. Please try again.');
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        if (!item._id) {
+          this.toastService.error('Cannot delete item: ID not found.');
+          return;
         }
-      });
-    }
+        
+        this.inventoryService.deleteInventory(item._id).subscribe({
+          next: () => {
+            this.loadInventory();
+            this.toastService.success(`${item.itemName} deleted successfully!`);
+          },
+          error: (error) => {
+            console.error('Error deleting inventory:', error);
+            this.toastService.error('Failed to delete inventory item. Please try again.');
+          }
+        });
+      }
+    });
   }
 
   toggleActive(item: InventoryItem): void {

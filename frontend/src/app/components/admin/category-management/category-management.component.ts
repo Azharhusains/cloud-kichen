@@ -18,6 +18,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 
 import { CategoryDialogComponent } from './category-dialog.component';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-category-management',
@@ -142,18 +143,31 @@ export class CategoryManagementComponent implements OnInit {
   }
 
   deleteCategory(category: Category): void {
-    if (confirm(`Are you sure you want to delete the category "${category.displayName}"?`)) {
-      this.categoryService.deleteCategory(category._id!).subscribe({
-        next: () => {
-          this.toastService.success('Category deleted successfully!');
-          this.loadCategories();
-        },
-        error: (error) => {
-          const errorMsg = error.error?.message || 'Failed to delete category. It may be in use by menu items.';
-          this.toastService.error(errorMsg);
-        }
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Category',
+        message: 'Are you sure you want to delete this category? This action cannot be undone.',
+        itemName: category.displayName,
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.categoryService.deleteCategory(category._id!).subscribe({
+          next: () => {
+            this.toastService.success('Category deleted successfully!');
+            this.loadCategories();
+          },
+          error: (error) => {
+            const errorMsg = error.error?.message || 'Failed to delete category. It may be in use by menu items.';
+            this.toastService.error(errorMsg);
+          }
+        });
+      }
+    });
   }
 
   toggleCategoryStatus(category: Category): void {
