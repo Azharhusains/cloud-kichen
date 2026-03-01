@@ -57,18 +57,18 @@ const login = async (req, res) => {
     }
 
     // Check if account is locked
-    const loginAttempt = await LoginAttempt.findOne({ userId: user._id });
-    if (loginAttempt && loginAttempt.lockedUntil && loginAttempt.lockedUntil > Date.now()) {
-      return res.status(423).json({ message: 'Account is locked due to too many failed login attempts. Try again later.' });
-    }
+    // const loginAttempt = await LoginAttempt.findOne({ userId: user._id });
+    // if (loginAttempt && loginAttempt.lockedUntil && loginAttempt.lockedUntil > Date.now()) {
+    //   return res.status(423).json({ message: 'Account is locked due to too many failed login attempts. Try again later.' });
+    // }
 
     if (await user.comparePassword(password)) {
       // Successful login: reset attempts
-      if (loginAttempt) {
-        loginAttempt.attempts = 0;
-        loginAttempt.lockedUntil = null;
-        await loginAttempt.save();
-      }
+      // if (loginAttempt) {
+      //   loginAttempt.attempts = 0;
+      //   loginAttempt.lockedUntil = null;
+      //   await loginAttempt.save();
+      // }
       res.json({
         _id: user._id,
         name: user.name,
@@ -78,17 +78,17 @@ const login = async (req, res) => {
       });
     } else {
       // Failed login: increment attempts
-      if (!loginAttempt) {
-        const newAttempt = new LoginAttempt({ userId: user._id, attempts: 1 });
-        await newAttempt.save();
-      } else {
-        loginAttempt.attempts += 1;
-        loginAttempt.lastAttempt = Date.now();
-        if (loginAttempt.attempts >= 5) {
-          loginAttempt.lockedUntil = Date.now() + 2 * 60 * 60 * 1000; // 2 hours
-        }
-        await loginAttempt.save();
-      }
+      // if (!loginAttempt) {
+      //   const newAttempt = new LoginAttempt({ userId: user._id, attempts: 1 });
+      //   await newAttempt.save();
+      // } else {
+      //   loginAttempt.attempts += 1;
+      //   loginAttempt.lastAttempt = Date.now();
+      //   if (loginAttempt.attempts >= 5) {
+      //     loginAttempt.lockedUntil = Date.now() + 2 * 60 * 60 * 1000; // 2 hours
+      //   }
+      //   await loginAttempt.save();
+      // }
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
