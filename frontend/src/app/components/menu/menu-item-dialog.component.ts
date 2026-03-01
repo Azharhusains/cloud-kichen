@@ -11,6 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { environment } from '../../../environments/environment';
 
 export interface MenuItemDialogData {
   viewingItem?: any;
@@ -44,8 +45,9 @@ export interface MenuItemDialogData {
       
       <mat-dialog-content>
         <div class="item-details" *ngIf="data.viewingItem">
-          <div class="item-image">
-            <mat-icon class="food-icon">restaurant</mat-icon>
+          <div class="item-image" [class.has-image]="data.viewingItem?.image">
+            <img *ngIf="data.viewingItem?.image" [src]="getImageUrl(data.viewingItem.image)" crossorigin="anonymous" alt="{{ data.viewingItem.name }}">
+            <mat-icon *ngIf="!data.viewingItem?.image" class="food-icon">restaurant</mat-icon>
           </div>
           
           <div class="item-info">
@@ -118,13 +120,24 @@ export interface MenuItemDialogData {
 
       .item-image {
         width: 100%;
-        height: 150px;
+        height: 200px;
         background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 20px;
+        overflow: hidden;
+
+        &.has-image {
+          background: none;
+        }
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
 
         .food-icon {
           font-size: 64px;
@@ -218,6 +231,18 @@ export class MenuItemDialogComponent implements OnInit {
     const category = this.data.categories?.find(c => c.name === categoryName);
     return category?.displayName || categoryName;
   }
+
+    getImageUrl(imagePath: string | null): string {
+      if (!imagePath) return '';
+      // Handle relative paths
+      if (imagePath.startsWith('/uploads/')) {
+        // Extract the base URL from environment (e.g., http://192.168.31.8:5000)
+        const baseUrl = environment.apiUrl.replace('/api', '');
+        return `${baseUrl}${imagePath}`;
+      }
+      return imagePath;
+    }
+    
 
   onAddToCart(): void {
     this.dialogRef.close(true);

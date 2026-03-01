@@ -33,6 +33,13 @@
     </div>
 
     <mat-card *ngFor="let item of filteredItems" class="menu-item-card">
+      <div class="item-image" *ngIf="item.image">
+        <img [src]="getImageUrl(item.image)" crossorigin="anonymous" alt="{{ item.name }}">
+      </div>
+      <div class="item-image item-image-placeholder" *ngIf="!item.image">
+        <mat-icon>restaurant</mat-icon>
+      </div>
+      
       <mat-card-header>
         <mat-card-title>{{ item.name }}</mat-card-title>
         <mat-card-subtitle>

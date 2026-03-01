@@ -1,23 +1,13 @@
-# TODO - Fix Socket Update Issue on Tab Visibility
+# TODO - Add Image Support for Menu Items
 
-## Task
-Fix socket not updating dashboard and order management when admin returns to the tab after being away.
+## Backend
+- [x] 1. Install multer package for file uploads
+- [x] 2. Update MenuItem model - add image field
+- [x] 3. Update menuController - handle file uploads
+- [x] 4. Update menu routes - configure multer middleware
 
-## Plan
-
-### Step 1: Update SocketService
-- [x] Add reconnect event handling to rejoin admin room
-- [x] Add Page Visibility API handling to detect when tab becomes visible
-- [x] Emit visibility change event for components to refresh data
-
-### Step 2: Update DashboardComponent
-- [x] Add visibility change listener to refresh data when tab becomes visible
-- [x] Subscribe to socket visibility event
-
-### Step 3: Update OrderManagementComponent  
-- [x] Add visibility change listener to refresh data when tab becomes visible
-- [x] Subscribe to socket visibility event
-
-## Implementation Notes
-- When tab becomes visible, socket should rejoin admin room
-- Components should also refresh data from server to get any missed orders
+## Frontend
+- [x] 5. Update MenuService - add image field to interface
+- [x] 6. Update admin menu dialog - add image upload
+- [x] 7. Update admin menu grid - display images
+- [x] 8. Update user menu - display images

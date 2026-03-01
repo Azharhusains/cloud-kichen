@@ -1,5 +1,44 @@
 const MenuItem = require('../models/MenuItem');
 const Category = require('../models/Category');
+const path = require('path');
+const fs = require('fs');
+
+// Configure multer for file uploads
+const multer = require('multer');
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '../uploads/menu-images');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)){
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename: timestamp + random number + extension
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Accept only image files
+  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed!'), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 const getMenuItems = async (req, res) => {
   try {
@@ -37,6 +76,11 @@ const getMenuItem = async (req, res) => {
 
 const createMenuItem = async (req, res) => {
   try {
+    // If file was uploaded, add image path to body
+    if (req.file) {
+      req.body.image = `/uploads/menu-images/${req.file.filename}`;
+    }
+    
     const menuItem = new MenuItem(req.body);
     const createdItem = await menuItem.save();
     res.status(201).json(createdItem);
@@ -51,6 +95,29 @@ const updateMenuItem = async (req, res) => {
     if (!menuItem) {
       return res.status(404).json({ message: 'Menu item not found' });
     }
+    
+    // If new file was uploaded, update image path
+    if (req.file) {
+      // Delete old image if exists
+      if (menuItem.image) {
+        const oldImagePath = path.join(__dirname, '..', menuItem.image);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+      req.body.image = `/uploads/menu-images/${req.file.filename}`;
+    }
+    
+    // If image is set to null or empty string, remove the image
+    if (req.body.image === null || req.body.image === '') {
+      if (menuItem.image) {
+        const oldImagePath = path.join(__dirname, '..', menuItem.image);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+    }
+    
     Object.assign(menuItem, req.body);
     const updatedItem = await menuItem.save();
     res.json(updatedItem);
@@ -65,6 +132,15 @@ const deleteMenuItem = async (req, res) => {
     if (!menuItem) {
       return res.status(404).json({ message: 'Menu item not found' });
     }
+    
+    // Delete associated image file if exists
+    if (menuItem.image) {
+      const imagePath = path.join(__dirname, '..', menuItem.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+    
     await menuItem.deleteOne();
     res.json({ message: 'Menu item removed' });
   } catch (error) {
@@ -72,4 +148,12 @@ const deleteMenuItem = async (req, res) => {
   }
 };
 
-module.exports = { getMenuItems, getMenuItem, createMenuItem, updateMenuItem, deleteMenuItem };
+// Export upload middleware and controller functions
+module.exports = { 
+  getMenuItems, 
+  getMenuItem, 
+  createMenuItem, 
+  updateMenuItem, 
+  deleteMenuItem,
+  upload 
+};

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 // Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
@@ -269,5 +270,16 @@ export class MenuComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed().subscribe(result => {
       // Optional: handle dialog close
     });
+  }
+
+  getImageUrl(imagePath: string | null): string {
+    if (!imagePath) return '';
+    // Handle relative paths
+    if (imagePath.startsWith('/uploads/')) {
+      // Extract the base URL from environment (e.g., http://192.168.31.8:5000)
+      const baseUrl = environment.apiUrl.replace('/api', '');
+      return `${baseUrl}${imagePath}`;
+    }
+    return imagePath;
   }
 }

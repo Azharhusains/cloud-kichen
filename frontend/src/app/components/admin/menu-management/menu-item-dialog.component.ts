@@ -41,6 +41,35 @@ export interface MenuItemDialogData {
       
       <mat-dialog-content>
         <form [formGroup]="menuForm" class="menu-form">
+          <!-- Image Upload Section -->
+          <div class="image-upload-section">
+            <div class="image-preview" *ngIf="imagePreview || data.editingItem?.image">
+              <img [src]="imagePreview || getImageUrl(data.editingItem?.image)" crossorigin="anonymous" alt="Menu item image" >
+              <button mat-icon-button class="remove-image-btn" (click)="removeImage()" type="button">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <div class="image-placeholder" *ngIf="!imagePreview && !data.editingItem?.image">
+              <mat-icon>add_photo_alternate</mat-icon>
+              <span>Add Image</span>
+            </div>
+            <input 
+              type="file" 
+              #fileInput 
+              (change)="onFileSelected($event)" 
+              accept="image/*" 
+              hidden>
+            <button 
+              mat-stroked-button 
+              color="primary" 
+              (click)="fileInput.click()" 
+              type="button"
+              class="upload-btn">
+              <mat-icon>cloud_upload</mat-icon>
+              {{ imagePreview || data.editingItem?.image ? 'Change Image' : 'Upload Image' }}
+            </button>
+          </div>
+
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Item Name</mat-label>
             <input matInput formControlName="name" placeholder="Enter item name">
@@ -144,6 +173,64 @@ export interface MenuItemDialogData {
       }
     }
 
+    .image-upload-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 16px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      background-color: #fafafa;
+    }
+
+    .image-preview {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      border-radius: 8px;
+      overflow: hidden;
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .remove-image-btn {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+      }
+    }
+
+    .image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 150px;
+      height: 150px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      color: #888;
+      cursor: pointer;
+      
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 8px;
+      }
+    }
+
+    .upload-btn {
+      width: 100%;
+    }
+
     ::ng-deep .error-text {
       color: #f44336 !important;
     }
@@ -161,6 +248,9 @@ export interface MenuItemDialogData {
 })
 export class MenuItemDialogComponent implements OnInit {
   menuForm: FormGroup;
+  selectedFile: File | null = null;
+  imagePreview: string | null = null;
+  private environment = { apiUrl: '' };
 
   constructor(
     private fb: FormBuilder,
@@ -183,12 +273,61 @@ export class MenuItemDialogComponent implements OnInit {
     }
   }
 
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.selectedFile = input.files[0];
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(this.selectedFile);
+    }
+  }
+
+  removeImage(): void {
+    this.selectedFile = null;
+    this.imagePreview = null;
+  }
+
+  getImageUrl(imagePath: string | null): string {
+    if (!imagePath) return '';
+    // Handle relative paths
+    if (imagePath.startsWith('/uploads/')) {
+      return `http://localhost:5000${imagePath}`;
+    }
+    return imagePath;
+  }
+
   onSubmit(): void {
     if (this.menuForm.invalid) {
       this.menuForm.markAllAsTouched();
       return;
     }
-    this.dialogRef.close(this.menuForm.value);
+
+    const formValue = this.menuForm.value;
+    
+    // If there's a new image file selected, use FormData approach
+    if (this.selectedFile) {
+      const result = {
+        ...formValue,
+        imageFile: this.selectedFile
+      };
+      this.dialogRef.close(result);
+    } else {
+      // No new image selected, just return form values
+      // If editing and removing existing image
+      if (this.data.editingItem && !this.imagePreview && this.data.editingItem.image) {
+        this.dialogRef.close({
+          ...formValue,
+          image: null
+        });
+      } else {
+        this.dialogRef.close(formValue);
+      }
+    }
   }
 
   onCancel(): void {
