@@ -161,13 +161,13 @@
 
               <div class="order-items">
                 <div *ngFor="let item of order.items" class="order-item">
-                  {{ item.menuItem.name }} x {{ item.quantity }}
+                  {{ item.menuItem?.name || 'Item unavailable' }} x {{ item.quantity || 0 }}
                 </div>
               </div>
 
               <div class="order-footer">
                 <div class="order-total">
-                  <strong>Total: ₹{{ order.totalAmount.toFixed(2) }}</strong>
+                  <strong>Total: ₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</strong>
                 </div>
               <button mat-stroked-button color="primary" (click)="trackOrder(order._id)">
                   <mat-icon>local_shipping</mat-icon>
