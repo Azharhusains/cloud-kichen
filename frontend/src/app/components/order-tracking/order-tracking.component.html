@@ -159,6 +159,12 @@
             >
             <span class="price-value">₹{{ getTaxAmount().toFixed(2) }}</span>
           </div>
+          <div class="price-row">
+            <span class="price-label"
+              >Delivery Charges</span
+            >
+            <span class="price-value">₹{{ getDeliveryCharge().toFixed(2) }}</span>
+          </div>
           <mat-divider class="breakdown-divider"></mat-divider>
           <div class="price-row grand-total">
             <span class="price-label">Total Amount</span>
