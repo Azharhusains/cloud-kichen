@@ -55,7 +55,7 @@
 
     <!-- Auth Buttons (when not logged in) -->
     <div class="nav-auth" *ngIf="!user">
-      <button mat-button (click)="navigateTo('/login')" *ngIf="currentUrl !== '/login'">
+      <button mat-stroked-button (click)="navigateTo('/login')" *ngIf="currentUrl !== '/login'">
         <mat-icon>login</mat-icon>
         <span>Login</span>
       </button>

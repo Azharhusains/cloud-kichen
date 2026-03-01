@@ -94,6 +94,13 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  
+  /* Mobile view - hide Register button */
+  @media (max-width: 768px) {
+    button:nth-child(2) {
+      display: none;
+    }
+  }
 }
 
 /* Mobile Menu Toggle */
