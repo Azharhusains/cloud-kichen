@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 // Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
@@ -24,6 +24,7 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
