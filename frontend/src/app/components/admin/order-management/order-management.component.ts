@@ -78,10 +78,23 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadOrders();
     this.setupSocketListeners();
+    this.setupVisibilityListener();
   }
 
   ngOnDestroy(): void {
     this.socketService.disconnect();
+  }
+
+  setupVisibilityListener(): void {
+    this.socketService.visibilityChange$.subscribe({
+      next: (isVisible) => {
+        if (isVisible) {
+          console.log('OrderManagement: Tab became visible, refreshing data...');
+          this.loadOrders();
+        }
+      },
+      error: (err) => console.error('Visibility change error:', err)
+    });
   }
 
   setupSocketListeners(): void {

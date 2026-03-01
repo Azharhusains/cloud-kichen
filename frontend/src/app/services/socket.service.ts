@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -9,8 +9,15 @@ import { environment } from '../../environments/environment';
 export class SocketService {
   private socket: Socket;
   private readonly URL = environment.apiUrl.replace('/api', '');
+  
+  // Subject to emit visibility change events
+  private visibilityChangeSubject = new Subject<boolean>();
+  public visibilityChange$ = this.visibilityChangeSubject.asObservable();
+  
+  // Track if admin room is joined
+  private isAdminRoomJoined = false;
 
-  constructor() {
+  constructor(private ngZone: NgZone) {
     console.log('SocketService: Connecting to', this.URL);
     
     this.socket = io(this.URL, {
@@ -22,6 +29,10 @@ export class SocketService {
 
     this.socket.on('connect', () => {
       console.log('SocketService: Connected with ID:', this.socket.id);
+      // Rejoin admin room on connect if it was previously joined
+      if (this.isAdminRoomJoined) {
+        this.joinAdminRoom();
+      }
     });
 
     this.socket.on('disconnect', () => {
@@ -31,11 +42,53 @@ export class SocketService {
     this.socket.on('connect_error', (error) => {
       console.error('SocketService: Connection error:', error);
     });
+    
+    // Handle socket reconnection
+    this.socket.on('reconnect', () => {
+      console.log('SocketService: Reconnected with ID:', this.socket.id);
+      // Rejoin admin room on reconnect
+      if (this.isAdminRoomJoined) {
+        this.joinAdminRoom();
+      }
+    });
+    
+    // Set up Page Visibility API handling
+    this.setupVisibilityHandling();
+  }
+  
+  private setupVisibilityHandling(): void {
+    // Run outside Angular zone to avoid change detection issues
+    this.ngZone.runOutsideAngular(() => {
+      document.addEventListener('visibilitychange', () => {
+        console.log('SocketService: Visibility changed:', document.visibilityState);
+        
+        if (document.visibilityState === 'visible') {
+          console.log('SocketService: Tab is now visible');
+          
+          // Check if socket is connected, if not it will auto-reconnect
+          if (this.socket.connected) {
+            console.log('SocketService: Socket is connected, rejoining admin room');
+            // Rejoin admin room when tab becomes visible
+            if (this.isAdminRoomJoined) {
+              this.joinAdminRoom();
+            }
+          } else {
+            console.log('SocketService: Socket is not connected, will reconnect');
+          }
+          
+          // Emit visibility change event for components
+          this.ngZone.run(() => {
+            this.visibilityChangeSubject.next(true);
+          });
+        }
+      });
+    });
   }
 
   // Join admin room to receive all order updates
   joinAdminRoom(): void {
     console.log('SocketService: Joining admin room');
+    this.isAdminRoomJoined = true;
     this.socket.emit('joinAdmin');
   }
 

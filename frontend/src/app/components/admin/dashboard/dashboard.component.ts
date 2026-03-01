@@ -48,11 +48,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadDashboardData();
     this.setupSocketListeners();
+    this.setupVisibilityListener();
   }
 
   ngOnDestroy(): void {
     // Don't disconnect the socket as it's a singleton service
     // but we could remove listeners if needed
+  }
+
+  setupVisibilityListener(): void {
+    // Subscribe to visibility change events to refresh data when tab becomes visible
+    this.socketService.visibilityChange$.subscribe({
+      next: (isVisible) => {
+        if (isVisible) {
+          console.log('Dashboard: Tab became visible, refreshing data...');
+          this.loadDashboardData();
+        }
+      },
+      error: (err) => console.error('Visibility change error:', err)
+    });
   }
 
   setupSocketListeners(): void {

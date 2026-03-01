@@ -1,9 +1,23 @@
-# Delete API Implementation for Inventory Management
+# TODO - Fix Socket Update Issue on Tab Visibility
 
-## Tasks:
-- [x] 1. Add deleteInventory function in backend/controllers/inventoryController.js
-- [x] 2. Add DELETE route in backend/routes/inventory.js
-- [x] 3. Add deleteInventory method in frontend/src/app/services/inventory.service.ts
-- [x] 4. Update deleteItem method in frontend/src/app/components/admin/inventory-management/inventory-management.component.ts
+## Task
+Fix socket not updating dashboard and order management when admin returns to the tab after being away.
 
-## Status: Completed
+## Plan
+
+### Step 1: Update SocketService
+- [x] Add reconnect event handling to rejoin admin room
+- [x] Add Page Visibility API handling to detect when tab becomes visible
+- [x] Emit visibility change event for components to refresh data
+
+### Step 2: Update DashboardComponent
+- [x] Add visibility change listener to refresh data when tab becomes visible
+- [x] Subscribe to socket visibility event
+
+### Step 3: Update OrderManagementComponent  
+- [x] Add visibility change listener to refresh data when tab becomes visible
+- [x] Subscribe to socket visibility event
+
+## Implementation Notes
+- When tab becomes visible, socket should rejoin admin room
+- Components should also refresh data from server to get any missed orders
