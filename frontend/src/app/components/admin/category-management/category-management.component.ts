@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CategoryService, Category } from '../../../services/category.service';
+import { ToastService } from '../../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -11,7 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
@@ -50,7 +51,7 @@ export class CategoryManagementComponent implements OnInit {
   constructor(
     private categoryService: CategoryService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -68,6 +69,7 @@ export class CategoryManagementComponent implements OnInit {
       error: (error) => {
         console.error('Error loading categories:', error);
         this.error = 'Failed to load categories. Please try again.';
+        this.toastService.error(this.error);
         this.loading = false;
       }
     });
@@ -98,11 +100,12 @@ export class CategoryManagementComponent implements OnInit {
       if (result) {
         this.categoryService.createCategory(result).subscribe({
           next: () => {
-            this.showSuccessMessage('Category created successfully!');
+            this.toastService.success('Category created successfully!');
             this.loadCategories();
           },
           error: (error) => {
-            this.error = error.error?.message || 'Failed to create category. Please try again.';
+            const errorMsg = error.error?.message || 'Failed to create category. Please try again.';
+            this.toastService.error(errorMsg);
           }
         });
       }
@@ -121,11 +124,12 @@ export class CategoryManagementComponent implements OnInit {
       if (result) {
         this.categoryService.updateCategory(category._id!, result).subscribe({
           next: () => {
-            this.showSuccessMessage('Category updated successfully!');
+            this.toastService.success('Category updated successfully!');
             this.loadCategories();
           },
           error: (error) => {
-            this.error = error.error?.message || 'Failed to update category. Please try again.';
+            const errorMsg = error.error?.message || 'Failed to update category. Please try again.';
+            this.toastService.error(errorMsg);
           }
         });
       }
@@ -141,11 +145,12 @@ export class CategoryManagementComponent implements OnInit {
     if (confirm(`Are you sure you want to delete the category "${category.displayName}"?`)) {
       this.categoryService.deleteCategory(category._id!).subscribe({
         next: () => {
-          this.showSuccessMessage('Category deleted successfully!');
+          this.toastService.success('Category deleted successfully!');
           this.loadCategories();
         },
         error: (error) => {
-          this.error = error.error?.message || 'Failed to delete category. It may be in use by menu items.';
+          const errorMsg = error.error?.message || 'Failed to delete category. It may be in use by menu items.';
+          this.toastService.error(errorMsg);
         }
       });
     }
@@ -159,19 +164,13 @@ export class CategoryManagementComponent implements OnInit {
     
     this.categoryService.updateCategory(category._id!, updatedCategory).subscribe({
       next: () => {
-        this.showSuccessMessage(`Category ${updatedCategory.isActive ? 'activated' : 'deactivated'} successfully!`);
+        this.toastService.success(`Category ${updatedCategory.isActive ? 'activated' : 'deactivated'} successfully!`);
         this.loadCategories();
       },
       error: (error) => {
-        this.error = error.error?.message || 'Failed to update category status.';
+        const errorMsg = error.error?.message || 'Failed to update category status.';
+        this.toastService.error(errorMsg);
       }
     });
-  }
-
-  private showSuccessMessage(message: string): void {
-    this.successMessage = message;
-    setTimeout(() => {
-      this.successMessage = null;
-    }, 3000);
   }
 }

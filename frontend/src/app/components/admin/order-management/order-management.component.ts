@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { OrderService } from '../../../services/order.service';
 import { SocketService } from '../../../services/socket.service';
+import { ToastService } from '../../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -17,7 +18,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-order-management',
@@ -70,7 +71,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   constructor(
     private orderService: OrderService,
     private socketService: SocketService,
-    private snackBar: MatSnackBar,
+    private toastService: ToastService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -94,7 +95,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
         this.calculateStatistics();
         this.applyFilters();
         this.cdr.detectChanges();
-        this.snackBar.open(`New order received! Order #${order.orderNumber}`, 'View', { duration: 5000 });
+        this.toastService.success(`New order received! Order #${order.orderNumber}`);
       },
       error: (err) => console.error('Socket error:', err)
     });
@@ -108,7 +109,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
           this.calculateStatistics();
           this.applyFilters();
           this.cdr.detectChanges();
-          this.snackBar.open(`Order #${updatedOrder.orderNumber} updated to ${updatedOrder.orderStatus}`, 'Close', { duration: 3000 });
+          this.toastService.info(`Order #${updatedOrder.orderNumber} updated to ${updatedOrder.orderStatus}`);
         }
       },
       error: (err) => console.error('Socket error:', err)
@@ -138,7 +139,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error loading orders:', error);
-        this.snackBar.open('Error loading orders', 'Close', { duration: 3000 });
+        this.toastService.error('Error loading orders');
       }
     });
   }
@@ -236,11 +237,11 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     this.orderService.updateOrderStatus(orderId, newStatus).subscribe({
       next: () => {
         this.loadOrders();
-        this.snackBar.open(`Order status updated to ${newStatus}`, 'Close', { duration: 3000 });
+        this.toastService.success(`Order status updated to ${newStatus}`);
       },
       error: (error) => {
         console.error('Error updating order status:', error);
-        this.snackBar.open('Error updating order status', 'Close', { duration: 3000 });
+        this.toastService.error('Error updating order status');
       }
     });
   }

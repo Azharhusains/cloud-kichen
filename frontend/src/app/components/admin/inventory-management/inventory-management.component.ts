@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../services/inventory.service';
+import { ToastService } from '../../../services/toast.service';
 import { CommonModule } from '@angular/common';
 
 // Angular Material Modules
@@ -15,10 +16,12 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { InventoryDialogComponent } from './inventory-dialog.component';
 
 interface InventoryItem {
+  _id?: string;
   itemName: string;
   quantity: number;
   unit: string;
@@ -42,7 +45,8 @@ interface InventoryItem {
     MatChipsModule,
     MatSelectModule,
     MatSlideToggleModule,
-    MatDialogModule
+    MatDialogModule,
+    MatSnackBarModule
   ],
   templateUrl: './inventory-management.component.html',
   styleUrls: ['./inventory-management.component.scss']
@@ -54,7 +58,8 @@ export class InventoryManagementComponent implements OnInit {
 
   constructor(
     private inventoryService: InventoryService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -70,6 +75,7 @@ export class InventoryManagementComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading inventory:', error);
+        this.toastService.error('Failed to load inventory. Please try again.');
       }
     });
   }
@@ -98,9 +104,11 @@ export class InventoryManagementComponent implements OnInit {
         this.inventoryService.updateInventory([result]).subscribe({
           next: () => {
             this.loadInventory();
+            this.toastService.success('Inventory item added successfully!');
           },
           error: (error) => {
             console.error('Error adding inventory:', error);
+            this.toastService.error('Failed to add inventory item. Please try again.');
           }
         });
       }
@@ -124,9 +132,11 @@ export class InventoryManagementComponent implements OnInit {
         this.inventoryService.updateInventory([updatedItem]).subscribe({
           next: () => {
             this.loadInventory();
+            this.toastService.success('Inventory item updated successfully!');
           },
           error: (error) => {
             console.error('Error updating inventory:', error);
+            this.toastService.error('Failed to update inventory item. Please try again.');
           }
         });
       }
@@ -135,7 +145,21 @@ export class InventoryManagementComponent implements OnInit {
 
   deleteItem(item: InventoryItem): void {
     if (confirm(`Are you sure you want to delete ${item.itemName}?`)) {
-      console.log('Delete item:', item);
+      if (!item._id) {
+        this.toastService.error('Cannot delete item: ID not found.');
+        return;
+      }
+      
+      this.inventoryService.deleteInventory(item._id).subscribe({
+        next: () => {
+          this.loadInventory();
+          this.toastService.success(`${item.itemName} deleted successfully!`);
+        },
+        error: (error) => {
+          console.error('Error deleting inventory:', error);
+          this.toastService.error('Failed to delete inventory item. Please try again.');
+        }
+      });
     }
   }
 
@@ -145,12 +169,13 @@ export class InventoryManagementComponent implements OnInit {
     
     this.inventoryService.updateInventory([item]).subscribe({
       next: () => {
-        console.log('Active status updated:', item);
+        this.toastService.success(`${item.itemName} ${item.isActive ? 'activated' : 'deactivated'} successfully!`);
       },
       error: (error) => {
         console.error('Error updating active status:', error);
         // Revert the change if there's an error
         item.isActive = previousState;
+        this.toastService.error('Failed to update item status. Please try again.');
       }
     });
   }

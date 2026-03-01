@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { OrderService } from '../../../services/order.service';
 import { MenuService } from '../../../services/menu.service';
 import { SocketService } from '../../../services/socket.service';
+import { ToastService } from '../../../services/toast.service';
 import { CommonModule } from '@angular/common';
 
 // Angular Material Modules
@@ -11,7 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-dashboard',
@@ -39,7 +40,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private orderService: OrderService,
     private menuService: MenuService,
     private socketService: SocketService,
-    private snackBar: MatSnackBar,
+    private toastService: ToastService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
@@ -66,11 +67,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.calculateStatistics();
         this.newOrdersCount++;
         this.cdr.detectChanges();
-        this.snackBar.open(`New order received! Order #${order.orderNumber}`, 'View', {
-          duration: 5000
-        }).onAction().subscribe(() => {
-          this.router.navigate(['/admin/orders']);
-        });
+        this.toastService.success(`New order received! Order #${order.orderNumber}`);
       },
       error: (err) => console.error('Socket error:', err)
     });
@@ -103,7 +100,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-loadDashboardData(): void {
+  loadDashboardData(): void {
     // Load today's orders
     this.orderService.getOrders().subscribe({
       next: (orders) => {
@@ -115,6 +112,7 @@ loadDashboardData(): void {
       },
       error: (error) => {
         console.error('Error loading orders:', error);
+        this.toastService.error('Error loading orders');
       }
     });
 
@@ -142,7 +140,7 @@ loadDashboardData(): void {
     this.router.navigate(['/admin/menu']);
   }
 
-navigateToInventory(): void {
+  navigateToInventory(): void {
     this.router.navigate(['/admin/inventory']);
   }
 

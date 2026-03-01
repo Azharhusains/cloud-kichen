@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MenuService } from '../../../services/menu.service';
 import { CategoryService, Category } from '../../../services/category.service';
+import { ToastService } from '../../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -16,7 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { MenuItemDialogComponent } from './menu-item-dialog.component';
 
@@ -52,7 +53,7 @@ export class MenuManagementComponent implements OnInit {
     private menuService: MenuService,
     private categoryService: CategoryService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -110,11 +111,12 @@ export class MenuManagementComponent implements OnInit {
         this.menuService.createMenuItem(result).subscribe({
           next: () => {
             this.loadMenuItems();
-            this.snackBar.open('Menu item created successfully!', 'Close', { duration: 3000 });
+            this.toastService.success('Menu item created successfully!');
           },
           error: (error) => {
             console.error('Error creating item:', error);
-            this.snackBar.open('Error creating menu item', 'Close', { duration: 3000 });
+            const errorMsg = error.error?.message || 'Error creating menu item';
+            this.toastService.error(errorMsg);
           }
         });
       }
@@ -135,11 +137,12 @@ export class MenuManagementComponent implements OnInit {
         this.menuService.updateMenuItem(item._id, result).subscribe({
           next: () => {
             this.loadMenuItems();
-            this.snackBar.open('Menu item updated successfully!', 'Close', { duration: 3000 });
+            this.toastService.success('Menu item updated successfully!');
           },
           error: (error) => {
             console.error('Error updating item:', error);
-            this.snackBar.open('Error updating menu item', 'Close', { duration: 3000 });
+            const errorMsg = error.error?.message || 'Error updating menu item';
+            this.toastService.error(errorMsg);
           }
         });
       }
@@ -151,11 +154,12 @@ export class MenuManagementComponent implements OnInit {
       this.menuService.deleteMenuItem(item._id).subscribe({
         next: () => {
           this.loadMenuItems();
-          this.snackBar.open('Menu item deleted successfully!', 'Close', { duration: 3000 });
+          this.toastService.success('Menu item deleted successfully!');
         },
         error: (error) => {
           console.error('Error deleting item:', error);
-          this.snackBar.open('Error deleting menu item', 'Close', { duration: 3000 });
+          const errorMsg = error.error?.message || 'Error deleting menu item';
+          this.toastService.error(errorMsg);
         }
       });
     }
@@ -166,9 +170,12 @@ export class MenuManagementComponent implements OnInit {
     this.menuService.updateMenuItem(item._id, updatedItem).subscribe({
       next: () => {
         this.loadMenuItems();
+        this.toastService.success(`Menu item ${updatedItem.isAvailable ? 'available' : 'unavailable'}!`);
       },
       error: (error) => {
         console.error('Error updating availability:', error);
+        const errorMsg = error.error?.message || 'Error updating availability';
+        this.toastService.error(errorMsg);
       }
     });
   }

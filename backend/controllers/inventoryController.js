@@ -9,6 +9,20 @@ const getInventory = async (req, res) => {
   }
 };
 
+const deleteInventory = async (req, res) => {
+  try {
+    const inventory = await Inventory.findById(req.params.id);
+    if (!inventory) {
+      return res.status(404).json({ message: 'Inventory item not found' });
+    }
+
+    await inventory.deleteOne();
+    res.json({ message: 'Inventory item removed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const updateInventory = async (req, res) => {
   try {
     const inventoryData = req.body;
@@ -125,4 +139,4 @@ const checkStockAvailability = async (items) => {
   return true;
 };
 
-module.exports = { getInventory, updateInventory, deductStock, checkStockAvailability };
+module.exports = { getInventory, deleteInventory, updateInventory, deductStock, checkStockAvailability };

@@ -16,4 +16,8 @@ export class InventoryService {
   updateInventory(inventoryData: any): Observable<any> {
     return this.http.put(`${environment.apiUrl}/inventory`, inventoryData);
   }
+
+  deleteInventory(id: string): Observable<any> {
+    return this.http.delete(`${environment.apiUrl}/inventory/${id}`);
+  }
 }

@@ -65,7 +65,7 @@ const deleteMenuItem = async (req, res) => {
     if (!menuItem) {
       return res.status(404).json({ message: 'Menu item not found' });
     }
-    await menuItem.remove();
+    await menuItem.deleteOne();
     res.json({ message: 'Menu item removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });
