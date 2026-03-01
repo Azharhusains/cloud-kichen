@@ -47,9 +47,8 @@ export interface ConfirmDialogData {
           <mat-icon>close</mat-icon>
           {{ data.cancelText || 'Cancel' }}
         </button>
-        <button 
+<button 
           mat-raised-button 
-          color="warn" 
           (click)="onConfirm()" 
           class="delete-button">
           <mat-icon>delete</mat-icon>
@@ -77,7 +76,7 @@ export interface ConfirmDialogData {
       width: 72px;
       height: 72px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #ff0b0b 0%, #a24b4b 100%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -146,15 +145,17 @@ export interface ConfirmDialogData {
       transform: translateY(-2px);
     }
 
-    .delete-button {
+.delete-button {
       min-width: 120px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #dc3545 !important;
+      color: white !important;
       transition: all 0.2s ease;
     }
 
     .delete-button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+      background: #c82333 !important;
     }
 
     .delete-button mat-icon,

@@ -5,6 +5,19 @@ $success-color: #28a745;
 $warn-color: #dc3545;
 $bg-color: #f8f9fa;
 
+// Delete button style
+.delete-btn {
+  color: #dc3545 !important;
+  
+  mat-icon {
+    color: #dc3545 !important;
+  }
+  
+  &:hover {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+  }
+}
+
 // CSS Custom Properties for Theme Consistency
 :host {
   --cp-primary: #667eea;
