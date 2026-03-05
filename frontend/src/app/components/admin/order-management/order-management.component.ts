@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { OrderService } from '../../../services/order.service';
 import { SocketService } from '../../../services/socket.service';
 import { ToastService } from '../../../services/toast.service';
+import { AudioService } from '../../../services/audio.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -68,10 +69,11 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   // Expanded orders tracking
   expandedOrders: Set<string> = new Set();
 
-  constructor(
+constructor(
     private orderService: OrderService,
     private socketService: SocketService,
     private toastService: ToastService,
+    private audioService: AudioService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -101,7 +103,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     // Join admin room for real-time updates
     this.socketService.joinAdminRoom();
 
-    // Listen for new orders
+// Listen for new orders
     this.socketService.onNewOrder().subscribe({
       next: (order) => {
         this.orders.unshift(order);
@@ -109,6 +111,10 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
         this.applyFilters();
         this.cdr.detectChanges();
         this.toastService.success(`New order received! Order #${order.orderNumber}`);
+        // Play sound notification for new order
+        setTimeout(() => {
+          this.audioService.playOrderNotification();
+        }, 2000);
       },
       error: (err) => console.error('Socket error:', err)
     });
@@ -370,7 +376,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     return this.formatDate(dateString);
   }
 
-  isUrgent(order: any): boolean {
+isUrgent(order: any): boolean {
     // Consider order urgent if it's been more than 30 minutes and still in received/preparing
     if (order.orderStatus === 'received' || order.orderStatus === 'preparing') {
       const date = new Date(order.createdAt);
@@ -379,5 +385,15 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       return diffMins > 30;
     }
     return false;
+  }
+
+  /**
+   * Test audio notification - can be used to verify audio works
+   * This also enables audio by triggering user interaction
+   */
+  testAudio(): void {
+    console.log('OrderManagement: Testing audio notification');
+    this.audioService.enableAudio();
+    this.audioService.testAudio();
   }
 }

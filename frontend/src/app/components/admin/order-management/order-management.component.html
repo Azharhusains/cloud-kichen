@@ -5,7 +5,11 @@
       <h1>Order Management</h1>
       <p class="subtitle">Track and manage customer orders</p>
     </div>
-    <div class="header-actions">
+<div class="header-actions">
+      <button mat-raised-button color="primary" (click)="testAudio()" class="test-audio-btn">
+        <mat-icon>volume_up</mat-icon>
+        Test Audio
+      </button>
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>Search orders</mat-label>
         <input matInput [(ngModel)]="searchTerm" (input)="onSearchChange()" placeholder="Search by Order #, name, email...">
