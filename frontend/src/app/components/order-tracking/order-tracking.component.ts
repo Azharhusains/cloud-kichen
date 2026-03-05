@@ -10,7 +10,6 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 // Angular Animations
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -30,8 +29,7 @@ import { SocketService } from '../../services/socket.service';
     MatDividerModule,
     MatStepperModule,
     MatProgressSpinnerModule,
-    MatChipsModule,
-    MatSnackBarModule
+    MatChipsModule
   ],
   templateUrl: './order-tracking.component.html',
   styleUrls: ['./order-tracking.component.scss'],
@@ -61,7 +59,6 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     private orderService: OrderService,
     private socketService: SocketService,
     private router: Router,
-    private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -103,7 +100,6 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         if (updatedOrder._id === this.orderId || updatedOrder._id === this.orderId?.toString()) {
           this.order = { ...updatedOrder };
           this.cdr.detectChanges();
-          this.snackBar.open(`Order status updated to: ${updatedOrder.orderStatus}`, 'Close', { duration: 5000 });
         }
       },
       error: (err) => console.error('OrderTrackingComponent: Socket error:', err)
@@ -118,7 +114,6 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         if (updatedOrder._id === this.orderId || updatedOrder._id === this.orderId?.toString()) {
           this.order = { ...updatedOrder };
           this.cdr.detectChanges();
-          this.snackBar.open(`Order status updated to: ${updatedOrder.orderStatus}`, 'Close', { duration: 5000 });
         }
       },
       error: (err) => console.error('OrderTrackingComponent: Broadcast Socket error:', err)
