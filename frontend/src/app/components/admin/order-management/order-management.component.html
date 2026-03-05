@@ -5,7 +5,7 @@
       <h1>Order Management</h1>
       <p class="subtitle">Track and manage customer orders</p>
     </div>
-<div class="header-actions">
+    <div class="header-actions">
       <button mat-raised-button color="primary" (click)="testAudio()" class="test-audio-btn">
         <mat-icon>volume_up</mat-icon>
         Test Audio
@@ -74,8 +74,8 @@
     </div>
   </div>
 
-  <!-- Status Filter Buttons with Counts -->
-  <div class="filter-section">
+  <!-- Status Filter Buttons with Counts - Sticky -->
+  <div class="filter-section sticky-filter">
     <mat-chip-listbox aria-label="Order status filters">
       <mat-chip-option 
         [selected]="!statusFilter" 
@@ -118,184 +118,219 @@
     </mat-chip-listbox>
   </div>
 
-  <!-- Orders List -->
-  <div class="orders-list">
-    <div *ngIf="filteredOrders.length === 0" class="empty-state">
-      <mat-card class="empty-card">
-        <mat-icon class="empty-icon">receipt_long</mat-icon>
-        <h3>No Orders Found</h3>
-        <p>There are no orders matching the selected filter.</p>
+  <!-- Scrollable Orders Container -->
+  <div class="orders-scroll-container">
+    <!-- Orders List -->
+    <div class="orders-list">
+      <div *ngIf="filteredOrders.length === 0" class="empty-state">
+        <mat-card class="empty-card">
+          <mat-icon class="empty-icon">receipt_long</mat-icon>
+          <h3>No Orders Found</h3>
+          <p>There are no orders matching the selected filter.</p>
+        </mat-card>
+      </div>
+
+      <mat-card *ngFor="let order of paginatedOrders" class="order-card" [class.urgent-order]="isUrgent(order)">
+        <!-- Card Header with Gradient -->
+        <div class="card-header-gradient">
+          <div class="order-id-section">
+            <span class="order-id">Order #{{ order.orderNumber }}</span>
+            <span class="time-ago" [class.urgent]="isUrgent(order)">
+              <mat-icon *ngIf="isUrgent(order)">warning</mat-icon>
+              {{ getTimeAgo(order.createdAt) }}
+            </span>
+          </div>
+          <div class="status-badge" [class]="'status-' + order.orderStatus">
+            <mat-icon>{{ getStatusIcon(order.orderStatus) }}</mat-icon>
+            <span>{{ order.orderStatus | titlecase }}</span>
+          </div>
+        </div>
+
+        <mat-card-content>
+          <!-- Order Timeline Progress -->
+          <div class="order-timeline">
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 0">
+              <div class="step-indicator">
+                <mat-icon>check</mat-icon>
+              </div>
+              <span class="step-label">Received</span>
+            </div>
+            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 1"></div>
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 1">
+              <div class="step-indicator">
+                <mat-icon>check</mat-icon>
+              </div>
+              <span class="step-label">Preparing</span>
+            </div>
+            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 2"></div>
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 2">
+              <div class="step-indicator">
+                <mat-icon>check</mat-icon>
+              </div>
+              <span class="step-label">Ready</span>
+            </div>
+            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 3"></div>
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 3">
+              <div class="step-indicator">
+                <mat-icon>check</mat-icon>
+              </div>
+              <span class="step-label">Delivered</span>
+            </div>
+          </div>
+
+          <!-- Quick Status Update Buttons -->
+          <div class="quick-actions">
+            <button mat-stroked-button 
+                    *ngIf="order.orderStatus === 'received'"
+                    (click)="quickUpdateStatus(order._id, 'preparing')"
+                    color="primary"
+                    class="quick-action-btn">
+              <mat-icon>sync</mat-icon>
+              Start Preparing
+            </button>
+            <button mat-stroked-button 
+                    *ngIf="order.orderStatus === 'preparing'"
+                    (click)="quickUpdateStatus(order._id, 'ready')"
+                    color="accent"
+                    class="quick-action-btn">
+              <mat-icon>check_circle</mat-icon>
+              Mark Ready
+            </button>
+            <button mat-stroked-button 
+                    *ngIf="order.orderStatus === 'ready'"
+                    (click)="quickUpdateStatus(order._id, 'delivered')"
+                    color="primary"
+                    class="quick-action-btn">
+              <mat-icon>local_shipping</mat-icon>
+              Mark Delivered
+            </button>
+          </div>
+
+          <div class="order-main-content" [class.expanded]="isOrderExpanded(order._id)">
+            <!-- Customer & Order Info -->
+            <div class="order-info-grid">
+              <div class="customer-section">
+                <div class="info-row">
+                  <mat-icon>person</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Customer</span>
+                    <span class="info-value">{{ order.user?.name || 'Guest' }}</span>
+                    <span class="info-subvalue">{{ order.user?.email || 'N/A' }}</span>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <mat-icon>schedule</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Ordered</span>
+                    <span class="info-value">{{ formatDate(order.createdAt) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="address-section">
+                <div class="info-row">
+                  <mat-icon>location_on</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Delivery Address</span>
+                    <span class="info-value">
+                      {{ order.deliveryAddress?.street }}, {{ order.deliveryAddress?.city }}
+                    </span>
+                    <span class="info-subvalue">
+                      {{ order.deliveryAddress?.state }} {{ order.deliveryAddress?.zipCode }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="order-items-section">
+              <div class="items-header" (click)="toggleOrderExpand(order._id)">
+                <h4>
+                  <mat-icon>restaurant_menu</mat-icon>
+                  Order Items ({{ order.items?.length || 0 }})
+                </h4>
+                <mat-icon class="expand-icon">{{ isOrderExpanded(order._id) ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              
+              <div class="items-list" *ngIf="isOrderExpanded(order._id)">
+                <div *ngFor="let item of order.items" class="order-item">
+                  <div class="item-info">
+                    <span class="item-quantity">x{{ item.quantity }}</span>
+                    <span class="item-name">{{ item.menuItem?.name || 'Item' }}</span>
+                  </div>
+                  <span class="item-price">₹{{ (item.price * item.quantity).toFixed(2) }}</span>
+                </div>
+              </div>
+
+              <!-- Always show summary when collapsed -->
+              <div class="items-summary" *ngIf="!isOrderExpanded(order._id)">
+                <span *ngFor="let item of order.items?.slice(0, 2)" class="item-tag">
+                  {{ item.menuItem?.name || 'Item' }} x{{ item.quantity }}
+                </span>
+                <span *ngIf="order.items?.length > 2" class="more-items">
+                  +{{ order.items.length - 2 }} more
+                </span>
+              </div>
+            </div>
+
+            <!-- Order Footer -->
+            <div class="order-footer">
+              <div class="total-section">
+                <div class="total-row">
+                  <span class="total-label">Total</span>
+                  <span class="total-amount">₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
+                </div>
+                <div class="profit-row" *ngIf="order.profit">
+                  <span class="profit-label">Profit</span>
+                  <span class="profit-amount">₹{{ order.profit.toFixed(2) }}</span>
+                </div>
+              </div>
+
+              <div class="action-buttons">
+                <button mat-icon-button 
+                        (click)="printOrder(order)"
+                        matTooltip="Print Order"
+                        class="action-btn print-btn">
+                  <mat-icon>print</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
       </mat-card>
     </div>
 
-    <mat-card *ngFor="let order of filteredOrders" class="order-card" [class.urgent-order]="isUrgent(order)">
-      <!-- Card Header with Gradient -->
-      <div class="card-header-gradient">
-        <div class="order-id-section">
-          <span class="order-id">Order #{{ order.orderNumber }}</span>
-          <span class="time-ago" [class.urgent]="isUrgent(order)">
-            <mat-icon *ngIf="isUrgent(order)">warning</mat-icon>
-            {{ getTimeAgo(order.createdAt) }}
-          </span>
-        </div>
-        <div class="status-badge" [class]="'status-' + order.orderStatus">
-          <mat-icon>{{ getStatusIcon(order.orderStatus) }}</mat-icon>
-          <span>{{ order.orderStatus | titlecase }}</span>
-        </div>
+    <!-- Pagination Controls -->
+    <div class="pagination-controls" *ngIf="filteredOrders.length > 0">
+      <div class="pagination-info">
+        <span class="pagination-text">
+          Showing {{ getStartIndex() }} - {{ getEndIndex() }} of {{ filteredOrders.length }} orders
+        </span>
       </div>
-
-      <mat-card-content>
-        <!-- Order Timeline Progress -->
-        <div class="order-timeline">
-          <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 0">
-            <div class="step-indicator">
-              <mat-icon>check</mat-icon>
-            </div>
-            <span class="step-label">Received</span>
-          </div>
-          <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 1"></div>
-          <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 1">
-            <div class="step-indicator">
-              <mat-icon>check</mat-icon>
-            </div>
-            <span class="step-label">Preparing</span>
-          </div>
-          <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 2"></div>
-          <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 2">
-            <div class="step-indicator">
-              <mat-icon>check</mat-icon>
-            </div>
-            <span class="step-label">Ready</span>
-          </div>
-          <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 3"></div>
-          <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 3">
-            <div class="step-indicator">
-              <mat-icon>check</mat-icon>
-            </div>
-            <span class="step-label">Delivered</span>
-          </div>
-        </div>
-
-        <!-- Quick Status Update Buttons -->
-        <div class="quick-actions">
-          <button mat-stroked-button 
-                  *ngIf="order.orderStatus === 'received'"
-                  (click)="quickUpdateStatus(order._id, 'preparing')"
-                  color="primary"
-                  class="quick-action-btn">
-            <mat-icon>sync</mat-icon>
-            Start Preparing
-          </button>
-          <button mat-stroked-button 
-                  *ngIf="order.orderStatus === 'preparing'"
-                  (click)="quickUpdateStatus(order._id, 'ready')"
-                  color="accent"
-                  class="quick-action-btn">
-            <mat-icon>check_circle</mat-icon>
-            Mark Ready
-          </button>
-          <button mat-stroked-button 
-                  *ngIf="order.orderStatus === 'ready'"
-                  (click)="quickUpdateStatus(order._id, 'delivered')"
-                  color="primary"
-                  class="quick-action-btn">
-            <mat-icon>local_shipping</mat-icon>
-            Mark Delivered
-          </button>
-        </div>
-
-        <div class="order-main-content" [class.expanded]="isOrderExpanded(order._id)">
-          <!-- Customer & Order Info -->
-          <div class="order-info-grid">
-            <div class="customer-section">
-              <div class="info-row">
-                <mat-icon>person</mat-icon>
-                <div class="info-content">
-                  <span class="info-label">Customer</span>
-                  <span class="info-value">{{ order.user?.name || 'Guest' }}</span>
-                  <span class="info-subvalue">{{ order.user?.email || 'N/A' }}</span>
-                </div>
-              </div>
-              <div class="info-row">
-                <mat-icon>schedule</mat-icon>
-                <div class="info-content">
-                  <span class="info-label">Ordered</span>
-                  <span class="info-value">{{ formatDate(order.createdAt) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="address-section">
-              <div class="info-row">
-                <mat-icon>location_on</mat-icon>
-                <div class="info-content">
-                  <span class="info-label">Delivery Address</span>
-                  <span class="info-value">
-                    {{ order.deliveryAddress?.street }}, {{ order.deliveryAddress?.city }}
-                  </span>
-                  <span class="info-subvalue">
-                    {{ order.deliveryAddress?.state }} {{ order.deliveryAddress?.zipCode }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Order Items -->
-          <div class="order-items-section">
-            <div class="items-header" (click)="toggleOrderExpand(order._id)">
-              <h4>
-                <mat-icon>restaurant_menu</mat-icon>
-                Order Items ({{ order.items?.length || 0 }})
-              </h4>
-              <mat-icon class="expand-icon">{{ isOrderExpanded(order._id) ? 'expand_less' : 'expand_more' }}</mat-icon>
-            </div>
-            
-            <div class="items-list" *ngIf="isOrderExpanded(order._id)">
-              <div *ngFor="let item of order.items" class="order-item">
-                <div class="item-info">
-                  <span class="item-quantity">x{{ item.quantity }}</span>
-                  <span class="item-name">{{ item.menuItem?.name || 'Item' }}</span>
-                </div>
-                <span class="item-price">₹{{ (item.price * item.quantity).toFixed(2) }}</span>
-              </div>
-            </div>
-
-            <!-- Always show summary when collapsed -->
-            <div class="items-summary" *ngIf="!isOrderExpanded(order._id)">
-              <span *ngFor="let item of order.items?.slice(0, 2)" class="item-tag">
-                {{ item.menuItem?.name || 'Item' }} x{{ item.quantity }}
-              </span>
-              <span *ngIf="order.items?.length > 2" class="more-items">
-                +{{ order.items.length - 2 }} more
-              </span>
-            </div>
-          </div>
-
-          <!-- Order Footer -->
-          <div class="order-footer">
-            <div class="total-section">
-              <div class="total-row">
-                <span class="total-label">Total</span>
-                <span class="total-amount">₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
-              </div>
-              <div class="profit-row" *ngIf="order.profit">
-                <span class="profit-label">Profit</span>
-                <span class="profit-amount">₹{{ order.profit.toFixed(2) }}</span>
-              </div>
-            </div>
-
-            <div class="action-buttons">
-              <button mat-icon-button 
-                      (click)="printOrder(order)"
-                      matTooltip="Print Order"
-                      class="action-btn print-btn">
-                <mat-icon>print</mat-icon>
-              </button>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
+      <div class="pagination-buttons">
+        <button mat-icon-button 
+                (click)="previousPage()" 
+                [disabled]="currentPage === 1"
+                class="pagination-btn">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        
+        <button mat-button 
+                *ngFor="let page of getPageNumbers()" 
+                [class.active-page]="page === currentPage"
+                (click)="goToPage(page)"
+                class="page-number-btn">
+          {{ page }}
+        </button>
+        
+        <button mat-icon-button 
+                (click)="nextPage()" 
+                [disabled]="currentPage === totalPages"
+                class="pagination-btn">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    </div>
   </div>
 </div>

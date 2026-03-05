@@ -69,6 +69,13 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   // Expanded orders tracking
   expandedOrders: Set<string> = new Set();
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+  totalPages = 1;
+  paginatedOrders: any[] = [];
+
 constructor(
     private orderService: OrderService,
     private socketService: SocketService,
@@ -236,14 +243,78 @@ constructor(
     result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
     this.filteredOrders = result;
+    this.totalPages = Math.ceil(this.filteredOrders.length / this.pageSize);
+    if (this.totalPages < 1) this.totalPages = 1;
+    this.updatePaginatedOrders();
+  }
+
+  // Pagination methods
+  updatePaginatedOrders(): void {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.paginatedOrders = this.filteredOrders.slice(startIndex, endIndex);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedOrders();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePaginatedOrders();
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePaginatedOrders();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  getStartIndex(): number {
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  getEndIndex(): number {
+    return Math.min(this.currentPage * this.pageSize, this.filteredOrders.length);
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+    this.totalPages = Math.ceil(this.filteredOrders.length / this.pageSize);
+    if (this.totalPages < 1) this.totalPages = 1;
+    this.updatePaginatedOrders();
   }
 
   filterByStatus(status: string): void {
     this.statusFilter = status;
+    this.currentPage = 1;
     this.applyFilters();
   }
 
   onSearchChange(): void {
+    this.currentPage = 1;
     this.applyFilters();
   }
 
