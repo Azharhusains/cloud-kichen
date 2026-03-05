@@ -6,7 +6,7 @@
       <p class="subtitle">Track and manage your stock levels</p>
     </div>
     <div class="header-actions">
-      <mat-form-field appearance="outline" class="search-field">
+      <mat-form-field appearance="outline" class="search-field" floatLabel="always">
         <mat-label>Search inventory</mat-label>
         <input matInput [(ngModel)]="searchTerm" (input)="filterInventory()" placeholder="Search...">
         <mat-icon matSuffix>search</mat-icon>

@@ -6,7 +6,7 @@
       <p class="subtitle">Manage your food categories</p>
     </div>
     <div class="header-actions">
-      <mat-form-field appearance="outline" class="search-field">
+      <mat-form-field appearance="outline" class="search-field" floatLabel="always">
         <mat-label>Search categories</mat-label>
         <input matInput [(ngModel)]="searchTerm" (input)="filterCategories()" placeholder="Search...">
         <mat-icon matSuffix>search</mat-icon>

@@ -46,7 +46,7 @@ export interface InventoryDialogData {
       
       <mat-dialog-content>
         <form [formGroup]="inventoryForm" class="inventory-form">
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width" floatLabel="always">
             <mat-label>Item Name</mat-label>
             <input matInput formControlName="itemName" placeholder="Enter item name">
             <mat-icon matPrefix>inventory_2</mat-icon>
@@ -56,7 +56,7 @@ export interface InventoryDialogData {
           </mat-form-field>
 
           <div class="form-row">
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Quantity</mat-label>
               <input matInput type="number" formControlName="quantity" min="0" step="0.1">
               <mat-icon matPrefix>scale</mat-icon>
@@ -68,7 +68,7 @@ export interface InventoryDialogData {
               </mat-error>
             </mat-form-field>
 
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" floatLabel="always">
               <mat-label>Unit</mat-label>
               <mat-select formControlName="unit">
                 <mat-option value="kg">Kilograms (kg)</mat-option>
@@ -83,7 +83,7 @@ export interface InventoryDialogData {
             </mat-form-field>
           </div>
 
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width" floatLabel="always">
             <mat-label>Minimum Stock Level</mat-label>
             <input matInput type="number" formControlName="minStockLevel" min="0" step="0.1">
             <mat-icon matPrefix>warning</mat-icon>

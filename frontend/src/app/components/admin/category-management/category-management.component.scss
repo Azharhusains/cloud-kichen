@@ -573,6 +573,10 @@ $bg-color: #f8f9fa;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
   }
 
+  .mat-mdc-form-field-flex {
+    padding: 0 16px !important;
+  }
+
   .mat-mdc-raised-button.mat-primary {
     background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%) !important;
   }

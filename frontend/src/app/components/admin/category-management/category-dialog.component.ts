@@ -45,7 +45,7 @@ export interface CategoryDialogData {
       
       <mat-dialog-content>
         <form [formGroup]="categoryForm" class="category-form">
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width" floatLabel="always">
             <mat-label>Display Name</mat-label>
             <input matInput formControlName="displayName" placeholder="e.g., Birani, Korma, Tandoori">
             <mat-error *ngIf="categoryForm.get('displayName')?.hasError('required')" class="error-text">
@@ -53,7 +53,7 @@ export interface CategoryDialogData {
             </mat-error>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width" floatLabel="always">
             <mat-label>Name (URL-friendly)</mat-label>
             <input matInput formControlName="name" placeholder="e.g., birani, korma, tandoori">
             <mat-hint>Use lowercase letters, numbers, and hyphens only</mat-hint>
@@ -65,12 +65,12 @@ export interface CategoryDialogData {
             </mat-error>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width" floatLabel="always">
             <mat-label>Description</mat-label>
             <textarea matInput formControlName="description" rows="3" placeholder="Enter category description (optional)"></textarea>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width" floatLabel="always">
             <mat-label>Sort Order</mat-label>
             <input matInput type="number" formControlName="sortOrder">
             <mat-hint>Lower numbers appear first</mat-hint>
