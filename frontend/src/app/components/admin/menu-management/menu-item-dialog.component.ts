@@ -92,17 +92,21 @@ export interface MenuItemDialogData {
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Description</mat-label>
-            <textarea matInput formControlName="description" rows="3" placeholder="Enter item description"></textarea>
+            <textarea matInput formControlName="description" rows="3" placeholder="Enter item description" maxlength="45"></textarea>
+            <mat-hint align="end">{{ menuForm.get('description')?.value?.length || 0 }}/45</mat-hint>
             <mat-error *ngIf="menuForm.get('description')?.hasError('required')" class="error-text">
               Description is required
+            </mat-error>
+            <mat-error *ngIf="menuForm.get('description')?.hasError('maxlength')" class="error-text">
+              Description cannot exceed 45 characters
             </mat-error>
           </mat-form-field>
 
           <div class="form-row">
             <mat-form-field appearance="outline">
-              <mat-label>Price (₹)</mat-label>
+<mat-label>Price (₹)</mat-label>
               <input matInput type="number" formControlName="price" step="0.01" min="0.01">
-              <mat-icon matPrefix>attach_money</mat-icon>
+              <mat-icon matPrefix>currency_rupee</mat-icon>
               <mat-error *ngIf="menuForm.get('price')?.hasError('required')" class="error-text">
                 Price is required
               </mat-error>
@@ -112,9 +116,9 @@ export interface MenuItemDialogData {
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>Cost Price (₹)</mat-label>
+<mat-label>Cost Price (₹)</mat-label>
               <input matInput type="number" formControlName="costPrice" step="0.01" min="0.01">
-              <mat-icon matPrefix>money</mat-icon>
+              <mat-icon matPrefix>currency_rupee</mat-icon>
               <mat-error *ngIf="menuForm.get('costPrice')?.hasError('required')" class="error-text">
                 Cost price is required
               </mat-error>
@@ -260,9 +264,9 @@ export class MenuItemDialogComponent implements OnInit {
     this.menuForm = this.fb.group({
       name: ['', Validators.required],
       category: ['', Validators.required],
-      description: ['', Validators.required],
-      price: [null, [Validators.required, Validators.min(0.01)]],
-      costPrice: [null, [Validators.required, Validators.min(0.01)]],
+      description: ['', [Validators.required, Validators.maxLength(45)]],
+      price: [null, [Validators.required, Validators.min(1)]],
+      costPrice: [null, [Validators.required, Validators.min(1)]],
       isAvailable: [true]
     });
   }

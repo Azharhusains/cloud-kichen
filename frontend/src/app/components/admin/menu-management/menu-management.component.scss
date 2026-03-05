@@ -378,6 +378,23 @@ mat-card-content {
       flex-direction: column;
       gap: 12px;
 
+      .category-price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+
+        .category-info {
+          mat-chip-set {
+            mat-chip {
+              font-size: 0.75rem;
+              min-height: 24px;
+            }
+          }
+        }
+      }
+
       .price-info {
         display: flex;
         gap: 24px;

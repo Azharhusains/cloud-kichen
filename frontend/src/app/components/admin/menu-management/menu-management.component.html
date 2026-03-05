@@ -42,25 +42,28 @@
       
       <mat-card-header>
         <mat-card-title>{{ item.name }}</mat-card-title>
-        <mat-card-subtitle>
-          <mat-chip-set>
-            <mat-chip>{{ item.category }}</mat-chip>
-          </mat-chip-set>
-        </mat-card-subtitle>
       </mat-card-header>
       
       <mat-card-content>
         <p class="description">{{ item.description }}</p>
         
         <div class="item-details">
-          <div class="price-info">
-            <div class="price">
-              <mat-icon>attach_money</mat-icon>
-              <span class="amount">{{ item.price.toFixed(2) }}</span>
+          <div class="category-price-row">
+            <div class="category-info">
+              <mat-chip-set>
+                <mat-chip>{{ item.category }}</mat-chip>
+              </mat-chip-set>
             </div>
-            <div class="cost-price">
-              <span class="label">Cost:</span>
-              <span class="amount">₹{{ item.costPrice.toFixed(2) }}</span>
+            
+            <div class="price-info">
+<div class="price">
+                <mat-icon>currency_rupee</mat-icon>
+                <span class="amount">{{ item.price.toFixed(2) }}</span>
+              </div>
+              <div class="cost-price">
+                <span class="label">Cost:</span>
+                <span class="amount">₹{{ item.costPrice.toFixed(2) }}</span>
+              </div>
             </div>
           </div>
           
