@@ -20,6 +20,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { CancelOrderDialogComponent } from '../confirm-dialog/cancel-order-dialog.component';
 
 @Component({
   selector: 'app-order-management',
@@ -39,7 +41,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     MatProgressBarModule,
     MatTooltipModule,
     MatExpansionModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatDialogModule
   ],
   templateUrl: './order-management.component.html',
   styleUrls: ['./order-management.component.scss']
@@ -63,7 +66,8 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     received: 0,
     preparing: 0,
     ready: 0,
-    delivered: 0
+    delivered: 0,
+    cancelled: 0
   };
   
   // Expanded orders tracking
@@ -76,12 +80,16 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   totalPages = 1;
   paginatedOrders: any[] = [];
 
-constructor(
+  // Cancel reason
+  cancelReason = '';
+
+  constructor(
     private orderService: OrderService,
     private socketService: SocketService,
     private toastService: ToastService,
     private audioService: AudioService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -102,7 +110,7 @@ constructor(
           this.loadOrders();
         }
       },
-      error: (err) => console.error('Visibility change error:', err)
+      error: (err: any) => console.error('Visibility change error:', err)
     });
   }
 
@@ -110,9 +118,9 @@ constructor(
     // Join admin room for real-time updates
     this.socketService.joinAdminRoom();
 
-// Listen for new orders
+    // Listen for new orders
     this.socketService.onNewOrder().subscribe({
-      next: (order) => {
+      next: (order: any) => {
         this.orders.unshift(order);
         this.calculateStatistics();
         this.applyFilters();
@@ -123,12 +131,12 @@ constructor(
           this.audioService.playOrderNotification();
         }, 2000);
       },
-      error: (err) => console.error('Socket error:', err)
+      error: (err: any) => console.error('Socket error:', err)
     });
 
     // Listen for order updates
     this.socketService.onOrderUpdated().subscribe({
-      next: (updatedOrder) => {
+      next: (updatedOrder: any) => {
         const index = this.orders.findIndex(o => o._id === updatedOrder._id);
         if (index !== -1) {
           this.orders[index] = { ...updatedOrder };
@@ -138,12 +146,12 @@ constructor(
           this.toastService.info(`Order #${updatedOrder.orderNumber} updated to ${updatedOrder.orderStatus}`);
         }
       },
-      error: (err) => console.error('Socket error:', err)
+      error: (err: any) => console.error('Socket error:', err)
     });
 
     // Also listen for broadcast as fallback
     this.socketService.onOrderStatusBroadcast().subscribe({
-      next: (updatedOrder) => {
+      next: (updatedOrder: any) => {
         const index = this.orders.findIndex(o => o._id === updatedOrder._id);
         if (index !== -1) {
           this.orders[index] = { ...updatedOrder };
@@ -152,18 +160,33 @@ constructor(
           this.cdr.detectChanges();
         }
       },
-      error: (err) => console.error('Socket broadcast error:', err)
+      error: (err: any) => console.error('Socket broadcast error:', err)
+    });
+
+    // Listen for order cancellations
+    this.socketService.onOrderCancelled().subscribe({
+      next: (cancelledOrder: any) => {
+        const index = this.orders.findIndex(o => o._id === cancelledOrder._id);
+        if (index !== -1) {
+          this.orders[index] = { ...cancelledOrder };
+          this.calculateStatistics();
+          this.applyFilters();
+          this.cdr.detectChanges();
+          this.toastService.warning(`Order #${cancelledOrder.orderNumber} has been cancelled`);
+        }
+      },
+      error: (err: any) => console.error('Socket cancel error:', err)
     });
   }
 
   loadOrders(): void {
     this.orderService.getOrders().subscribe({
-      next: (orders) => {
+      next: (orders: any[]) => {
         this.orders = orders;
         this.calculateStatistics();
         this.applyFilters();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading orders:', error);
         this.toastService.error('Error loading orders');
       }
@@ -178,7 +201,8 @@ constructor(
       received: 0,
       preparing: 0,
       ready: 0,
-      delivered: 0
+      delivered: 0,
+      cancelled: 0
     };
     
     this.pendingOrders = 0;
@@ -186,10 +210,12 @@ constructor(
     this.deliveredOrders = 0;
     this.totalRevenue = 0;
     
-    this.orders.forEach(order => {
+    this.orders.forEach((order: any) => {
       // Count by status
       if (this.statusCounts[order.orderStatus] !== undefined) {
         this.statusCounts[order.orderStatus]++;
+      } else if (order.orderStatus === 'cancelled') {
+        this.statusCounts['cancelled']++;
       }
       
       // Pending = received + preparing
@@ -212,7 +238,7 @@ constructor(
     });
     
     // Calculate average order value
-    this.averageOrderValue = this.totalOrders > 0 ? this.totalRevenue / this.orders.length : 0;
+    this.averageOrderValue = this.totalOrders > 0 ? this.totalRevenue / this.totalOrders : 0;
   }
 
   applyFilters(): void {
@@ -227,7 +253,7 @@ constructor(
     if (this.searchTerm) {
       const search = this.searchTerm.toLowerCase();
       
-      result = result.filter(order => 
+      result = result.filter((order: any) => 
         // Search by MongoDB _id
         order._id.toLowerCase().includes(search) ||
         // Search by user name
@@ -240,7 +266,7 @@ constructor(
     }
     
     // Sort by date (newest first)
-    result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    result.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
     this.filteredOrders = result;
     this.totalPages = Math.ceil(this.filteredOrders.length / this.pageSize);
@@ -323,13 +349,12 @@ constructor(
     this.applyFilters();
   }
 
-updateOrderStatus(orderId: string, newStatus: string): void {
+  updateOrderStatus(orderId: string, newStatus: string): void {
     this.orderService.updateOrderStatus(orderId, newStatus).subscribe({
       next: () => {
         this.loadOrders();
-        // Toast is handled by socket listener for consistency
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error updating order status:', error);
         this.toastService.error('Error updating order status');
       }
@@ -338,6 +363,34 @@ updateOrderStatus(orderId: string, newStatus: string): void {
 
   quickUpdateStatus(orderId: string, newStatus: string): void {
     this.updateOrderStatus(orderId, newStatus);
+  }
+
+  cancelOrder(order: any): void {
+    const dialogRef = this.dialog.open(CancelOrderDialogComponent, {
+      width: '450px',
+      data: {
+        orderNumber: order.orderNumber,
+        title: 'Cancel Order',
+        message: 'Are you sure you want to cancel this order? Please provide a reason.',
+        userType: 'admin'
+      },
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe((reason: string | null) => {
+      if (reason && reason.trim() !== '') {
+        this.orderService.cancelOrder(order._id, reason.trim()).subscribe({
+          next: () => {
+            this.loadOrders();
+            this.toastService.success(`Order #${order.orderNumber} has been cancelled`);
+          },
+          error: (error: any) => {
+            console.error('Error cancelling order:', error);
+            this.toastService.error(error.error?.message || 'Error cancelling order');
+          }
+        });
+      }
+    });
   }
 
   getStatusOptions(currentStatus: string): string[] {
@@ -356,7 +409,8 @@ updateOrderStatus(orderId: string, newStatus: string): void {
       'received': 'radio_button_checked',
       'preparing': 'sync',
       'ready': 'check_circle',
-      'delivered': 'done_all'
+      'delivered': 'done_all',
+      'cancelled': 'cancel'
     };
     return icons[status] || 'help_outline';
   }
@@ -389,7 +443,6 @@ updateOrderStatus(orderId: string, newStatus: string): void {
   }
 
   printOrder(order: any): void {
-    // Create print-friendly content
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       const content = `
@@ -404,13 +457,15 @@ updateOrderStatus(orderId: string, newStatus: string): void {
               .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
               .total { font-size: 18px; font-weight: bold; margin-top: 20px; }
               .status { display: inline-block; padding: 4px 12px; background: #667eea; color: white; border-radius: 4px; }
+              .cancelled { background: #dc3545; }
             </style>
           </head>
           <body>
             <h1>Order #${order.orderNumber}</h1>
             <div class="info"><strong>Customer:</strong> ${order.user?.name || 'N/A'} (${order.user?.email || 'N/A'})</div>
             <div class="info"><strong>Date:</strong> ${this.formatDate(order.createdAt)}</div>
-            <div class="info"><strong>Status:</strong> <span class="status">${order.orderStatus}</span></div>
+            <div class="info"><strong>Status:</strong> <span class="status ${order.orderStatus === 'cancelled' ? 'cancelled' : ''}">${order.orderStatus}</span></div>
+            ${order.cancellationReason ? `<div class="info"><strong>Cancellation Reason:</strong> ${order.cancellationReason}</div>` : ''}
             <div class="info"><strong>Delivery Address:</strong> ${order.deliveryAddress?.street}, ${order.deliveryAddress?.city}, ${order.deliveryAddress?.state} ${order.deliveryAddress?.zipCode}</div>
             <div class="items">
               <h3>Items:</h3>
@@ -447,8 +502,7 @@ updateOrderStatus(orderId: string, newStatus: string): void {
     return this.formatDate(dateString);
   }
 
-isUrgent(order: any): boolean {
-    // Consider order urgent if it's been more than 30 minutes and still in received/preparing
+  isUrgent(order: any): boolean {
     if (order.orderStatus === 'received' || order.orderStatus === 'preparing') {
       const date = new Date(order.createdAt);
       const now = new Date();
@@ -458,10 +512,6 @@ isUrgent(order: any): boolean {
     return false;
   }
 
-  /**
-   * Test audio notification - can be used to verify audio works
-   * This also enables audio by triggering user interaction
-   */
   testAudio(): void {
     console.log('OrderManagement: Testing audio notification');
     this.audioService.enableAudio();

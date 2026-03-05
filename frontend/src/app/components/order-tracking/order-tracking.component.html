@@ -31,15 +31,23 @@
           <span>{{ order.orderStatus | titlecase }}</span>
         </div>
       </div>
+      
+      <!-- Cancellation Reason Alert -->
+      <div *ngIf="order.orderStatus === 'cancelled'" class="cancellation-alert">
+        <mat-icon>info</mat-icon>
+        <span>
+          <strong>Order Cancelled:</strong> {{ order.cancellationReason || 'Reason not specified' }}
+        </span>
+      </div>
     </mat-card>
 
     <!-- Progress Timeline -->
     <mat-card class="timeline-card">
       <mat-card-header>
-        <mat-card-title *ngIf="order.orderStatus != 'preparing' && order.orderStatus != 'ready'">
-  <mat-icon>timeline</mat-icon>
-  Order Progress
-</mat-card-title>
+        <mat-card-title *ngIf="order.orderStatus != 'preparing' && order.orderStatus != 'ready' && order.orderStatus != 'cancelled'">
+          <mat-icon>timeline</mat-icon>
+          Order Progress
+        </mat-card-title>
         <!-- Delivery Animation -->
         <mat-card
           class="delivery-animation-card"
@@ -221,6 +229,16 @@
       <button mat-stroked-button (click)="goBack()" class="back-btn">
         <mat-icon>arrow_back</mat-icon>
         Back to Profile
+      </button>
+      <!-- Cancel Order Button for Users -->
+      <button 
+        *ngIf="order.orderStatus === 'received' || order.orderStatus === 'preparing'"
+        mat-raised-button 
+        color="warn" 
+        (click)="cancelOrder()"
+        class="cancel-btn">
+        <mat-icon>cancel</mat-icon>
+        Cancel Order
       </button>
       <button
         mat-raised-button

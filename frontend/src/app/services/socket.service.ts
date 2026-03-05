@@ -142,6 +142,28 @@ export class SocketService {
     });
   }
 
+  // Listen for order cancellation (admin)
+  onOrderCancelled(): Observable<any> {
+    console.log('SocketService: Listening for orderCancelled events');
+    return new Observable(observer => {
+      this.socket.on('orderCancelled', (data) => {
+        console.log('SocketService: Received orderCancelled:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // Listen for order cancellation broadcast (fallback)
+  onOrderCancelledBroadcast(): Observable<any> {
+    console.log('SocketService: Listening for orderCancelledBroadcast events');
+    return new Observable(observer => {
+      this.socket.on('orderCancelledBroadcast', (data) => {
+        console.log('SocketService: Received orderCancelledBroadcast:', data);
+        observer.next(data);
+      });
+    });
+  }
+
   // Disconnect socket
   disconnect(): void {
     console.log('SocketService: Disconnecting');

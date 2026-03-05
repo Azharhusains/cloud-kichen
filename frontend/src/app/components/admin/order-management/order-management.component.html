@@ -115,6 +115,15 @@
         Delivered
         <span class="chip-count">{{ statusCounts['delivered'] }}</span>
       </mat-chip-option>
+      <mat-chip-option 
+        [class.active-status]="statusFilter === 'cancelled'"
+        [selected]="statusFilter === 'cancelled'" 
+        (click)="filterByStatus('cancelled')"
+        class="cancelled-chip">
+        <mat-icon class="status-icon cancelled">cancel</mat-icon>
+        Cancelled
+        <span class="chip-count">{{ statusCounts['cancelled'] || 0 }}</span>
+      </mat-chip-option>
     </mat-chip-listbox>
   </div>
 
@@ -130,9 +139,9 @@
         </mat-card>
       </div>
 
-      <mat-card *ngFor="let order of paginatedOrders" class="order-card" [class.urgent-order]="isUrgent(order)">
+      <mat-card *ngFor="let order of paginatedOrders" class="order-card" [class.urgent-order]="isUrgent(order)" [class.cancelled-order]="order.orderStatus === 'cancelled'">
         <!-- Card Header with Gradient -->
-        <div class="card-header-gradient">
+        <div class="card-header-gradient" [class.cancelled-gradient]="order.orderStatus === 'cancelled'">
           <div class="order-id-section">
             <span class="order-id">Order #{{ order.orderNumber }}</span>
             <span class="time-ago" [class.urgent]="isUrgent(order)">
@@ -146,31 +155,39 @@
           </div>
         </div>
 
+        <!-- Cancellation Reason Alert -->
+        <div *ngIf="order.orderStatus === 'cancelled'" class="cancellation-alert">
+          <mat-icon>info</mat-icon>
+          <span>
+            <strong>Cancelled:</strong> {{ order.cancellationReason || 'Reason not specified' }}
+          </span>
+        </div>
+
         <mat-card-content>
           <!-- Order Timeline Progress -->
-          <div class="order-timeline">
-            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 0">
+          <div class="order-timeline" [class.cancelled-timeline]="order.orderStatus === 'cancelled'">
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 0 && order.orderStatus !== 'cancelled'">
               <div class="step-indicator">
                 <mat-icon>check</mat-icon>
               </div>
               <span class="step-label">Received</span>
             </div>
-            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 1"></div>
-            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 1">
+            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 1 && order.orderStatus !== 'cancelled'"></div>
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 1 && order.orderStatus !== 'cancelled'">
               <div class="step-indicator">
                 <mat-icon>check</mat-icon>
               </div>
               <span class="step-label">Preparing</span>
             </div>
-            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 2"></div>
-            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 2">
+            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 2 && order.orderStatus !== 'cancelled'"></div>
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 2 && order.orderStatus !== 'cancelled'">
               <div class="step-indicator">
                 <mat-icon>check</mat-icon>
               </div>
               <span class="step-label">Ready</span>
             </div>
-            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 3"></div>
-            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 3">
+            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 3 && order.orderStatus !== 'cancelled'"></div>
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 3 && order.orderStatus !== 'cancelled'">
               <div class="step-indicator">
                 <mat-icon>check</mat-icon>
               </div>
@@ -199,6 +216,12 @@
                       class="quick-action-btn status-delivered">
                 <mat-icon>local_shipping</mat-icon>
                 Mark Delivered
+              </button>
+              <button *ngIf="order.orderStatus === 'received' || order.orderStatus === 'preparing'"
+                      (click)="cancelOrder(order)"
+                      class="quick-action-btn status-cancelled">
+                <mat-icon>cancel</mat-icon>
+                Cancel Order
               </button>
             </div>
 
@@ -276,9 +299,9 @@
               <div class="total-section">
                 <div class="total-row">
                   <span class="total-label">Total</span>
-                  <span class="total-amount">₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
+                  <span class="total-amount" [class.cancelled-amount]="order.orderStatus === 'cancelled'">₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
                 </div>
-                <div class="profit-row" *ngIf="order.profit">
+                <div class="profit-row" *ngIf="order.profit && order.orderStatus !== 'cancelled'">
                   <span class="profit-label">Profit</span>
                   <span class="profit-amount">₹{{ order.profit.toFixed(2) }}</span>
                 </div>

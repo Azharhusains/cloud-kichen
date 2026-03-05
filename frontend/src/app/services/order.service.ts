@@ -24,4 +24,13 @@ export class OrderService {
   updateOrderStatus(id: string, status: string): Observable<any> {
     return this.http.put(`${environment.apiUrl}/orders/${id}/status`, { status });
   }
+
+  /**
+   * Cancel an order
+   * @param id - Order ID
+   * @param reason - Reason for cancellation
+   */
+  cancelOrder(id: string, reason: string): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/orders/${id}/cancel`, { reason });
+  }
 }

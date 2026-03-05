@@ -10,6 +10,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { CancelOrderDialogComponent } from '../admin/confirm-dialog/cancel-order-dialog.component';
 
 // Angular Animations
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -17,6 +19,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
 // Services
 import { OrderService } from '../../services/order.service';
 import { SocketService } from '../../services/socket.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-order-tracking',
@@ -29,7 +32,8 @@ import { SocketService } from '../../services/socket.service';
     MatDividerModule,
     MatStepperModule,
     MatProgressSpinnerModule,
-    MatChipsModule
+    MatChipsModule,
+    MatDialogModule
   ],
   templateUrl: './order-tracking.component.html',
   styleUrls: ['./order-tracking.component.scss'],
@@ -59,7 +63,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     private orderService: OrderService,
     private socketService: SocketService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastService: ToastService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -102,7 +108,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         }
       },
-      error: (err) => console.error('OrderTrackingComponent: Socket error:', err)
+      error: (err: any) => console.error('OrderTrackingComponent: Socket error:', err)
     });
 
     // Listen for broadcast (fallback)
@@ -116,7 +122,21 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         }
       },
-      error: (err) => console.error('OrderTrackingComponent: Broadcast Socket error:', err)
+      error: (err: any) => console.error('OrderTrackingComponent: Broadcast Socket error:', err)
+    });
+
+    // Listen for order cancellation
+    this.socketService.onOrderCancelledBroadcast().subscribe({
+      next: (cancelledOrder) => {
+        console.log('OrderTrackingComponent: Received orderCancelledBroadcast:', cancelledOrder);
+        
+        if (cancelledOrder._id === this.orderId || cancelledOrder._id === this.orderId?.toString()) {
+          this.order = { ...cancelledOrder };
+          this.cdr.detectChanges();
+          this.toastService.warning(`Your order #${this.order.orderNumber} has been cancelled`);
+        }
+      },
+      error: (err: any) => console.error('OrderTrackingComponent: Cancellation Socket error:', err)
     });
   }
 
@@ -128,6 +148,47 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       },
       error: (error: any) => {
         console.error('OrderTrackingComponent: Error loading order:', error);
+      }
+    });
+  }
+
+  /**
+   * Cancel the order (user-side)
+   * Only allowed when order status is 'received' or 'preparing'
+   */
+  cancelOrder(): void {
+    if (!this.order) return;
+    
+    // Check if cancellation is allowed
+    if (this.order.orderStatus !== 'received' && this.order.orderStatus !== 'preparing') {
+      this.toastService.error('Order cannot be cancelled at this stage');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(CancelOrderDialogComponent, {
+      width: '450px',
+      data: {
+        orderNumber: this.order.orderNumber,
+        title: 'Cancel Order',
+        message: 'Are you sure you want to cancel your order? Please provide a reason.',
+        userType: 'customer'
+      },
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe((reason: string | null) => {
+      if (reason && reason.trim() !== '') {
+        this.orderService.cancelOrder(this.order!._id, reason.trim()).subscribe({
+          next: (updatedOrder) => {
+            this.order = { ...updatedOrder };
+            this.toastService.success('Order cancelled successfully');
+            this.cdr.detectChanges();
+          },
+          error: (error: any) => {
+            console.error('Error cancelling order:', error);
+            this.toastService.error(error.error?.message || 'Error cancelling order');
+          }
+        });
       }
     });
   }
@@ -150,6 +211,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return 'status-preparing';
       case 'ready': return 'status-ready';
       case 'delivered': return 'status-delivered';
+      case 'cancelled': return 'status-cancelled';
       default: return '';
     }
   }
@@ -160,6 +222,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return 'restaurant';
       case 'ready': return 'takeout_dining';
       case 'delivered': return 'delivery_dining';
+      case 'cancelled': return 'cancel';
       default: return 'help';
     }
   }
@@ -203,6 +266,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return 'restaurant';
       case 'ready': return 'notifications_active';
       case 'delivered': return 'celebration';
+      case 'cancelled': return 'cancel';
       default: return 'info';
     }
   }
@@ -213,6 +277,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return 'Our chefs are preparing your delicious food with care.';
       case 'ready': return 'Your order is ready and will be picked up by our delivery partner.';
       case 'delivered': return 'Your order has been delivered successfully. Enjoy your meal!';
+      case 'cancelled': return 'Your order has been cancelled.';
       default: return 'Order status unknown.';
     }
   }

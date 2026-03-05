@@ -690,6 +690,34 @@ mat-divider {
       box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
     }
   }
+
+  // Cancel Order Button - Red color (as per common rule)
+  .cancel-btn {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
+
+    mat-icon {
+      color: white !important;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4) !important;
+      background: linear-gradient(135deg, #c82333 0%, #bd2130 100%) !important;
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Cancellation Alert */
+.cancellation-alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Loading State */

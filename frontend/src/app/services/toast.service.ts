@@ -56,4 +56,11 @@ export class ToastService {
   info(message: string): void {
     this.show(message, 'info');
   }
+
+  /**
+   * Show a warning toast (orange)
+   */
+  warning(message: string): void {
+    this.show(message, 'info');
+  }
 }
