@@ -323,11 +323,11 @@ constructor(
     this.applyFilters();
   }
 
-  updateOrderStatus(orderId: string, newStatus: string): void {
+updateOrderStatus(orderId: string, newStatus: string): void {
     this.orderService.updateOrderStatus(orderId, newStatus).subscribe({
       next: () => {
         this.loadOrders();
-        this.toastService.success(`Order status updated to ${newStatus}`);
+        // Toast is handled by socket listener for consistency
       },
       error: (error) => {
         console.error('Error updating order status:', error);

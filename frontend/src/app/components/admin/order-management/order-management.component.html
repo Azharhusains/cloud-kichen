@@ -10,7 +10,7 @@
         <mat-icon>volume_up</mat-icon>
         Test Audio
       </button>
-      <mat-form-field appearance="outline" class="search-field">
+      <mat-form-field appearance="outline" class="search-field" floatLabel="always">
         <mat-label>Search orders</mat-label>
         <input matInput [(ngModel)]="searchTerm" (input)="onSearchChange()" placeholder="Search by Order #, name, email...">
         <mat-icon matSuffix>search</mat-icon>
@@ -178,35 +178,30 @@
             </div>
           </div>
 
-          <!-- Quick Status Update Buttons -->
-          <div class="quick-actions">
-            <button mat-stroked-button 
-                    *ngIf="order.orderStatus === 'received'"
-                    (click)="quickUpdateStatus(order._id, 'preparing')"
-                    color="primary"
-                    class="quick-action-btn">
-              <mat-icon>sync</mat-icon>
-              Start Preparing
-            </button>
-            <button mat-stroked-button 
-                    *ngIf="order.orderStatus === 'preparing'"
-                    (click)="quickUpdateStatus(order._id, 'ready')"
-                    color="accent"
-                    class="quick-action-btn">
-              <mat-icon>check_circle</mat-icon>
-              Mark Ready
-            </button>
-            <button mat-stroked-button 
-                    *ngIf="order.orderStatus === 'ready'"
-                    (click)="quickUpdateStatus(order._id, 'delivered')"
-                    color="primary"
-                    class="quick-action-btn">
-              <mat-icon>local_shipping</mat-icon>
-              Mark Delivered
-            </button>
-          </div>
+          <!-- Quick Actions & Order Info Grid - Same Line (Flex) -->
+          <div class="quick-actions-info-wrapper">
+            <!-- Quick Status Update Buttons -->
+            <div class="quick-actions">
+              <button *ngIf="order.orderStatus === 'received'"
+                      (click)="quickUpdateStatus(order._id, 'preparing')"
+                      class="quick-action-btn status-preparing">
+                <mat-icon>sync</mat-icon>
+                Start Preparing
+              </button>
+              <button *ngIf="order.orderStatus === 'preparing'"
+                      (click)="quickUpdateStatus(order._id, 'ready')"
+                      class="quick-action-btn status-ready">
+                <mat-icon>check_circle</mat-icon>
+                Mark Ready
+              </button>
+              <button *ngIf="order.orderStatus === 'ready'"
+                      (click)="quickUpdateStatus(order._id, 'delivered')"
+                      class="quick-action-btn status-delivered">
+                <mat-icon>local_shipping</mat-icon>
+                Mark Delivered
+              </button>
+            </div>
 
-          <div class="order-main-content" [class.expanded]="isOrderExpanded(order._id)">
             <!-- Customer & Order Info -->
             <div class="order-info-grid">
               <div class="customer-section">
@@ -242,7 +237,9 @@
                 </div>
               </div>
             </div>
+          </div>
 
+          <div class="order-main-content" [class.expanded]="isOrderExpanded(order._id)">
             <!-- Order Items -->
             <div class="order-items-section">
               <div class="items-header" (click)="toggleOrderExpand(order._id)">

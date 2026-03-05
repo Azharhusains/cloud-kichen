@@ -572,68 +572,80 @@ input[type="radio"] {
 }
 
 /* Mat-snack-bar overrides */
-::ng-deep .mat-mdc-snack-bar-container {
+.mat-mdc-snack-bar-container {
   border-radius: var(--border-radius-sm) !important;
 }
 
+/* Remove hover effects on snackbar/toast close button */
+.mat-mdc-snack-bar-container .mat-mdc-snack-bar__action:hover {
+  background-color: transparent !important;
+}
+
+.mat-mdc-snack-bar-container .mat-mdc-button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
 /* Snackbar Error Style - Red */
-::ng-deep .mat-mdc-snack-bar-container.snackbar-error .mdc-snackbar__surface,
-::ng-deep .mat-mdc-snack-bar-container.snackbar-error .mat-mdc-snack-bar__surface {
+.mat-mdc-snack-bar-container.snackbar-error .mdc-snackbar__surface,
+.mat-mdc-snack-bar-container.snackbar-error .mat-mdc-snack-bar__surface {
   background-color: #f44336 !important;
 }
 
-::ng-deep .mat-mdc-snack-bar-container.snackbar-error .mdc-snackbar__label,
-::ng-deep .mat-mdc-snack-bar-container.snackbar-error .mat-mdc-snack-bar__label {
+.mat-mdc-snack-bar-container.snackbar-error .mdc-snackbar__label,
+.mat-mdc-snack-bar-container.snackbar-error .mat-mdc-snack-bar__label {
   color: #ffffff !important;
 }
 
-::ng-deep .mat-mdc-snack-bar-container.snackbar-error .mat-mdc-button,
-::ng-deep .mat-mdc-snack-bar-container.snackbar-error .mdc-button {
+.mat-mdc-snack-bar-container.snackbar-error .mat-mdc-button,
+.mat-mdc-snack-bar-container.snackbar-error .mdc-button {
   color: #ffffff !important;
 }
 
 /* Snackbar Success Style - Green */
-::ng-deep .mat-mdc-snack-bar-container.snackbar-success .mdc-snackbar__surface,
-::ng-deep .mat-mdc-snack-bar-container.snackbar-success .mat-mdc-snack-bar__surface {
+.mat-mdc-snack-bar-container.snackbar-success .mdc-snackbar__surface,
+.mat-mdc-snack-bar-container.snackbar-success .mat-mdc-snack-bar__surface {
   background-color: #4caf50 !important;
 }
 
-::ng-deep .mat-mdc-snack-bar-container.snackbar-success .mdc-snackbar__label,
-::ng-deep .mat-mdc-snack-bar-container.snackbar-success .mat-mdc-snack-bar__label {
+.mat-mdc-snack-bar-container.snackbar-success .mdc-snackbar__label,
+.mat-mdc-snack-bar-container.snackbar-success .mat-mdc-snack-bar__label {
   color: #ffffff !important;
 }
 
-::ng-deep .mat-mdc-snack-bar-container.snackbar-success .mat-mdc-button,
-::ng-deep .mat-mdc-snack-bar-container.snackbar-success .mdc-button {
+.mat-mdc-snack-bar-container.snackbar-success .mat-mdc-button,
+.mat-mdc-snack-bar-container.snackbar-success .mdc-button {
   color: #ffffff !important;
 }
 
 /* Snackbar Info Style - Blue */
-::ng-deep .mat-mdc-snack-bar-container.snackbar-info .mdc-snackbar__surface,
-::ng-deep .mat-mdc-snack-bar-container.snackbar-info .mat-mdc-snack-bar__surface {
+.mat-mdc-snack-bar-container.snackbar-info .mdc-snackbar__surface,
+.mat-mdc-snack-bar-container.snackbar-info .mat-mdc-snack-bar__surface {
   background-color: #2196f3 !important;
 }
 
-::ng-deep .mat-mdc-snack-bar-container.snackbar-info .mdc-snackbar__label,
-::ng-deep .mat-mdc-snack-bar-container.snackbar-info .mat-mdc-snack-bar__label {
+.mat-mdc-snack-bar-container.snackbar-info .mdc-snackbar__label,
+.mat-mdc-snack-bar-container.snackbar-info .mat-mdc-snack-bar__label {
   color: #ffffff !important;
 }
 
-::ng-deep .mat-mdc-snack-bar-container.snackbar-info .mat-mdc-button,
-::ng-deep .mat-mdc-snack-bar-container.snackbar-info .mdc-button {
+.mat-mdc-snack-bar-container.snackbar-info .mat-mdc-button,
+.mat-mdc-snack-bar-container.snackbar-info .mdc-button {
   color: #ffffff !important;
 }
 
-/* Fallback styles using ::ng-deep for better compatibility */
-::ng-deep snack-bar-container.snackbar-error .mdc-snackbar__surface {
-  background-color: #f44336 !important;
-}
-
-::ng-deep snack-bar-container.snackbar-success .mdc-snackbar__surface {
+/* Additional specificity for success toast to ensure green background */
+.mdc-snackbar__surface.snackbar-success,
+.mat-mdc-snack-bar__surface.snackbar-success {
   background-color: #4caf50 !important;
 }
 
-::ng-deep snack-bar-container.snackbar-info .mdc-snackbar__surface {
+.mdc-snackbar__surface.snackbar-error,
+.mat-mdc-snack-bar__surface.snackbar-error {
+  background-color: #f44336 !important;
+}
+
+.mdc-snackbar__surface.snackbar-info,
+.mat-mdc-snack-bar__surface.snackbar-info {
   background-color: #2196f3 !important;
 }
 
