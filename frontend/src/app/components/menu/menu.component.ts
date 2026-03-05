@@ -189,14 +189,6 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   addToCart(item: MenuItem): void {
     this.cartService.addToCart(item);
-    
-    this.snackBar.open(`${item.name} added to cart!`, 'View Cart', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'bottom'
-    }).onAction().subscribe(() => {
-      this.router.navigate(['/cart']);
-    });
   }
 
   increaseQuantity(menuItem: any): void {
