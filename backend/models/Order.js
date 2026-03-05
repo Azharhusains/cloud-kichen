@@ -56,9 +56,32 @@ const orderSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
-  orderStatus: {
+orderStatus: {
     type: String,
     default: 'received',
+  },
+  // Cancellation fields
+  cancellationReason: {
+    type: String,
+    default: null,
+  },
+  // Separate cancellation reasons for user-facing and admin internal notes
+  cancellationReasonUser: {
+    type: String,
+    default: null,
+  },
+  cancellationReasonAdmin: {
+    type: String,
+    default: null,
+  },
+  cancelledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  cancelledAt: {
+    type: Date,
+    default: null,
   },
   deliveryAddress: {
     street: String,

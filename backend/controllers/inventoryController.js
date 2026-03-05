@@ -139,4 +139,43 @@ const checkStockAvailability = async (items) => {
   return true;
 };
 
-module.exports = { getInventory, deleteInventory, updateInventory, deductStock, checkStockAvailability };
+// Restore stock when order is cancelled (reverse of deductStock)
+const restoreStock = async (items) => {
+  for (const item of items) {
+    const menuItem = await require('../models/MenuItem').findById(item.menuItem);
+    if (!menuItem) continue;
+
+    let restoreQuantity = 0;
+    if (menuItem.category === 'Biryani') {
+      restoreQuantity = item.quantity * 0.5;
+      const inventoryItem = await Inventory.findOne({ itemName: 'Rice' });
+      if (inventoryItem) {
+        inventoryItem.quantity += restoreQuantity;
+        await inventoryItem.save();
+      }
+    } else if (menuItem.category === 'Korma' && menuItem.name.includes('Chicken')) {
+      restoreQuantity = item.quantity * 0.3;
+      const inventoryItem = await Inventory.findOne({ itemName: 'Chicken' });
+      if (inventoryItem) {
+        inventoryItem.quantity += restoreQuantity;
+        await inventoryItem.save();
+      }
+    } else if (menuItem.category === 'Korma' && menuItem.name.includes('Mutton')) {
+      restoreQuantity = item.quantity * 0.3;
+      const inventoryItem = await Inventory.findOne({ itemName: 'Mutton' });
+      if (inventoryItem) {
+        inventoryItem.quantity += restoreQuantity;
+        await inventoryItem.save();
+      }
+    } else if (menuItem.category === 'Tandoori') {
+      restoreQuantity = item.quantity * 0.5;
+      const inventoryItem = await Inventory.findOne({ itemName: 'Chicken' });
+      if (inventoryItem) {
+        inventoryItem.quantity += restoreQuantity;
+        await inventoryItem.save();
+      }
+    }
+  }
+};
+
+module.exports = { getInventory, deleteInventory, updateInventory, deductStock, checkStockAvailability, restoreStock };

@@ -2,7 +2,7 @@ const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
 const User = require('../models/User');
 const Counter = require('../models/Counter');
-const { deductStock, checkStockAvailability } = require('./inventoryController');
+const { deductStock, checkStockAvailability, restoreStock } = require('./inventoryController');
 
 const getOrders = async (req, res) => {
   try {
@@ -178,4 +178,85 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getOrder, createOrder, updateOrderStatus };
+const cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Check if user is admin
+    const isAdmin = req.user.role === 'admin';
+    
+    // Check if order can be cancelled (only for customers)
+    if (!isAdmin) {
+      const cancellableStatuses = ['received', 'preparing'];
+      if (!cancellableStatuses.includes(order.orderStatus)) {
+        return res.status(400).json({ 
+          message: 'Order cannot be cancelled at this stage. Only orders in received or preparing status can be cancelled.' 
+        });
+      }
+      
+      // For customers, verify they own the order
+      if (order.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to cancel this order' });
+      }
+    }
+
+    // Admin can cancel orders at any stage, customers only at received/preparing
+    const { reason, reasonUser, reasonAdmin } = req.body;
+
+    // Update order with cancellation details
+    order.orderStatus = 'cancelled';
+    order.cancellationReason = reason || (isAdmin ? 'Cancelled by admin' : 'Cancelled by customer');
+    
+    // Store separate reasons for user-facing and admin internal notes
+    if (isAdmin) {
+      // Admin is cancelling - store both user-facing reason and admin note
+      order.cancellationReasonUser = reasonUser || reason || 'Cancelled by admin';
+      order.cancellationReasonAdmin = reasonAdmin || null;
+    } else {
+      // Customer is cancelling - store user reason
+      order.cancellationReasonUser = reason || 'Cancelled by customer';
+      order.cancellationReasonAdmin = null;
+    }
+    
+    order.cancelledBy = req.user._id;
+    order.cancelledAt = new Date();
+
+    const updatedOrder = await order.save();
+
+    // Restore inventory stock (only for non-delivered orders)
+    if (order.orderStatus !== 'delivered') {
+      await restoreStock(order.items);
+    }
+
+    // Populate the order for Socket.IO emission
+    const populatedOrder = await Order.findById(updatedOrder._id)
+      .populate('user', 'name email')
+      .populate('items.menuItem');
+
+    // Emit real-time events
+    const io = req.app.get('io');
+    const orderRoom = `order_${order._id.toString()}`;
+
+    // Emit to admin room
+    io.to('adminRoom').emit('orderUpdated', populatedOrder);
+    io.to('adminRoom').emit('orderCancelled', populatedOrder);
+
+    // Emit to specific order room
+    io.to(orderRoom).emit('orderStatusChanged', populatedOrder);
+    io.to(orderRoom).emit('orderCancelled', populatedOrder);
+
+    // Broadcast as fallback
+    io.emit('orderStatusBroadcast', populatedOrder);
+    io.emit('orderCancelledBroadcast', populatedOrder);
+
+    res.json(updatedOrder);
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getOrders, getOrder, createOrder, updateOrderStatus, cancelOrder };
