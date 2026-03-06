@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -16,6 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { TableService } from '../../../services/table.service';
+import { SocketService } from '../../../services/socket.service';
 import { ToastService } from '../../../services/toast.service';
 import { TableDialogComponent } from './table-dialog.component';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
@@ -43,7 +44,7 @@ import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.compone
   templateUrl: './table-management.component.html',
   styleUrls: ['./table-management.component.scss']
 })
-export class TableManagementComponent implements OnInit {
+export class TableManagementComponent implements OnInit, OnDestroy {
   tables: any[] = [];
   filteredTables: any[] = [];
   searchTerm: string = '';
@@ -51,12 +52,66 @@ export class TableManagementComponent implements OnInit {
 
   constructor(
     private tableService: TableService,
+    private socketService: SocketService,
     private dialog: MatDialog,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadTables();
+    this.setupSocketListeners();
+    this.setupVisibilityListener();
+  }
+
+  ngOnDestroy(): void {
+    // Socket will be disconnected when leaving the admin area
+  }
+
+  setupVisibilityListener(): void {
+    this.socketService.visibilityChange$.subscribe({
+      next: (isVisible) => {
+        if (isVisible) {
+          console.log('TableManagement: Tab became visible, refreshing data...');
+          this.loadTables();
+        }
+      },
+      error: (err: any) => console.error('Visibility change error:', err)
+    });
+  }
+
+  setupSocketListeners(): void {
+    // Join admin room for real-time updates
+    this.socketService.joinAdminRoom();
+
+    // Listen for table status changes
+    this.socketService.onTableStatusChanged().subscribe({
+      next: (updatedTable: any) => {
+        console.log('TableManagement: Received table status change:', updatedTable);
+        this.updateTableInList(updatedTable);
+        this.toastService.info(`Table ${updatedTable.tableNumber} status changed to ${updatedTable.status}`);
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => console.error('Socket table status error:', err)
+    });
+
+    // Also listen for broadcast as fallback
+    this.socketService.onTableStatusBroadcast().subscribe({
+      next: (updatedTable: any) => {
+        console.log('TableManagement: Received table status broadcast:', updatedTable);
+        this.updateTableInList(updatedTable);
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => console.error('Socket table broadcast error:', err)
+    });
+  }
+
+  updateTableInList(updatedTable: any): void {
+    const index = this.tables.findIndex(t => t._id === updatedTable._id);
+    if (index !== -1) {
+      this.tables[index] = { ...updatedTable };
+      this.filterTables();
+    }
   }
 
   loadTables(): void {

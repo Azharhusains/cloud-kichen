@@ -52,6 +52,7 @@ const updateTable = async (req, res) => {
     }
 
     const { tableNumber, capacity, status, location } = req.body;
+    const oldStatus = table.status;
     
     if (tableNumber && tableNumber !== table.tableNumber) {
       const existingTable = await Table.findOne({ tableNumber, _id: { $ne: table._id } });
@@ -66,6 +67,15 @@ const updateTable = async (req, res) => {
     if (location) table.location = location;
 
     const updatedTable = await table.save();
+
+    // Emit Socket.IO event if status changed
+    if (status && status !== oldStatus) {
+      const io = req.app.get('io');
+      io.to('adminRoom').emit('tableStatusChanged', updatedTable);
+      io.emit('tableStatusBroadcast', updatedTable);
+      console.log(`Table ${updatedTable.tableNumber} status changed: ${oldStatus} -> ${status}`);
+    }
+
     res.json(updatedTable);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -97,10 +107,17 @@ const updateTableStatus = async (req, res) => {
     }
 
     const { status } = req.body;
+    const oldStatus = table.status;
     table.status = status;
-    await table.save();
+    const updatedTable = await table.save();
 
-    res.json(table);
+    // Emit Socket.IO event for status change
+    const io = req.app.get('io');
+    io.to('adminRoom').emit('tableStatusChanged', updatedTable);
+    io.emit('tableStatusBroadcast', updatedTable);
+    console.log(`Table ${updatedTable.tableNumber} status changed: ${oldStatus} -> ${status}`);
+
+    res.json(updatedTable);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
