@@ -144,6 +144,11 @@
         <div class="card-header-gradient" [class.cancelled-gradient]="order.orderStatus === 'cancelled'">
           <div class="order-id-section">
             <span class="order-id">Order #{{ order.orderNumber }}</span>
+            <!-- Order Type Badge -->
+            <span class="order-type-badge" [class.dine-in]="order.orderType === 'dine-in'" [class.delivery]="order.orderType === 'delivery'">
+              <mat-icon>{{ order.orderType === 'dine-in' ? 'restaurant' : 'delivery_dining' }}</mat-icon>
+              {{ order.orderType === 'dine-in' ? 'Dine-in' : 'Delivery' }}
+            </span>
             <span class="time-ago" [class.urgent]="isUrgent(order)">
               <mat-icon *ngIf="isUrgent(order)">warning</mat-icon>
               {{ getTimeAgo(order.createdAt) }}
@@ -246,7 +251,21 @@
               </div>
 
               <div class="address-section">
-                <div class="info-row">
+                <!-- Show Table Number for Dine-in orders -->
+                <div class="info-row" *ngIf="order.orderType === 'dine-in'">
+                  <mat-icon>table_bar</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Table Number</span>
+                    <span class="info-value dine-in-value">
+                      <mat-icon>restaurant</mat-icon>
+                      Table {{ order.tableNumber }}
+                    </span>
+                    <span class="info-subvalue">Food will be served at this table</span>
+                  </div>
+                </div>
+                
+                <!-- Show Delivery Address for Delivery orders -->
+                <div class="info-row" *ngIf="order.orderType === 'delivery'">
                   <mat-icon>location_on</mat-icon>
                   <div class="info-content">
                     <span class="info-label">Delivery Address</span>

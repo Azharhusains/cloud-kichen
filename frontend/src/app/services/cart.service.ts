@@ -6,6 +6,12 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface TableInfo {
+  tableNumber: string;
+  capacity: number;
+  location?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -15,6 +21,10 @@ export class CartService {
 
   private cartItemCountSubject = new BehaviorSubject<number>(0);
   public cartItemCount$ = this.cartItemCountSubject.asObservable();
+
+  // Table info for dine-in orders
+  private tableInfoSubject = new BehaviorSubject<TableInfo | null>(null);
+  public tableInfo$ = this.tableInfoSubject.asObservable();
 
   constructor() {
     this.loadCartFromLocalStorage();
@@ -40,6 +50,29 @@ export class CartService {
 
   getCartItemCount(): number {
     return this.cartItemCountSubject.getValue();
+  }
+
+  /**
+   * Set table info for dine-in orders
+   */
+  setTableInfo(table: TableInfo): void {
+    this.tableInfoSubject.next(table);
+    localStorage.setItem('tableInfo', JSON.stringify(table));
+  }
+
+  /**
+   * Get table info
+   */
+  getTableInfo(): TableInfo | null {
+    return this.tableInfoSubject.getValue();
+  }
+
+  /**
+   * Clear table info
+   */
+  clearTableInfo(): void {
+    this.tableInfoSubject.next(null);
+    localStorage.removeItem('tableInfo');
   }
 
   /**

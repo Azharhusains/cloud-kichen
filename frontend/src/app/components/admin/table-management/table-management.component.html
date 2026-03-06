@@ -1,0 +1,128 @@
+<div class="table-management-container">
+  <div class="page-header">
+    <h1>Table Management</h1>
+    <p>Manage restaurant tables for dine-in orders</p>
+  </div>
+
+  <div class="content-grid">
+    <!-- Add/Edit Table Form -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>{{ isEditing ? 'edit' : 'add' }}</mat-icon>
+          {{ isEditing ? 'Edit Table' : 'Add New Table' }}
+        </mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <form [formGroup]="tableForm" (ngSubmit)="onSubmit()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Table Number</mat-label>
+            <input matInput formControlName="tableNumber" placeholder="e.g., T1, A1, 5">
+            <mat-icon matPrefix>table_bar</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Capacity (seats)</mat-label>
+            <input matInput type="number" formControlName="capacity" min="1">
+            <mat-icon matPrefix>people</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="available">
+                <mat-icon>check_circle</mat-icon>
+                Available
+              </mat-option>
+              <mat-option value="occupied">
+                <mat-icon>person</mat-icon>
+                Occupied
+              </mat-option>
+              <mat-option value="reserved">
+                <mat-icon>event</mat-icon>
+                Reserved
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Location (optional)</mat-label>
+            <input matInput formControlName="location" placeholder="e.g., Ground Floor, Window side">
+            <mat-icon matPrefix>location_on</mat-icon>
+          </mat-form-field>
+
+          <div class="form-actions">
+            <button mat-stroked-button type="button" (click)="resetForm()" *ngIf="isEditing">
+              Cancel
+            </button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="!tableForm.valid">
+              <mat-icon>{{ isEditing ? 'save' : 'add' }}</mat-icon>
+              {{ isEditing ? 'Update Table' : 'Add Table' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Tables List -->
+    <mat-card class="tables-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>list</mat-icon>
+          Restaurant Tables ({{ tables.length }})
+        </mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="tables-grid" *ngIf="tables.length > 0">
+          <div class="table-item" *ngFor="let table of tables">
+            <div class="table-icon">
+              <mat-icon>table_bar</mat-icon>
+            </div>
+            <div class="table-info">
+              <h3>Table {{ table.tableNumber }}</h3>
+              <p><mat-icon>people</mat-icon> {{ table.capacity }} seats</p>
+              <p *ngIf="table.location"><mat-icon>location_on</mat-icon> {{ table.location }}</p>
+              <mat-chip [color]="getStatusColor(table.status)" selected>
+                {{ table.status | titlecase }}
+              </mat-chip>
+            </div>
+            <div class="table-actions">
+              <button mat-icon-button (click)="editTable(table)" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteTable(table)" matTooltip="Delete">
+                <mat-icon>delete</mat-icon>
+              </button>
+              <button mat-icon-button [matMenuTriggerFor]="statusMenu" matTooltip="Change Status">
+                <mat-icon>swap_horiz</mat-icon>
+              </button>
+              <mat-menu #statusMenu="matMenu">
+                <button mat-menu-item (click)="updateTableStatus(table, 'available')">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Available</span>
+                </button>
+                <button mat-menu-item (click)="updateTableStatus(table, 'occupied')">
+                  <mat-icon>person</mat-icon>
+                  <span>Occupied</span>
+                </button>
+                <button mat-menu-item (click)="updateTableStatus(table, 'reserved')">
+                  <mat-icon>event</mat-icon>
+                  <span>Reserved</span>
+                </button>
+              </mat-menu>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="tables.length === 0">
+          <mat-icon>table_bar</mat-icon>
+          <h3>No Tables Yet</h3>
+          <p>Add your first table to start receiving dine-in orders</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+

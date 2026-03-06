@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
 const User = require('../models/User');
 const Counter = require('../models/Counter');
+const Table = require('../models/Table');
 const { deductStock, checkStockAvailability, restoreStock } = require('./inventoryController');
 
 const getOrders = async (req, res) => {
@@ -12,6 +13,10 @@ const getOrders = async (req, res) => {
     }
     if (req.query.status) {
       query.orderStatus = req.query.status;
+    }
+    // Filter by order type (delivery or dine-in)
+    if (req.query.orderType) {
+      query.orderType = req.query.orderType;
     }
     const orders = await Order.find(query).populate('user', 'name email').populate('items.menuItem').sort({ createdAt: -1 });
     res.json(orders);
@@ -37,9 +42,11 @@ const getOrder = async (req, res) => {
 
 const createOrder = async (req, res) => {
   try {
-    const { items, deliveryAddress, saveAddress } = req.body;
+    const { items, deliveryAddress, saveAddress, orderType, tableNumber } = req.body;
 
     console.log('=== CREATE ORDER DEBUG ===');
+    console.log('orderType:', orderType);
+    console.log('tableNumber:', tableNumber);
     console.log('saveAddress:', saveAddress);
     console.log('deliveryAddress:', deliveryAddress);
     console.log('req.user._id:', req.user._id);
@@ -47,6 +54,16 @@ const createOrder = async (req, res) => {
     // Validate items
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'No items in order' });
+    }
+
+    // For dine-in orders, table number is required
+    if (orderType === 'dine-in' && !tableNumber) {
+      return res.status(400).json({ message: 'Table number is required for dine-in orders' });
+    }
+
+    // For delivery orders, delivery address is required
+    if (orderType === 'delivery' && !deliveryAddress) {
+      return res.status(400).json({ message: 'Delivery address is required for delivery orders' });
     }
 
     // Check stock availability
@@ -69,9 +86,15 @@ const createOrder = async (req, res) => {
       totalCost += item.costPrice * item.quantity;
     }
 
-    // Add delivery charge and tax (configurable) - matching frontend checkout
-    const deliveryCharge = 2.99; // Flat delivery charge
-    const taxRate = 0.05; // 5% tax
+    // Determine delivery charge based on order type
+    // No delivery charge for dine-in orders
+    let deliveryCharge = 0;
+    let taxRate = 0.05;
+    
+    if (orderType === 'delivery') {
+      deliveryCharge = 2.99; // Flat delivery charge for delivery orders
+    }
+    
     const taxAmount = subtotal * taxRate;
     const totalAmount = subtotal + deliveryCharge + taxAmount;
 
@@ -90,13 +113,15 @@ const createOrder = async (req, res) => {
     const order = new Order({
       user: req.user._id,
       orderNumber,
+      orderType: orderType || 'delivery',
+      tableNumber: orderType === 'dine-in' ? tableNumber : null,
       items,
       subtotal,
       deliveryCharge,
       taxRate,
       taxAmount,
       totalAmount,
-      deliveryAddress,
+      deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
       profit,
     });
 
@@ -104,6 +129,15 @@ const createOrder = async (req, res) => {
 
     // Deduct stock
     await deductStock(items);
+
+    // For dine-in orders, automatically set table to occupied
+    if (orderType === 'dine-in' && tableNumber) {
+      await Table.findOneAndUpdate(
+        { tableNumber: tableNumber },
+        { status: 'occupied' }
+      );
+      console.log(`Table ${tableNumber} marked as occupied`);
+    }
 
     // Save address to user profile if saveAddress is true
     if (saveAddress && deliveryAddress) {
@@ -149,6 +183,17 @@ const updateOrderStatus = async (req, res) => {
     
     order.orderStatus = req.body.status;
     const updatedOrder = await order.save();
+
+    // For dine-in orders, when status is 'delivered' or 'ready', set table back to available
+    // 'ready' means food is served at table (for dine-in)
+    if (order.orderType === 'dine-in' && order.tableNumber && 
+        (req.body.status === 'delivered' || req.body.status === 'ready')) {
+      await Table.findOneAndUpdate(
+        { tableNumber: order.tableNumber },
+        { status: 'available' }
+      );
+      console.log(`Table ${order.tableNumber} marked as available (order ${req.body.status})`);
+    }
 
     // Populate the order for Socket.IO emission
     const populatedOrder = await Order.findById(updatedOrder._id)
@@ -229,6 +274,15 @@ const cancelOrder = async (req, res) => {
     // Restore inventory stock (only for non-delivered orders)
     if (order.orderStatus !== 'delivered') {
       await restoreStock(order.items);
+    }
+
+    // For dine-in orders, if cancelled, set table back to available
+    if (order.orderType === 'dine-in' && order.tableNumber) {
+      await Table.findOneAndUpdate(
+        { tableNumber: order.tableNumber },
+        { status: 'available' }
+      );
+      console.log(`Table ${order.tableNumber} marked as available (order cancelled)`);
     }
 
     // Populate the order for Socket.IO emission
