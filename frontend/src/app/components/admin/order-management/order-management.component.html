@@ -198,6 +198,14 @@
               </div>
               <span class="step-label">Delivered</span>
             </div>
+            <!-- Completed step for Dine-in orders -->
+            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 4 && order.orderType === 'dine-in' && order.orderStatus !== 'cancelled'" *ngIf="order.orderType === 'dine-in'"></div>
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 4 && order.orderType === 'dine-in' && order.orderStatus !== 'cancelled'" *ngIf="order.orderType === 'dine-in'">
+              <div class="step-indicator">
+                <mat-icon>check</mat-icon>
+              </div>
+              <span class="step-label">Completed</span>
+            </div>
           </div>
 
           <!-- Quick Actions & Order Info Grid - Same Line (Flex) -->
@@ -221,6 +229,13 @@
                       class="quick-action-btn status-delivered">
                 <mat-icon>local_shipping</mat-icon>
                 Mark Delivered
+              </button>
+              <!-- Mark as Completed for Dine-in orders (customer finished eating) -->
+              <button *ngIf="order.orderStatus === 'delivered' && order.orderType === 'dine-in'"
+                      (click)="quickUpdateStatus(order._id, 'completed')"
+                      class="quick-action-btn status-completed">
+                <mat-icon>event_available</mat-icon>
+                Mark Completed
               </button>
               <button *ngIf="order.orderStatus === 'received' || order.orderStatus === 'preparing'"
                       (click)="cancelOrder(order)"

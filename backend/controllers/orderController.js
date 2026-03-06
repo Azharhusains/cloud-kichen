@@ -184,10 +184,10 @@ const updateOrderStatus = async (req, res) => {
     order.orderStatus = req.body.status;
     const updatedOrder = await order.save();
 
-    // For dine-in orders, when status is 'delivered' or 'ready', set table back to available
-    // 'ready' means food is served at table (for dine-in)
-    if (order.orderType === 'dine-in' && order.tableNumber && 
-        (req.body.status === 'delivered' || req.body.status === 'ready')) {
+    // For dine-in orders, when status is 'completed', set table back to available
+    // 'completed' means customer has finished eating and left the table
+    // This gives customers 25-30 minutes to eat after food is delivered
+    if (order.orderType === 'dine-in' && order.tableNumber && req.body.status === 'completed') {
       await Table.findOneAndUpdate(
         { tableNumber: order.tableNumber },
         { status: 'available' }

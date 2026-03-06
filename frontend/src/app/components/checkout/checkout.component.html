@@ -50,7 +50,7 @@
             </div>
             <div class="total-row" *ngIf="orderType === 'dine-in'">
               <span>Delivery</span>
-              <span class="free">FREE</span>
+              <span class="free">FREE (₹{{ getDeliveryCharge().toFixed(2) }})</span>
             </div>
             <div class="total-row grand-total">
               <span>Total</span>

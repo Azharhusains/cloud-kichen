@@ -67,6 +67,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     preparing: 0,
     ready: 0,
     delivered: 0,
+    completed: 0,
     cancelled: 0
   };
   
@@ -202,6 +203,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       preparing: 0,
       ready: 0,
       delivered: 0,
+      completed: 0,
       cancelled: 0
     };
     
@@ -231,8 +233,8 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
         this.deliveredOrders++;
       }
       
-      // Revenue (only from delivered orders)
-      if (order.orderStatus === 'delivered' && order.totalAmount) {
+      // Revenue (from delivered or completed orders)
+      if ((order.orderStatus === 'delivered' || order.orderStatus === 'completed') && order.totalAmount) {
         this.totalRevenue += order.totalAmount;
       }
     });
@@ -394,13 +396,13 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   }
 
   getStatusOptions(currentStatus: string): string[] {
-    const allStatuses = ['received', 'preparing', 'ready', 'delivered'];
+    const allStatuses = ['received', 'preparing', 'ready', 'delivered', 'completed'];
     const currentIndex = allStatuses.indexOf(currentStatus);
     return allStatuses.slice(currentIndex);
   }
 
   getStatusIndex(status: string): number {
-    const statuses = ['received', 'preparing', 'ready', 'delivered'];
+    const statuses = ['received', 'preparing', 'ready', 'delivered', 'completed'];
     return statuses.indexOf(status);
   }
 
@@ -410,6 +412,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       'preparing': 'sync',
       'ready': 'check_circle',
       'delivered': 'done_all',
+      'completed': 'event_available',
       'cancelled': 'cancel'
     };
     return icons[status] || 'help_outline';
@@ -429,7 +432,8 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
 
   getStatusProgress(order: any): number {
     const currentIndex = this.getStatusIndex(order.orderStatus);
-    return ((currentIndex + 1) / 4) * 100;
+    // 5 statuses: received, preparing, ready, delivered, completed
+    return ((currentIndex + 1) / 5) * 100;
   }
 
   formatDate(dateString: string): string {

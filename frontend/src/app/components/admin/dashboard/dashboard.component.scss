@@ -226,6 +226,16 @@ $bg-color: #f8f9fa;
   color: white !important;
 }
 
+.status-chip-completed {
+  background-color: #28a745 !important;
+  color: white !important;
+}
+
+.status-chip-cancelled {
+  background-color: #dc3545 !important;
+  color: white !important;
+}
+
 // No Data
 .no-data {
   text-align: center;

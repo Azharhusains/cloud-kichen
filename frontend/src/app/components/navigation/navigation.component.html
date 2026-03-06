@@ -47,10 +47,6 @@
           <mat-icon>table_bar</mat-icon>
           <span>Tables</span>
         </button>
-        <button mat-button (click)="navigateTo('/admin/inventory')">
-          <mat-icon>inventory</mat-icon>
-          <span>Inventory</span>
-        </button>
         <button mat-icon-button (click)="logout()" color="warn" matTooltip="Logout">
           <mat-icon>logout</mat-icon>
         </button>
@@ -117,10 +113,6 @@
         <a mat-list-item (click)="navigateTo('/admin/tables')">
           <mat-icon matListItemIcon>table_bar</mat-icon>
           <span matListItemTitle>Tables</span>
-        </a>
-        <a mat-list-item (click)="navigateTo('/admin/inventory')">
-          <mat-icon matListItemIcon>inventory</mat-icon>
-          <span matListItemTitle>Inventory</span>
         </a>
         <mat-divider></mat-divider>
         <a mat-list-item (click)="logout()">

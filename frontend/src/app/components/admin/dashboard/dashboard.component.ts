@@ -161,4 +161,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   navigateToCategory(): void {
     this.router.navigate(['/admin/categories']);
   }
+
+  navigateToTables(): void {
+    this.router.navigate(['/admin/tables']);
+  }
 }

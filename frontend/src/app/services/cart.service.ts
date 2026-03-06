@@ -28,6 +28,15 @@ export class CartService {
 
   constructor() {
     this.loadCartFromLocalStorage();
+    this.loadTableInfoFromLocalStorage();
+  }
+
+  private loadTableInfoFromLocalStorage(): void {
+    const tableInfoData = localStorage.getItem('tableInfo');
+    if (tableInfoData) {
+      const tableInfo = JSON.parse(tableInfoData);
+      this.tableInfoSubject.next(tableInfo);
+    }
   }
 
   private loadCartFromLocalStorage(): void {
