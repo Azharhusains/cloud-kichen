@@ -78,13 +78,44 @@ const createOrder = async (req, res) => {
     const profit = totalAmount - totalCost - deliveryCharge - taxAmount;
 
     // Get global order number using Counter
-    const counter = await Counter.findOneAndUpdate(
-      { name: 'orderNumber' },
-      { $inc: { sequence: 1 } },
-      { new: true, upsert: true }
-    );
-
-    const orderNumber = counter.sequence;
+    // Check if it's a new day (midnight) FIRST, then reset if needed before incrementing
+    const now = new Date();
+    const todayDate = now.toISOString().split('T')[0]; // Get just YYYY-MM-DD
+    
+    // First, get the current counter to check the date
+    let counter = await Counter.findOne({ name: 'orderNumber' });
+    
+    let orderNumber;
+    
+    if (!counter) {
+      // No counter exists, create one starting at 1
+      await Counter.findOneAndUpdate(
+        { name: 'orderNumber' },
+        { $set: { sequence: 1, lastResetDate: now } },
+        { upsert: true }
+      );
+      orderNumber = 1;
+    } else {
+      // Check if we need to reset (new day) - compare date strings
+      const lastResetDateStr = counter.lastResetDate ? new Date(counter.lastResetDate).toISOString().split('T')[0] : null;
+      
+      if (!lastResetDateStr || lastResetDateStr !== todayDate) {
+        // It's a new day, reset to 1
+        await Counter.findOneAndUpdate(
+          { name: 'orderNumber' },
+          { $set: { sequence: 1, lastResetDate: now } }
+        );
+        orderNumber = 1;
+      } else {
+        // Same day, increment the counter
+        const updatedCounter = await Counter.findOneAndUpdate(
+          { name: 'orderNumber' },
+          { $inc: { sequence: 1 } },
+          { new: true }
+        );
+        orderNumber = updatedCounter.sequence;
+      }
+    }
 
     // Create order with orderNumber and charge breakdown
     const order = new Order({
