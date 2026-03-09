@@ -198,6 +198,7 @@ class CommandExecutor {
 
   /**
    * Add items to cart
+   * Combines items with the same name/size instead of adding as separate entries
    * @param {Object} command - Add to cart command
    * @param {Object} context - Execution context
    * @returns {Object} - Result
@@ -221,29 +222,59 @@ class CommandExecutor {
 
     // Convert Mongoose document to plain object for proper JSON serialization
     const menuItemObj = menuItem.toObject ? menuItem.toObject() : menuItem;
-    
     const quantity = command.quantity || 1;
     
-    // Add to context cart - store the complete menuItem object
-    for (let i = 0; i < quantity; i++) {
-      context.cart.push({
+    // Check if item already exists in cart - if so, update quantity
+    // Compare by menuItem ID to properly combine duplicates
+    const menuItemIdStr = menuItemObj._id?.toString() || menuItemObj._id;
+    const itemSize = command.size || menuItemObj.size || null;
+    
+    const existingItemIndex = context.cart.findIndex(item => {
+      // Get the cart item's menuItem ID - handle both old and new structures
+      const cartItemMenuItem = item.menuItem;
+      const cartItemId = cartItemMenuItem?._id?.toString() || 
+                        (typeof cartItemMenuItem === 'string' ? cartItemMenuItem : null);
+      const cartItemSize = item.size || cartItemMenuItem?.size || null;
+      
+      // Match by ID AND size (if specified)
+      const idMatch = cartItemId === menuItemIdStr;
+      const sizeMatch = !itemSize || !cartItemSize || itemSize === cartItemSize;
+      
+      return idMatch && sizeMatch;
+    });
+    
+    if (existingItemIndex >= 0) {
+      // Item exists - update quantity (combine)
+      context.cart[existingItemIndex].quantity += quantity;
+      items.push(context.cart[existingItemIndex]);
+      
+      return {
+        success: true,
+        items,
+        itemName: menuItem.name,
+        quantity: context.cart[existingItemIndex].quantity,
+        totalPrice: menuItem.price * context.cart[existingItemIndex].quantity,
+        message: `Updated ${menuItem.name} quantity to ${context.cart[existingItemIndex].quantity} in cart`
+      };
+    } else {
+      // Item doesn't exist - add new entry
+      const newItem = {
         menuItem: menuItemObj,
-        quantity: 1
-      });
-      items.push({
-        menuItem: menuItemObj,
-        quantity: 1
-      });
+        quantity: quantity,
+        size: itemSize
+      };
+      context.cart.push(newItem);
+      items.push(newItem);
+      
+      return {
+        success: true,
+        items,
+        itemName: menuItem.name,
+        quantity,
+        totalPrice: menuItem.price * quantity,
+        message: `Added ${quantity} x ${menuItem.name} to cart`
+      };
     }
-
-    return {
-      success: true,
-      items,
-      itemName: menuItem.name,
-      quantity,
-      totalPrice: menuItem.price * quantity,
-      message: `Added ${quantity} x ${menuItem.name} to cart`
-    };
   }
 
   /**
