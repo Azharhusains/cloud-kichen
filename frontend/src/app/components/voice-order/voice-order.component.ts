@@ -129,8 +129,10 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
           this.handleProcessingComplete();
         }
         
-        // Show error messages
-        if (state.error) {
+        // Show error messages - and stop forced loading immediately on error
+        if (state.error && !previousState.error) {
+          // Stop forced loading immediately when error occurs
+          this.stopForcedLoading();
           this.showNotification(state.error, 'error');
           this.voiceService.clearError();
         }
@@ -313,5 +315,16 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
       this.showForcedLoading = false;
     }
     // If timer is still running, keep showing the loading until 10 seconds
+  }
+
+  /**
+   * Stop forced loading immediately - called when error occurs
+   */
+  private stopForcedLoading(): void {
+    if (this.forcedLoadingTimer) {
+      clearTimeout(this.forcedLoadingTimer);
+      this.forcedLoadingTimer = null;
+    }
+    this.showForcedLoading = false;
   }
 }

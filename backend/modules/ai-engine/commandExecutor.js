@@ -446,7 +446,11 @@ class CommandExecutor {
       user: context.userId,
       orderNumber,
       items: orderItems,
-      totalAmount,
+      subtotal: totalAmount,
+      taxRate: taxRate,
+      taxAmount: taxAmount,
+      deliveryCharge: deliveryCharge,
+      totalAmount: grandTotal,
       deliveryAddress: context.selectedAddress,
       profit,
       orderStatus: 'received'

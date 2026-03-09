@@ -87,34 +87,35 @@ class MenuFetcher {
 
       // Clean the item name
       const cleanedName = this.cleanItemName(itemName);
+      console.log('Matching menu item for:', cleanedName);
       
-      // Try exact match first
-      let menuItem = await MenuItem.findOne({
-        isAvailable: true,
-        name: { $regex: new RegExp(`^${cleanedName}$`, 'i') }
-      }).populate('category', 'name');
+      // Get all available menu items for matching
+      const allMenuItems = await MenuItem.find({ isAvailable: true })
+        .populate('category', 'name')
+        .lean();
+      
+      // Create a lowercase map for exact matching
+      const menuItemMap = new Map();
+      allMenuItems.forEach(item => {
+        menuItemMap.set(item.name.toLowerCase(), item);
+      });
 
-      if (menuItem) {
-        return this.formatMenuItem(menuItem, size);
-      }
-
-      // Try partial match
-      menuItem = await MenuItem.findOne({
-        isAvailable: true,
-        name: { $regex: new RegExp(cleanedName, 'i') }
-      }).populate('category', 'name');
-
-      if (menuItem) {
-        return this.formatMenuItem(menuItem, size);
-      }
-
-      // Try matching with category
-      menuItem = await this.matchWithCategory(cleanedName);
+      // FIRST: Try exact match first (case insensitive) - strict match
+      let menuItem = allMenuItems.find(item => 
+        item.name.toLowerCase() === cleanedName.toLowerCase()
+      );
       
       if (menuItem) {
+        console.log('Exact match found:', menuItem.name);
         return this.formatMenuItem(menuItem, size);
       }
 
+      // If no exact match, item is not in menu - return error
+      // DO NOT fall back to partial matching
+      // This prevents "chicken" from matching "chicken biryani"
+      console.log('No exact match found for:', cleanedName);
+      console.log('Available items:', allMenuItems.map(i => i.name).join(', '));
+      
       return null;
     } catch (error) {
       console.error('Menu Match Error:', error);
@@ -173,22 +174,19 @@ class MenuFetcher {
    * @returns {string} - Cleaned name
    */
   static cleanItemName(itemName) {
+    if (!itemName) return '';
+    
+    // First, preserve compound words by protecting them
+    // Don't clean individual words that are part of dish names
+    
+    // Just do basic cleanup - remove extra spaces and convert to lowercase
+    // Don't replace words like "chicken" with just "chicken" alone
+    // as it destroys compound dish names like "chicken masala"
     return itemName
-      .replace(/\b(pizza|pizzas?)\b/gi, 'pizza')
-      .replace(/\b(burger|burgers?)\b/gi, 'burger')
-      .replace(/\b(pasta|pastas?)\b/gi, 'pasta')
-      .replace(/\b(biryani|biryanis?)\b/gi, 'biryani')
-      .replace(/\b(noodles?|noodle)\b/gi, 'noodles')
-      .replace(/\b(chicken|chickens?)\b/gi, 'chicken')
-      .replace(/\b(mutton|mutton)\b/gi, 'mutton')
-      .replace(/\b(fish|fishes?)\b/gi, 'fish')
-      .replace(/\b(paneer|tofu)\b/gi, 'paneer')
-      .replace(/\b(veg|vegetable|vegetables)\b/gi, 'vegetable')
-      .replace(/\b(desserts?|sweet|dessert)\b/gi, 'dessert')
-      .replace(/\b(drinks?|beverages?)\b/gi, 'drinks')
-      .replace(/\b(fries|french fries)\b/gi, 'fries')
-      .replace(/\b(ice cream|icecream)\b/gi, 'ice cream')
-      .trim();
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, ' ')  // Normalize spaces
+      .replace(/[^a-z\s]/g, ''); // Keep only letters and spaces
   }
 
   /**

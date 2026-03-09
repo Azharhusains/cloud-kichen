@@ -143,6 +143,8 @@ class IntentDetector {
     const compoundItemsFound = new Map();
     
     const compoundFoodPatterns = [
+      { pattern: /\b(chicken\s+masala)\b/gi, name: 'chicken masala' },
+      { pattern: /\b(mutton\s+masala)\b/gi, name: 'mutton masala' },
       { pattern: /\b(chicken\s+biryani)\b/gi, name: 'chicken biryani' },
       { pattern: /\b(mutton\s+biryani)\b/gi, name: 'mutton biryani' },
       { pattern: /\b(prawns?\s+biryani)\b/gi, name: 'prawn biryani' },
@@ -214,7 +216,8 @@ class IntentDetector {
         /\b(naan|naans?|roti|rotis?)\b/gi,
         /\b(paratha|parathas?)\b/gi,
         /\b(kebab|kebabs?)\b/gi,
-        /\b(tandoori)\b/gi
+        /\b(tandoori)\b/gi,
+        /\b(masala)\b/gi
       ];
 
       for (const pattern of individualFoodPatterns) {

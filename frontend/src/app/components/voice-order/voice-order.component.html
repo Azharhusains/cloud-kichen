@@ -5,7 +5,8 @@
       <mat-slide-toggle
         [checked]="isTextMode"
         (change)="toggleAIMode()"
-        color="primary">
+        color="primary"
+        [disabled]="voiceState.isListening">
         <span class="toggle-label">
           {{ isTextMode ? 'Text Mode' : 'Voice Mode' }}
         </span>
@@ -27,7 +28,7 @@
         [class.listening]="voiceState.isListening"
         [class.processing]="voiceState.isProcessing"
         [class.unsupported]="!voiceState.isSupported"
-        [disabled]="!voiceState.isSupported || voiceState.isProcessing || isTextMode"
+        [disabled]="!voiceState.isSupported || isTextMode"
         (click)="voiceState.isListening ? stopVoiceRecognition() : startVoiceRecognition()"
         [matTooltip]="!voiceState.isSupported ? 'Voice not supported in this browser' : (voiceState.isListening ? 'Click to stop' : 'Click to speak')">
         

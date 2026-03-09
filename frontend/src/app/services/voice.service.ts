@@ -55,6 +55,7 @@ export class VoiceService {
   private lastSpeechTime: number = 0;
   private noSpeechCount: number = 0;
   private maxNoSpeechAttempts: number = 2; // Stop after 2 consecutive no-speech errors
+  private isManuallyStopped: boolean = false; // Track if user intentionally stopped
 
   constructor(
     private http: HttpClient,
@@ -105,6 +106,9 @@ export class VoiceService {
       return;
     }
 
+    // Reset the manual stop flag when starting fresh
+    this.isManuallyStopped = false;
+
     try {
       // Create new recognition instance
       this.speechRecognition = new this.SpeechRecognition();
@@ -150,6 +154,9 @@ export class VoiceService {
    * Stop voice recognition
    */
   stopListening(): void {
+    // Mark as manually stopped to prevent auto-restart
+    this.isManuallyStopped = true;
+    
     if (this.speechRecognition) {
       try {
         this.speechRecognition.stop();
@@ -243,6 +250,16 @@ export class VoiceService {
       
       if (state.isListening && state.transcript) {
         this.finalizeTranscript();
+      }
+      
+      // If user manually stopped, don't restart - just update state
+      if (this.isManuallyStopped) {
+        console.log('User manually stopped - not restarting');
+        this.isManuallyStopped = false; // Reset flag
+        this.noSpeechCount = 0;
+        this.updateState({ isListening: false });
+        this.clearSilenceTimer();
+        return;
       }
       
       // If we were supposed to be listening but it ended unexpectedly, restart
@@ -393,18 +410,25 @@ export class VoiceService {
             this.cartService.reloadCart();
           }
 
-          // Handle order completion - check if payment was successful
+          // Handle order completion - navigate when order is placed
+          // Either with payment or without (cash on delivery default)
           if (response.order) {
             localStorage.removeItem('cart');
             this.cartService.reloadCart();
             
-            // Check if payment was successful in the commands
+            // Check if payment was successful OR if order was placed without explicit payment
+            // (e.g., user said "order biryani at home" - order placed, payment via cash on delivery)
             const paymentCommand = response.commands?.find(
               (cmd: any) => cmd.action === 'payment' && cmd.success === true
             );
             
-            if (paymentCommand) {
-              // Payment was successful - emit order completed event
+            const checkoutCommand = response.commands?.find(
+              (cmd: any) => cmd.action === 'checkout' && cmd.success === true
+            );
+            
+            // Navigate if: payment was successful OR checkout was successful (cash on delivery)
+            if (paymentCommand || checkoutCommand) {
+              // Order was successfully placed - emit order completed event
               this.orderCompletedSubject.next(response);
             }
           }
@@ -416,8 +440,28 @@ export class VoiceService {
       },
       error: (error) => {
         console.error('AI processing error:', error);
+        
+        // Extract the actual error message from backend response
+        // Backend returns { success: false, message: "..." } even on HTTP 400/500
+        let errorMessage = 'Failed to process voice command. Please try again.';
+        
+        if (error.error) {
+          // Check for response body with message
+          if (typeof error.error === 'string') {
+            errorMessage = error.error;
+          } else if (error.error.message) {
+            errorMessage = error.error.message;
+          } else if (error.error.error) {
+            // Some error responses use 'error' field instead of 'message'
+            errorMessage = error.error.error;
+          }
+        } else if (error.message) {
+          // Fallback to HTTP error message for network issues
+          errorMessage = error.message;
+        }
+        
         this.updateState({
-          error: 'Failed to process voice command. Please try again.'
+          error: errorMessage
         });
       }
     });
