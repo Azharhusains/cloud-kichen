@@ -144,6 +144,11 @@
         <div class="card-header-gradient" [class.cancelled-gradient]="order.orderStatus === 'cancelled'">
           <div class="order-id-section">
             <span class="order-id">Order #{{ order.orderNumber }}</span>
+            <!-- Order Type Badge -->
+            <span class="order-type-badge" [class.dine-in]="order.orderType === 'dine-in'" [class.delivery]="order.orderType === 'delivery'">
+              <mat-icon>{{ order.orderType === 'dine-in' ? 'restaurant' : 'delivery_dining' }}</mat-icon>
+              {{ order.orderType === 'dine-in' ? 'Dine-in' : 'Delivery' }}
+            </span>
             <span class="time-ago" [class.urgent]="isUrgent(order)">
               <mat-icon *ngIf="isUrgent(order)">warning</mat-icon>
               {{ getTimeAgo(order.createdAt) }}
@@ -193,6 +198,14 @@
               </div>
               <span class="step-label">Delivered</span>
             </div>
+            <!-- Completed step for Dine-in orders -->
+            <div class="timeline-connector" [class.completed]="getStatusIndex(order.orderStatus) >= 4 && order.orderType === 'dine-in' && order.orderStatus !== 'cancelled'" *ngIf="order.orderType === 'dine-in'"></div>
+            <div class="timeline-step" [class.completed]="getStatusIndex(order.orderStatus) >= 4 && order.orderType === 'dine-in' && order.orderStatus !== 'cancelled'" *ngIf="order.orderType === 'dine-in'">
+              <div class="step-indicator">
+                <mat-icon>check</mat-icon>
+              </div>
+              <span class="step-label">Completed</span>
+            </div>
           </div>
 
           <!-- Quick Actions & Order Info Grid - Same Line (Flex) -->
@@ -216,6 +229,13 @@
                       class="quick-action-btn status-delivered">
                 <mat-icon>local_shipping</mat-icon>
                 Mark Delivered
+              </button>
+              <!-- Mark as Completed for Dine-in orders (customer finished eating) -->
+              <button *ngIf="order.orderStatus === 'delivered' && order.orderType === 'dine-in'"
+                      (click)="quickUpdateStatus(order._id, 'completed')"
+                      class="quick-action-btn status-completed">
+                <mat-icon>event_available</mat-icon>
+                Mark Completed
               </button>
               <button *ngIf="order.orderStatus === 'received' || order.orderStatus === 'preparing'"
                       (click)="cancelOrder(order)"
@@ -246,7 +266,21 @@
               </div>
 
               <div class="address-section">
-                <div class="info-row">
+                <!-- Show Table Number for Dine-in orders -->
+                <div class="info-row" *ngIf="order.orderType === 'dine-in'">
+                  <mat-icon>table_bar</mat-icon>
+                  <div class="info-content">
+                    <span class="info-label">Table Number</span>
+                    <span class="info-value dine-in-value">
+                      <mat-icon>restaurant</mat-icon>
+                      Table {{ order.tableNumber }}
+                    </span>
+                    <span class="info-subvalue">Food will be served at this table</span>
+                  </div>
+                </div>
+                
+                <!-- Show Delivery Address for Delivery orders -->
+                <div class="info-row" *ngIf="order.orderType === 'delivery'">
                   <mat-icon>location_on</mat-icon>
                   <div class="info-content">
                     <span class="info-label">Delivery Address</span>

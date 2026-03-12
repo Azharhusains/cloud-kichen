@@ -169,4 +169,37 @@ export class SocketService {
     console.log('SocketService: Disconnecting');
     this.socket.disconnect();
   }
+
+  // Listen for table status changes (admin room)
+  onTableStatusChanged(): Observable<any> {
+    console.log('SocketService: Listening for tableStatusChanged events');
+    return new Observable(observer => {
+      this.socket.on('tableStatusChanged', (data) => {
+        console.log('SocketService: Received tableStatusChanged:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // Listen for table status broadcast (fallback - receives all status changes)
+  onTableStatusBroadcast(): Observable<any> {
+    console.log('SocketService: Listening for tableStatusBroadcast events');
+    return new Observable(observer => {
+      this.socket.on('tableStatusBroadcast', (data) => {
+        console.log('SocketService: Received tableStatusBroadcast:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // Listen for table updates (general)
+  onTableUpdated(): Observable<any> {
+    console.log('SocketService: Listening for tableUpdated events');
+    return new Observable(observer => {
+      this.socket.on('tableUpdated', (data) => {
+        console.log('SocketService: Received tableUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
 }

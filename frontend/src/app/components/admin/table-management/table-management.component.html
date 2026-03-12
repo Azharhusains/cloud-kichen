@@ -1,0 +1,85 @@
+<div class="table-management-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <h1>Table Management</h1>
+      <p class="subtitle">Manage restaurant tables for dine-in orders</p>
+    </div>
+    <div class="header-actions">
+      <mat-form-field appearance="outline" class="search-field" floatLabel="always">
+        <mat-label>Search tables</mat-label>
+        <input matInput [(ngModel)]="searchTerm" (input)="filterTables()" placeholder="Search...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <button mat-raised-button color="primary" (click)="showAddForm()" class="add-button">
+        <mat-icon>add</mat-icon>
+        Add Table
+      </button>
+    </div>
+  </div>
+
+  <!-- Tables Grid -->
+  <div class="table-grid">
+    <div *ngIf="filteredTables.length === 0" class="empty-state">
+      <mat-card class="empty-card">
+        <div class="empty-icon-wrapper">
+          <mat-icon class="empty-icon">table_bar</mat-icon>
+        </div>
+        <h3>No Tables Found</h3>
+        <p>Add your first table to start receiving dine-in orders!</p>
+        <button mat-raised-button color="primary" (click)="showAddForm()">
+          <mat-icon>add</mat-icon>
+          Add Table
+        </button>
+      </mat-card>
+    </div>
+
+    <mat-card *ngFor="let table of filteredTables" class="table-card">
+      <div class="table-icon-section">
+        <div class="table-icon">
+          <mat-icon>table_bar</mat-icon>
+        </div>
+      </div>
+      
+      <mat-card-header>
+        <mat-card-title>Table {{ table.tableNumber }}</mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="table-details">
+          <div class="detail-row">
+            <div class="detail-item">
+              <mat-icon>people</mat-icon>
+              <span>{{ table.capacity }} seats</span>
+            </div>
+          </div>
+          
+          <div class="detail-row" *ngIf="table.location">
+            <div class="detail-item">
+              <mat-icon>location_on</mat-icon>
+              <span>{{ table.location }}</span>
+            </div>
+          </div>
+
+          <div class="status-toggle">
+            <mat-chip [color]="getStatusColor(table.status)" selected>
+              {{ table.status | titlecase }}
+            </mat-chip>
+          </div>
+        </div>
+      </mat-card-content>
+      
+      <mat-card-actions align="end">        
+        <button mat-button color="primary" (click)="editTable(table)">
+          <mat-icon>edit</mat-icon>
+          Edit
+        </button>
+        <button mat-button class="delete-btn" (click)="deleteTable(table)">
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>
+

@@ -180,6 +180,8 @@ loadOrders(): void {
       case 'preparing': return 'status-preparing';
       case 'ready': return 'status-ready';
       case 'delivered': return 'status-delivered';
+      case 'completed': return 'status-completed';
+      case 'cancelled': return 'status-cancelled';
       default: return '';
     }
   }

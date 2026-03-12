@@ -22,6 +22,31 @@
   }
 }
 
+/* Order Type Indicator */
+.order-type-indicator {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  &.dine-in {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+}
+
 /* Checkout Content */
 .checkout-content {
   max-width: 1200px;
@@ -47,6 +72,8 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 20px 24px !important;
     border-bottom: 1px solid #eee;
+    margin: -16px -16px 0 -16px !important;
+    border-radius: 16px 16px 0 0 !important;
 
     mat-card-title {
       display: flex;
@@ -113,6 +140,11 @@
     padding: 8px 0;
     color: #666;
 
+    .free {
+      color: #4caf50;
+      font-weight: 600;
+    }
+
     &.grand-total {
       padding-top: 16px;
       margin-top: 8px;
@@ -129,6 +161,88 @@
 
   mat-divider {
     margin: 8px 0 !important;
+  }
+}
+
+/* Dine-in Card */
+.dinein-card {
+  border-radius: 16px !important;
+
+  mat-card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white;
+    padding: 20px 24px !important;
+    margin: -16px -16px 0 -16px !important;
+    border-radius: 16px 16px 0 0 !important;
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 !important;
+      font-size: 1.25rem !important;
+
+      mat-icon {
+        color: white;
+      }
+    }
+  }
+
+  mat-card-content {
+    padding: 24px !important;
+  }
+}
+
+.table-info-display {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  margin-bottom: 20px;
+
+  .table-icon {
+    mat-icon {
+      font-size: 60px;
+      width: 60px;
+      height: 60px;
+    }
+  }
+
+  .table-details {
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+  }
+}
+
+.dinein-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  margin-bottom: 24px;
+
+  mat-icon {
+    color: #1976d2;
+  }
+
+  p {
+    margin: 0;
+    color: #333;
+    font-size: 0.95rem;
   }
 }
 

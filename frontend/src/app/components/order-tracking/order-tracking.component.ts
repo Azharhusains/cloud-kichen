@@ -54,9 +54,17 @@ import { ToastService } from '../../services/toast.service';
 })
 export class OrderTrackingComponent implements OnInit, OnDestroy {
   order: any = null;
-  statusSteps: string[] = ['received', 'preparing', 'ready', 'delivered'];
+  // For dine-in orders, 'completed' is added after 'delivered' to indicate customer finished eating
+  deliveryStatusSteps: string[] = ['received', 'preparing', 'ready', 'delivered'];
+  dineInStatusSteps: string[] = ['received', 'preparing', 'ready', 'delivered', 'completed'];
   private orderId: string | null = null;
   private socketConnected: boolean = false;
+
+  // Get status steps based on order type
+  get statusSteps(): string[] {
+    if (!this.order) return this.deliveryStatusSteps;
+    return this.order.orderType === 'dine-in' ? this.dineInStatusSteps : this.deliveryStatusSteps;
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -211,6 +219,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return 'status-preparing';
       case 'ready': return 'status-ready';
       case 'delivered': return 'status-delivered';
+      case 'completed': return 'status-completed';
       case 'cancelled': return 'status-cancelled';
       default: return '';
     }
@@ -222,6 +231,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return 'restaurant';
       case 'ready': return 'takeout_dining';
       case 'delivered': return 'delivery_dining';
+      case 'completed': return 'event_available';
       case 'cancelled': return 'cancel';
       default: return 'help';
     }
@@ -233,6 +243,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return 'restaurant';
       case 'ready': return 'takeout_dining';
       case 'delivered': return 'home';
+      case 'completed': return 'event_available';
       default: return 'circle';
     }
   }
@@ -256,6 +267,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return '~15-20 mins';
       case 'ready': return '~25-30 mins';
       case 'delivered': return '~35-45 mins';
+      case 'completed': return '~25-30 mins';
       default: return '';
     }
   }
@@ -266,6 +278,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return 'restaurant';
       case 'ready': return 'notifications_active';
       case 'delivered': return 'celebration';
+      case 'completed': return 'event_available';
       case 'cancelled': return 'cancel';
       default: return 'info';
     }
@@ -277,6 +290,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'preparing': return 'Our chefs are preparing your delicious food with care.';
       case 'ready': return 'Your order is ready and will be picked up by our delivery partner.';
       case 'delivered': return 'Your order has been delivered successfully. Enjoy your meal!';
+      case 'completed': return 'Thank you for dining with us! We hope you enjoyed your meal.';
       case 'cancelled': return 'Your order has been cancelled.';
       default: return 'Order status unknown.';
     }

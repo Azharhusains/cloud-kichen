@@ -217,7 +217,8 @@ export class MenuComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login']);
       return;
     }
-    this.router.navigate(['/checkout']);
+    // Navigate to table select first to choose between dine-in or delivery
+    this.router.navigate(['/table-select']);
   }
 
   openItemDetails(item: MenuItem): void {

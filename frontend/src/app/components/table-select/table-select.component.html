@@ -1,0 +1,90 @@
+<div class="table-select-container">
+  <mat-card class="table-card">
+    <mat-card-header>
+      <mat-card-title>Select Order Type</mat-card-title>
+      <mat-card-subtitle>Choose how you'd like to order</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <!-- Order Type Selection -->
+      <div class="order-type-selection">
+        <div 
+          class="order-type-option" 
+          [class.selected]="orderType === 'dine-in'"
+          (click)="onOrderTypeChange('dine-in')">
+          <mat-icon>restaurant</mat-icon>
+          <span>Dine-in</span>
+          <small>Order at your table</small>
+        </div>
+        
+        <div 
+          class="order-type-option" 
+          [class.selected]="orderType === 'delivery'"
+          (click)="onOrderTypeChange('delivery')">
+          <mat-icon>delivery_dining</mat-icon>
+          <span>Delivery</span>
+          <small>Get food delivered</small>
+        </div>
+      </div>
+
+      <!-- Table Number Input (only for dine-in) -->
+      <div class="table-input-section" *ngIf="orderType === 'dine-in'">
+        <h3>Enter Your Table Number</h3>
+        <p class="hint">Find the table number on your table or scan the QR code</p>
+        
+        <form [formGroup]="tableForm" (ngSubmit)="verifyTable()">
+          <mat-form-field appearance="outline" class="table-input">
+            <mat-label>Table Number</mat-label>
+            <input matInput formControlName="tableNumber" 
+                   placeholder="e.g., T1, A1, 5" 
+                   maxlength="10"
+                   autocomplete="off">
+            <mat-icon matPrefix>table_bar</mat-icon>
+          </mat-form-field>
+          
+          <div class="error-message" *ngIf="error">
+            <mat-icon>error</mat-icon>
+            {{ error }}
+          </div>
+
+          <button mat-raised-button color="primary" 
+                  type="submit" 
+                  [disabled]="!tableForm.valid || loading"
+                  class="verify-btn">
+            <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+            <span *ngIf="!loading">Verify Table</span>
+          </button>
+        </form>
+
+        <!-- Selected Table Info -->
+        <div class="selected-table" *ngIf="selectedTable">
+          <mat-icon class="success-icon">check_circle</mat-icon>
+          <div class="table-details">
+            <h4>Table {{ selectedTable.tableNumber }}</h4>
+            <p>Capacity: {{ selectedTable.capacity }} seats</p>
+            <p *ngIf="selectedTable.location">Location: {{ selectedTable.location }}</p>
+          </div>
+          <button mat-button color="warn" (click)="clearTable()">
+            <mat-icon>close</mat-icon>
+            Change
+          </button>
+        </div>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Back to Menu
+      </button>
+      
+      <button mat-raised-button color="accent" 
+              *ngIf="selectedTable && orderType === 'dine-in'"
+              (click)="proceedToCheckout()">
+        Continue to Checkout
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>
+

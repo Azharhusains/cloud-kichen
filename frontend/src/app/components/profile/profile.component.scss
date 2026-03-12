@@ -408,6 +408,16 @@
         background: rgba(156, 39, 176, 0.1);
         color: #9c27b0;
       }
+
+      &.status-completed {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4caf50;
+      }
+
+      &.status-cancelled {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+      }
     }
   }
 

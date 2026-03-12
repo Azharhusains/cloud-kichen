@@ -10,6 +10,18 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  // NEW: Order type - delivery or dine-in
+  orderType: {
+    type: String,
+    enum: ['delivery', 'dine-in'],
+    default: 'delivery',
+    required: true,
+  },
+  // NEW: Table number for dine-in orders
+  tableNumber: {
+    type: String,
+    default: null,
+  },
   items: [{
     menuItem: {
       type: mongoose.Schema.Types.ObjectId,

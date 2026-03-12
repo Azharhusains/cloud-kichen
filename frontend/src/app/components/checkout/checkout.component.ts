@@ -68,6 +68,10 @@ export class CheckoutComponent implements OnInit {
   saveAddressForFuture: boolean = false;
   loading: boolean = false;
   newAddreesActive: boolean = false;
+  
+  // NEW: Order type (delivery or dine-in)
+  orderType: 'delivery' | 'dine-in' = 'delivery';
+  tableInfo: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -88,6 +92,7 @@ export class CheckoutComponent implements OnInit {
   ngOnInit(): void {
     this.loadCart();
     this.loadAddresses();
+    this.loadTableInfo();
   }
 
   loadCart(): void {
@@ -103,6 +108,17 @@ export class CheckoutComponent implements OnInit {
         this.addresses = [];
       }
     });
+  }
+
+  loadTableInfo(): void {
+    // Check if there's table info stored (for dine-in)
+    const tableInfo = this.cartService.getTableInfo();
+    if (tableInfo) {
+      this.tableInfo = tableInfo;
+      this.orderType = 'dine-in';
+    } else {
+      this.orderType = 'delivery';
+    }
   }
 
   selectAddress(index: number): void {
@@ -130,8 +146,13 @@ export class CheckoutComponent implements OnInit {
     return this.getSubtotal() * this.taxRate;
   }
 
+  getDeliveryCharge(): number {
+    // No delivery charge for dine-in orders
+    return this.orderType === 'dine-in' ? 0 : this.deliveryCharge;
+  }
+
   getTotal(): number {
-    return this.getSubtotal() + this.getTax() + this.deliveryCharge;
+    return this.getSubtotal() + this.getTax() + this.getDeliveryCharge();
   }
 
   goBack(): void {
@@ -139,24 +160,43 @@ export class CheckoutComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (!this.checkoutForm.valid || this.cart.length === 0) {
+    // For dine-in, validate table info
+    if (this.orderType === 'dine-in' && !this.tableInfo) {
+      return;
+    }
+    
+    // For delivery, validate address
+    if (this.orderType === 'delivery' && !this.checkoutForm.valid) {
       return;
     }
 
     this.loading = true;
-    const orderData = {
+    
+    const orderData: any = {
       items: this.cart.map((item: any) => ({
         menuItem: item.menuItem._id,
         quantity: item.quantity,
         price: item.menuItem.price
       })),
-      deliveryAddress: this.checkoutForm.value,
       paymentMethod: 'cod',
-      saveAddress: this.saveAddressForFuture
+      orderType: this.orderType
     };
+
+    // Add table number for dine-in orders
+    if (this.orderType === 'dine-in' && this.tableInfo) {
+      orderData.tableNumber = this.tableInfo.tableNumber;
+    }
+
+    // Add delivery address for delivery orders
+    if (this.orderType === 'delivery') {
+      orderData.deliveryAddress = this.checkoutForm.value;
+      orderData.saveAddress = this.saveAddressForFuture;
+    }
 
     this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
+        // Clear table info after order
+        this.cartService.clearTableInfo();
         this.cartService.clearCart();
         this.router.navigate(['/order-confirmation', order._id]);
       },
@@ -167,3 +207,4 @@ export class CheckoutComponent implements OnInit {
     });
   }
 }
+

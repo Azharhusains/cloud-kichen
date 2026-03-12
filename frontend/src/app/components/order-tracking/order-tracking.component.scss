@@ -198,6 +198,11 @@ mat-card {
       background: rgba(156, 39, 176, 0.2);
       color: #9c27b0;
     }
+
+    &.status-completed {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+    }
   }
 }
 
@@ -358,6 +363,11 @@ mat-card {
     &.delivered {
       background: rgba(156, 39, 176, 0.1);
       color: #9c27b0;
+    }
+
+    &.completed {
+      background: rgba(76, 175, 80, 0.1);
+      color: #4caf50;
     }
   }
 }
