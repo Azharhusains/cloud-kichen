@@ -37,7 +37,10 @@ const getOrder = async (req, res) => {
 
 const createOrder = async (req, res) => {
   try {
-    const { items, deliveryAddress, saveAddress } = req.body;
+    const { items, deliveryAddress, saveAddress, paymentMethod } = req.body;
+    if (paymentMethod === 'online') {
+      return res.status(400).json({ message: 'Online payments must use /api/payment/create-session. Use COD for direct order creation.' });
+    }
 
     console.log('=== CREATE ORDER DEBUG ===');
     console.log('saveAddress:', saveAddress);

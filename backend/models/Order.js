@@ -94,6 +94,28 @@ orderStatus: {
     type: Number,
     default: 0,
   },
+  // Payment fields
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'succeeded', 'failed', 'cancelled'],
+    default: 'pending'
+  },
+  paymentIntentId: {
+    type: String,
+    default: null
+  },
+  transactionId: {
+    type: String,
+    default: null
+  },
+  couponCode: {
+    type: String,
+    default: null
+  },
+  couponDiscount: {
+    type: Number,
+    default: 0
+  },
 }, {
   timestamps: true,
 });

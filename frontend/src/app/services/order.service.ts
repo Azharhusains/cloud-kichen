@@ -13,6 +13,14 @@ export class OrderService {
     return this.http.post(`${environment.apiUrl}/orders`, orderData);
   }
 
+  createPaymentSession(orderData: any, couponCode?: string): Observable<any> {
+    const body = { 
+      orderData,
+      couponCode: couponCode || ''
+    };
+    return this.http.post(`${environment.apiUrl}/payment/create-session`, body);
+  }
+
   getOrders(): Observable<any[]> {
     return this.http.get<any[]>(`${environment.apiUrl}/orders`);
   }
@@ -26,6 +34,17 @@ export class OrderService {
   }
 
   /**
+   * Verify Razorpay payment and create order
+   */
+  verifyPayment(orderId: string, paymentId: string, signature: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/payment/verify`, { 
+      razorpay_order_id: orderId, 
+      razorpay_payment_id: paymentId, 
+      razorpay_signature: signature 
+    });
+  }
+
+  /**
    * Cancel an order
    * @param id - Order ID
    * @param reason - Reason for cancellation
@@ -34,3 +53,4 @@ export class OrderService {
     return this.http.put(`${environment.apiUrl}/orders/${id}/cancel`, { reason });
   }
 }
+

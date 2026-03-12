@@ -258,7 +258,7 @@
     }
   }
 
-  .payment-options {
+.payment-options {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -278,6 +278,28 @@
         color: #667eea;
       }
     }
+  }
+
+  .coupon-input {
+    margin: 16px 0;
+
+    mat-form-field {
+      width: 100%;
+
+      button {
+        color: #667eea;
+      }
+    }
+  }
+
+  .stripe-loading {
+    height: 4px !important;
+    margin-left: 8px;
+    width: 60px;
+  }
+
+  .discount {
+    color: #4caf50 !important;
   }
 
   .form-actions {
