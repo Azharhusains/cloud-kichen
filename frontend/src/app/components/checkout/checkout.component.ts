@@ -203,8 +203,9 @@ export class CheckoutComponent implements OnInit {
 
     if (this.paymentMethod === 'cod') {
       // COD direct order
-      this.orderService.createOrder({ ...orderData, paymentMethod: 'cod' }).subscribe({
+          this.orderService.createOrder({ ...orderData, paymentMethod: 'cod' }).subscribe({
         next: (order) => {
+          this.loading = false;
           this.cartService.clearCart();
           this.router.navigate(['/order-confirmation', order._id]);
         },
@@ -216,11 +217,13 @@ export class CheckoutComponent implements OnInit {
       });
     } else {
       // Online payment - Razorpay
-      this.orderService.createPaymentSession(orderData, this.couponCode).subscribe({
+        this.orderService.createPaymentSession(orderData, this.couponCode).subscribe({
         next: (response) => {
           this.razorpayResponse = response;
           this.finalTotal = response.finalTotal;
           this.couponDiscount = response.couponDiscount;
+          this.loading = false;
+          this.loadingPayment = true;
           this.initiateRazorpayPayment();
         },
         error: (error) => {
@@ -247,8 +250,9 @@ export class CheckoutComponent implements OnInit {
       script.onload = () => {
         this.openRazorpayCheckout();
       };
-      script.onerror = () => {
+    script.onerror = () => {
         this.toastService.show('Failed to load Razorpay', 'error');
+        this.loadingPayment = false;
         this.loading = false;
       };
       document.head.appendChild(script);
@@ -277,6 +281,10 @@ export class CheckoutComponent implements OnInit {
     };
 
     const rzp1 = new (window as any)['Razorpay'](options);
+    
+    rzp1.on('payment.failed', this.onRazorpayFailed.bind(this));
+    rzp1.on('payment.cancelled', this.onRazorpayFailed.bind(this));
+    
     rzp1.open();
   }
 
@@ -288,14 +296,22 @@ export class CheckoutComponent implements OnInit {
       response.razorpay_signature
     ).subscribe({
       next: (result) => {
+        this.loadingPayment = false;
         this.cartService.clearCart();
         this.toastService.show(`Payment Success! Order ${result.orderNumber}`, 'success');
         this.router.navigate(['/order-confirmation', result.orderId]);
       },
       error: (err) => {
         console.error('Verify error:', err);
+        this.loadingPayment = false;
         this.toastService.show('Payment verification failed. Contact support.', 'error');
       }
     });
+  }
+
+  onRazorpayFailed(error: any): void {
+    console.error('Razorpay failed/cancelled:', error);
+    this.loadingPayment = false;
+    this.toastService.show('Payment cancelled or failed. Please try again.', 'error');
   }
 }

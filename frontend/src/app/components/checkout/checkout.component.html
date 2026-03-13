@@ -155,9 +155,9 @@
                 <mat-icon>arrow_back</mat-icon>
                 Back to Cart
               </button>
-              <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!checkoutForm.valid || loading">
+              <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!(selectedAddressIndex >= 0 || checkoutForm.valid) || loading || loadingPayment">
                 <mat-icon>check_circle</mat-icon>
-                {{ loading ? 'Placing Order...' : 'Place Order' }}
+                {{ loading ? 'Placing Order...' : (loadingPayment ? 'Processing Payment...' : 'Place Order') }}
               </button>
             </div>
           </div>
