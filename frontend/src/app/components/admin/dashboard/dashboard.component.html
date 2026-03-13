@@ -46,7 +46,7 @@
     <mat-card class="recent-orders-card">
       <mat-card-header>
         <mat-card-title>Today's Orders</mat-card-title>
-        <button mat-button color="primary" (click)="navigateToOrders()" class="view-all-btn">
+        <button mat-raised-button class="action-btn" (click)="navigateToOrders()">
           View All Orders
           <mat-icon>arrow_forward</mat-icon>
         </button>
@@ -98,6 +98,10 @@
           <button mat-raised-button class="action-btn" (click)="navigateToOrders()">
             <mat-icon>receipt_long</mat-icon>
             <span>View Orders</span>
+          </button>
+          <button mat-raised-button class="action-btn" (click)="navigateToTables()">
+            <mat-icon>table_bar</mat-icon>
+            <span>Manage Tables</span>
           </button>
         </div>
       </mat-card-content>

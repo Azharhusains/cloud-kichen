@@ -15,6 +15,8 @@ import { OrderManagementComponent } from './components/admin/order-management/or
 import { InventoryManagementComponent } from './components/admin/inventory-management/inventory-management.component';
 import { CategoryManagementComponent } from './components/admin/category-management/category-management.component';
 import { VoiceOrderComponent } from './components/voice-order/voice-order.component';
+import { TableSelectComponent } from './components/table-select/table-select.component';
+import { TableManagementComponent } from './components/admin/table-management/table-management.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -23,6 +25,7 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'menu', component: MenuComponent, canActivate: [AuthGuard] },
   { path: 'cart', component: CartComponent, canActivate: [AuthGuard] },
+  { path: 'table-select', component: TableSelectComponent, canActivate: [AuthGuard] },
   { path: 'checkout', component: CheckoutComponent, canActivate: [AuthGuard] },
   { path: 'order-confirmation/:id', component: OrderConfirmationComponent, canActivate: [AuthGuard] },
   { path: 'order-tracking/:id', component: OrderTrackingComponent, canActivate: [AuthGuard] },
@@ -34,5 +37,6 @@ export const routes: Routes = [
   { path: 'admin/orders', component: OrderManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   { path: 'admin/inventory', component: InventoryManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   { path: 'admin/categories', component: CategoryManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
+  { path: 'admin/tables', component: TableManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   { path: '**', redirectTo: '/home' }
 ];

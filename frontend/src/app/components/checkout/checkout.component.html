@@ -5,8 +5,15 @@
   </div>
 
   <div class="checkout-content" *ngIf="cart.length > 0">
+    <!-- Order Type Indicator -->
+    <div class="order-type-indicator" [class.dine-in]="orderType === 'dine-in'">
+      <mat-icon>{{ orderType === 'dine-in' ? 'restaurant' : 'delivery_dining' }}</mat-icon>
+      <span *ngIf="orderType === 'dine-in'">Dine-in Order - Table {{ tableInfo?.tableNumber }}</span>
+      <span *ngIf="orderType === 'delivery'">Delivery Order</span>
+    </div>
+
     <!-- Order Summary -->
-    <div class="order-summary-section delivery-card">
+    <div class="order-summary-section">
       <mat-card class="summary-card">
         <mat-card-header>
           <mat-card-title>
@@ -33,13 +40,17 @@
               <span>Subtotal</span>
               <span>₹{{ getSubtotal().toFixed(2) }}</span>
             </div>
-            <div class="total-row">
+          <div class="total-row">
               <span>Tax (5%)</span>
               <span>₹{{ getTax().toFixed(2) }}</span>
             </div>
-<div class="total-row">
+            <div class="total-row" *ngIf="orderType === 'delivery'">
               <span>Delivery</span>
-              <span>₹{{ deliveryCharge.toFixed(2) }}</span>
+              <span>₹{{ getDeliveryCharge().toFixed(2) }}</span>
+            </div>
+            <div class="total-row" *ngIf="orderType === 'dine-in'">
+              <span>Delivery</span>
+              <span class="free">FREE (₹{{ getDeliveryCharge().toFixed(2) }})</span>
             </div>
             <div class="coupon-section" *ngIf="couponDiscount > 0">
               <div class="total-row discount">
@@ -56,8 +67,8 @@
       </mat-card>
     </div>
 
-    <!-- Delivery Address -->
-    <div class="delivery-section">
+    <!-- Delivery Address (only for delivery orders) -->
+    <div class="delivery-section" *ngIf="orderType === 'delivery'">
       <mat-card class="delivery-card">
         <mat-card-header>
           <mat-card-title>
@@ -86,8 +97,10 @@
               <mat-icon>add</mat-icon>
               Add New Address
             </button>
-          </div>          <!-- New Address Form -->
-          <form [formGroup]="checkoutForm" class="address-form" *ngIf="newAddreesActive || addresses.length == 0">
+          </div>
+          
+          <!-- New Address Form -->
+          <form [formGroup]="checkoutForm" class="address-form" *ngIf="newAddressActive || addresses.length == 0">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Street Address</mat-label>
               <input matInput formControlName="street" placeholder="Enter your street address">
@@ -164,6 +177,61 @@
         </mat-card-content>
       </mat-card>
     </div>
+
+    <!-- Dine-in Confirmation (for dine-in orders) -->
+    <div class="dinein-section" *ngIf="orderType === 'dine-in'">
+      <mat-card class="dinein-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>restaurant</mat-icon>
+            Dine-in Order
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="table-info-display">
+            <div class="table-icon">
+              <mat-icon>table_bar</mat-icon>
+            </div>
+            <div class="table-details">
+              <h3>Table {{ tableInfo?.tableNumber }}</h3>
+              <p *ngIf="tableInfo?.capacity">Capacity: {{ tableInfo.capacity }} seats</p>
+              <p *ngIf="tableInfo?.location">Location: {{ tableInfo.location }}</p>
+            </div>
+          </div>
+
+          <div class="dinein-notice">
+            <mat-icon>info</mat-icon>
+            <p>Your order will be delivered to your table. No delivery charges apply.</p>
+          </div>
+
+          <!-- Payment Method for Dine-in -->
+          <div class="payment-section">
+            <h4>
+              <mat-icon>payment</mat-icon>
+              Payment Method
+            </h4>
+            <mat-radio-group class="payment-options">
+              <mat-radio-button value="cod" [checked]="true">
+                <mat-icon>payments</mat-icon>
+                Pay at Table
+              </mat-radio-button>
+            </mat-radio-group>
+
+            <div class="form-actions">
+              <button mat-stroked-button (click)="goBack()">
+                <mat-icon>arrow_back</mat-icon>
+                Back to Cart
+              </button>
+              <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="loading">
+                <mat-icon>check_circle</mat-icon>
+                {{ loading ? 'Placing Order...' : 'Place Order' }}
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
   </div>
 
   <!-- Empty Cart -->
@@ -179,3 +247,4 @@
     </mat-card>
   </div>
 </div>
+

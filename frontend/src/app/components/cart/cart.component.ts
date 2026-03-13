@@ -99,6 +99,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   checkout(): void {
-    this.router.navigate(['/checkout']);
+    // Navigate to table-select to choose between dine-in or delivery
+    this.router.navigate(['/table-select']);
   }
 }

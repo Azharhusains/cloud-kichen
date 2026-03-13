@@ -72,13 +72,17 @@ export class CheckoutComponent implements OnInit {
   selectedAddressIndex: number = -1;
   saveAddressForFuture: boolean = false;
   loading: boolean = false;
-  newAddreesActive: boolean = false;
+  newAddressActive: boolean = false;
   paymentMethod: string = 'cod';
   couponCode: string = '';
   couponDiscount: number = 0;
   finalTotal: number = 0;
   razorpayResponse: any = null;
   loadingPayment: boolean = false;
+  
+  // NEW: Order type (delivery or dine-in)
+  orderType: 'delivery' | 'dine-in' = 'delivery';
+  tableInfo: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -98,31 +102,33 @@ export class CheckoutComponent implements OnInit {
     this.finalTotal = this.getTotal();
   }
 
-  ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     this.loadCart();
     this.loadAddresses();
-    return Promise.resolve();
+    this.loadTableInfo();
   }
 
   applyCoupon(): void {
     if (!this.couponCode.trim()) {
       this.couponDiscount = 0;
-      this.finalTotal = this.getTotal();
+      this.updateTotals();
       return;
     }
 
-    // Mock for demo - replace with API call to /api/coupons/validate
+    // Mock for demo - replace with API call later
     const mockCoupons: { [key: string]: number } = {
       'FIRST10': 0.1,
       'WELCOME20': 20
     };
-    const discount = mockCoupons[this.couponCode.toUpperCase() as keyof typeof mockCoupons] || 0;
-    this.couponDiscount = discount * this.getSubtotal();
-    this.finalTotal = Math.max(0, this.getTotal() - this.couponDiscount);
-    if (this.couponDiscount > 0) {
+    const discountRate = mockCoupons[this.couponCode.toUpperCase()] || 0;
+    if (discountRate > 0) {
+      this.couponDiscount = discountRate * this.getSubtotal();
+      this.updateTotals();
       this.toastService.show(`Coupon applied! Saved ₹${this.couponDiscount.toFixed(2)}`, 'success');
     } else {
-      this.toastService.show('Invalid coupon', 'error');
+      this.couponDiscount = 0;
+      this.updateTotals();
+      this.toastService.show('Invalid coupon code', 'error');
     }
   }
 
@@ -142,16 +148,27 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
+  loadTableInfo(): void {
+    // Check if there's table info stored (for dine-in)
+    const tableInfo = this.cartService.getTableInfo();
+    if (tableInfo) {
+      this.tableInfo = tableInfo;
+      this.orderType = 'dine-in';
+    } else {
+      this.orderType = 'delivery';
+    }
+  }
+
   selectAddress(index: number): void {
     this.selectedAddressIndex = index;
     const address = this.addresses[index];
-    this.newAddreesActive = false;
+    this.newAddressActive = false;
     this.checkoutForm.patchValue(address);
   }
 
   clearSelection(): void {
     this.selectedAddressIndex = -1;
-    this.newAddreesActive = true;
+    this.newAddressActive = true;
     this.checkoutForm.reset();
   }
 
@@ -167,8 +184,13 @@ export class CheckoutComponent implements OnInit {
     return this.getSubtotal() * this.taxRate;
   }
 
+  getDeliveryCharge(): number {
+    // No delivery charge for dine-in orders
+    return this.orderType === 'dine-in' ? 0 : this.deliveryCharge;
+  }
+
   getTotal(): number {
-    return this.getSubtotal() + this.getTax() + this.deliveryCharge;
+    return this.getSubtotal() + this.getTax() + this.getDeliveryCharge();
   }
 
   private updateTotals(): void {
@@ -179,15 +201,27 @@ export class CheckoutComponent implements OnInit {
     this.router.navigate(['/cart']);
   }
 
-  async onSubmit(): Promise<void> {
-    if (!this.checkoutForm.valid || this.cart.length === 0) {
-      this.toastService.show('Please complete all fields', 'error');
+  onSubmit(): void {
+    // Validate based on order type
+    if (this.orderType === 'dine-in' && !this.tableInfo) {
+      this.toastService.show('Please select a table first', 'error');
+      return;
+    }
+    
+    if (this.orderType === 'delivery' && !this.isAddressSelected()) {
+      this.toastService.show('Please select or enter a delivery address', 'error');
+      return;
+    }
+
+    if (this.cart.length === 0) {
+      this.toastService.show('Cart is empty', 'error');
       return;
     }
 
     this.loading = true;
 
-    const orderData = {
+    // Prepare common order data
+    const orderData: any = {
       items: this.cart.map((item: any) => ({
         menuItem: item.menuItem._id,
         quantity: item.quantity,
@@ -195,38 +229,51 @@ export class CheckoutComponent implements OnInit {
       })),
       subtotal: this.getSubtotal(),
       taxAmount: this.getTax(),
-      deliveryCharge: this.deliveryCharge,
+      deliveryCharge: this.getDeliveryCharge(),
       totalAmount: this.finalTotal,
-      deliveryAddress: this.checkoutForm.value,
-      saveAddress: this.saveAddressForFuture
+      couponCode: this.couponCode,
+      couponDiscount: this.couponDiscount,
+      paymentMethod: this.paymentMethod,
+      orderType: this.orderType
     };
 
+    // Add table info for dine-in
+    if (this.orderType === 'dine-in' && this.tableInfo) {
+      orderData.tableNumber = this.tableInfo.tableNumber;
+    }
+
+    // Add delivery address for delivery orders
+    if (this.orderType === 'delivery') {
+      orderData.deliveryAddress = this.checkoutForm.value;
+      orderData.saveAddress = this.saveAddressForFuture;
+    }
+
     if (this.paymentMethod === 'cod') {
-      // COD direct order
-          this.orderService.createOrder({ ...orderData, paymentMethod: 'cod' }).subscribe({
-        next: (order) => {
+      // COD - create order directly
+      this.orderService.createOrder(orderData).subscribe({
+        next: (order: any) => {
           this.loading = false;
           this.cartService.clearCart();
+          if (this.orderType === 'dine-in') {
+            this.cartService.clearTableInfo();
+          }
           this.router.navigate(['/order-confirmation', order._id]);
         },
-        error: (error) => {
-          console.error('COD order error:', error);
-          this.toastService.show('Order failed. Try again.', 'error');
+        error: (error: any) => {
+          console.error('Order error:', error);
+          this.toastService.show('Order failed: ' + (error.error?.message || 'Try again'), 'error');
           this.loading = false;
         }
       });
     } else {
       // Online payment - Razorpay
-        this.orderService.createPaymentSession(orderData, this.couponCode).subscribe({
-        next: (response) => {
+      this.orderService.createPaymentSession(orderData).subscribe({
+        next: (response: any) => {
           this.razorpayResponse = response;
-          this.finalTotal = response.finalTotal;
-          this.couponDiscount = response.couponDiscount;
-          this.loading = false;
           this.loadingPayment = true;
           this.initiateRazorpayPayment();
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Payment session error:', error);
           this.toastService.show('Payment setup failed: ' + (error.error?.message || error.message), 'error');
           this.loading = false;
@@ -250,10 +297,9 @@ export class CheckoutComponent implements OnInit {
       script.onload = () => {
         this.openRazorpayCheckout();
       };
-    script.onerror = () => {
+      script.onerror = () => {
         this.toastService.show('Failed to load Razorpay', 'error');
         this.loadingPayment = false;
-        this.loading = false;
       };
       document.head.appendChild(script);
     } else {
@@ -315,3 +361,4 @@ export class CheckoutComponent implements OnInit {
     this.toastService.show('Payment cancelled or failed. Please try again.', 'error');
   }
 }
+

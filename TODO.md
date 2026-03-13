@@ -1,43 +1,23 @@
-# Razorpay Integration TODO
+# Checkout Component Fix Plan
 
-## Plan Overview
-Replace Stripe with Razorpay for online payments (INR/UPI/cards). Keep COD. Backend creates Razorpay order → Frontend opens checkout modal → Post-payment verify signature → Create DB Order.
+## Steps to Complete:
 
-## Steps (6/8 completed) ✅
+✅ **Step 1:** Create TODO.md with implementation steps (current)
 
-### [x] 1. Install backend dependencies ✅
-### [x] 2. Add Razorpay keys to backend/.env ✅ (user confirmed)
-### [x] 3. Update backend/controllers/paymentController.js ✅
-### [x] 4. Update backend/routes/payment.js ✅
-### [x] 5. Update frontend/src/app/services/order.service.ts ✅
-### [x] 6. Update frontend/src/app/components/checkout/checkout.component.ts & .html ✅ (Stripe removed, Razorpay flow)
+⏳ **Step 2:** Define proper TypeScript interfaces for CartItem, Address, TableInfo
 
-### [ ] 7. Test integration
-### [ ] 8. Cleanups
-- Add Razorpay instance
-- Rewrite createPaymentSession → createRazorpayOrder
-- Add verifyPayment endpoint logic
-- Remove Stripe code
+✅ **Step 3:** Fix syntax errors - remove duplicate onSubmit(), fix code structure
 
-### [ ] 4. Update backend/routes/payment.js
-- Adjust routes: /create-session → /create-order (optional), add /verify
+⏳ **Step 4:** Implement proper form validation for delivery/dine-in flows
 
-### [ ] 5. Update frontend/src/app/services/order.service.ts
-- Add verifyPayment(orderId, paymentId, signature) POST /payment/verify
+⏳ **Step 5:** Fix Razorpay integration and payment flows
 
-### [ ] 6. Update frontend/src/app/components/checkout/checkout.component.ts
-- Remove Stripe
-- Add Razorpay script load
-- Update payment flow: open Razorpay modal, handler → verify
+⏳ **Step 6:** Improve type safety - replace any[] with typed arrays/objects
 
-### [ ] 7. Test integration
-- Backend: `npm run dev`
-- Frontend: `ng serve`
-- Test COD, Razorpay checkout+coupon, order creation
+⏳ **Step 7:** Test checkout flow (delivery + dine-in, COD + online payment)
 
-### [ ] 8. Cleanups (optional)
-- Remove Stripe deps
-- Update docs/README
+⏳ **Step 8:** Verify no TypeScript errors and update VSCode
 
-**Next step after completion: attempt_completion**
+⏳ **Step 9:** attempt_completion
 
+## Progress: 4/9 steps completed

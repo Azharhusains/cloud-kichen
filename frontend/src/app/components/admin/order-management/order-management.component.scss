@@ -823,6 +823,26 @@ $bg-color: #f8f9fa;
         }
       }
 
+      // Mark Completed Button - Green gradient (for dine-in)
+      &.status-completed {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+
+        mat-icon {
+          color: white;
+        }
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+
       // Default fallback style
       &:not(.status-preparing):not(.status-ready):not(.status-delivered):not(.status-cancelled) {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
