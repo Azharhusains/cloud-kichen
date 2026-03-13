@@ -69,8 +69,8 @@ export interface MenuItemDialogData {
       </mat-dialog-content>
       
       <mat-dialog-actions align="end">
-        <button mat-button (click)="onClose()">Close</button>
-        <button mat-raised-button color="primary" (click)="onAddToCart()" [disabled]="!data.viewingItem?.isAvailable">
+        <button mat-stroked-button (click)="onClose()">Close</button>
+        <button mat-raised-button class="action-btn" (click)="onAddToCart()" [disabled]="!data.viewingItem?.isAvailable">
           <mat-icon>add_shopping_cart</mat-icon>
           Add to Cart
         </button>
@@ -100,11 +100,15 @@ export interface MenuItemDialogData {
         }
 
         .close-button {
-          color: white;
+          color: #ffcccc;
           margin-left: auto;
           
+          &:hover {
+            background: rgba(220, 53, 69, 0.2);
+            border-radius: 50%;
+          }
+          
           mat-icon {
-            color: white;
           }
         }
       }
@@ -200,14 +204,48 @@ export interface MenuItemDialogData {
     }
 
     mat-dialog-actions {
-      padding: 16px 0 0 !important;
+      padding: 20px 16px 16px !important;
+      gap: 12px;
 
-      button.mat-mdc-raised-button {
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
+      button {
+        border-radius: 8px;
+        font-weight: 500;
+      }
+
+      button.mat-mdc-stroked-button {
+        color: #dc3545;
+        border-color: rgba(220, 53, 69, 0.3);
         
         &:hover {
-          border: 2px solid #667eea;
+          background: rgba(220, 53, 69, 0.08);
+          border-color: #dc3545;
+        }
+      }
+
+      button.mat-mdc-raised-button.action-btn {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        color: #495057;
+        
+        mat-icon {
+          color: #667eea;
+        }
+
+        &:hover:not([disabled]) {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          color: white !important;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+          border-color: transparent;
+
+          mat-icon {
+            color: white !important;
+          }
+        }
+
+        &[disabled] {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
       }
     }
