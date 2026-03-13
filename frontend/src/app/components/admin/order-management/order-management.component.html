@@ -11,12 +11,9 @@
         Test Audio
       </button>
       <mat-form-field appearance="outline" class="search-field" floatLabel="always">
-        <mat-label>Search orders</mat-label>
+        <mat-label>Search menu items</mat-label>
         <input matInput [(ngModel)]="searchTerm" (input)="onSearchChange()" placeholder="Search by Order #, name, email...">
         <mat-icon matSuffix>search</mat-icon>
-        <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="clearSearch()">
-          <mat-icon>close</mat-icon>
-        </button>
       </mat-form-field>
     </div>
   </div>
