@@ -132,8 +132,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // Load menu items
     this.menuService.getMenuItems().subscribe({
-      next: (items:any) => {
-        this.menuItems = items;
+      next: (items: any) => {
+        this.menuItems = items.menuItems || [];
       },
       error: (error) => {
         console.error('Error loading menu items:', error);
