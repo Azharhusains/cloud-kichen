@@ -365,16 +365,10 @@ export class VoiceService {
       'Authorization': token ? `Bearer ${token}` : ''
     });
 
-    // Get current cart from localStorage
+    // For voice AI: Clear existing cart, start fresh with only voice-mentioned items
+    console.log('Voice AI: Clearing existing cart for fresh voice order');
+    localStorage.setItem('cart', '[]');
     let cart: any[] = [];
-    const cartData = localStorage.getItem('cart');
-    if (cartData) {
-      try {
-        cart = JSON.parse(cartData);
-      } catch (e) {
-        console.error('Error parsing cart:', e);
-      }
-    }
 
     // Get browser info
     const browserInfo = navigator.userAgent;

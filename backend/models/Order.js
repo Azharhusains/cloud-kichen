@@ -107,6 +107,11 @@ orderStatus: {
     default: 0,
   },
   // Payment fields
+  paymentMethod: {
+    type: String,
+    enum: ['cash', 'online'],
+    default: 'cash'
+  },
   paymentStatus: {
     type: String,
     enum: ['pending', 'succeeded', 'failed', 'cancelled'],

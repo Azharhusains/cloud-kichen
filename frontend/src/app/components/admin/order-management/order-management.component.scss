@@ -43,6 +43,11 @@ $bg-color: #f8f9fa;
   }
 }
 
+span.order-type-badge.delivery {
+    display: flex;
+    color: #fff;
+}
+
 // Filter Section
 .filter-section {
   margin-bottom: 24px;
@@ -308,6 +313,7 @@ $bg-color: #f8f9fa;
 }
 
 // Angular Material Theme Overrides
+
 ::ng-deep {
   .mat-mdc-card {
     border-radius: 12px !important;
@@ -587,38 +593,84 @@ $bg-color: #f8f9fa;
 .card-header-gradient {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   border-radius: 12px 12px 0 0;
 
-  .order-id-section {
+.order-header-row {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    font-weight: 600;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .order-number-time {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: flex-start;
+    }
 
     .order-id {
       font-size: 1.1rem;
-      font-weight: 600;
       color: white;
+      white-space: nowrap;
     }
 
     .time-ago {
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.85);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
 
       mat-icon {
-        font-size: 14px;
-        width: 14px;
-        height: 14px;
+        font-size: 12px;
+        width: 12px;
+        height: 12px;
       }
 
       &.urgent {
         color: #ff6b6b;
-        font-weight: 600;
+      }
+    }
+
+    .payment-chip {
+      --mdc-evolution-protected-chip-container-shape: 18px !important;
+      
+      ::ng-deep {
+        .mat-mdc-chip-touch {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          height: 32px !important;
+        }
+        
+        .mdc-evolution-chip__text-label {
+          .mat-mdc-chip-action-label {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 4px !important;
+            color: #fff !important;
+            font-weight: 600 !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+          }
+        }
+        
+        mat-icon {
+          width: 16px !important;
+          height: 16px !important;
+          font-size: 16px !important;
+          line-height: 1 !important;
+        }
+      }
+    }
+
+    .status-badge-wrapper {
+      .status-badge {
+        white-space: nowrap;
       }
     }
   }

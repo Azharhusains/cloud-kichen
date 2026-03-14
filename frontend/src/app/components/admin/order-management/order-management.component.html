@@ -98,7 +98,7 @@
       </mat-chip-option>
       <mat-chip-option 
         [class.active-status]="statusFilter === 'ready'"
-        [selected]="statusFilter === 'ready'" 
+        [selected]="statusFilter === 'preparing'" 
         (click)="filterByStatus('ready')">
         <mat-icon class="status-icon ready">check_circle_outline</mat-icon>
         Ready
@@ -139,21 +139,30 @@
       <mat-card *ngFor="let order of paginatedOrders" class="order-card" [class.urgent-order]="isUrgent(order)" [class.cancelled-order]="order.orderStatus === 'cancelled'">
         <!-- Card Header with Gradient -->
         <div class="card-header-gradient" [class.cancelled-gradient]="order.orderStatus === 'cancelled'">
-          <div class="order-id-section">
-            <span class="order-id">Order #{{ order.orderNumber }}</span>
+          <div class="order-header-row">
+            <div class="order-number-time">
+              <span class="order-id">Order #{{ order.orderNumber }}</span>
+              <span class="time-ago" [class.urgent]="isUrgent(order)">
+                <mat-icon *ngIf="isUrgent(order)">warning</mat-icon>
+                {{ getTimeAgo(order.createdAt) }}
+              </span>
+            </div>
             <!-- Order Type Badge -->
             <span class="order-type-badge" [class.dine-in]="order.orderType === 'dine-in'" [class.delivery]="order.orderType === 'delivery'">
               <mat-icon>{{ order.orderType === 'dine-in' ? 'restaurant' : 'delivery_dining' }}</mat-icon>
               {{ order.orderType === 'dine-in' ? 'Dine-in' : 'Delivery' }}
             </span>
-            <span class="time-ago" [class.urgent]="isUrgent(order)">
-              <mat-icon *ngIf="isUrgent(order)">warning</mat-icon>
-              {{ getTimeAgo(order.createdAt) }}
-            </span>
-          </div>
-          <div class="status-badge" [class]="'status-' + order.orderStatus">
-            <mat-icon>{{ getStatusIcon(order.orderStatus) }}</mat-icon>
-            <span>{{ order.orderStatus | titlecase }}</span>
+            <!-- Payment Method Badge - CENTERED -->
+            <mat-chip class="payment-chip" [color]="getPaymentMethodColor(order.paymentMethod)" selected="true">
+              <mat-icon>{{ getPaymentMethodIcon(order.paymentMethod) }}</mat-icon>
+              {{ getPaymentMethodLabel(order.paymentMethod) }}
+            </mat-chip>
+            <div class="status-badge-wrapper">
+              <div class="status-badge" [class]="'status-' + order.orderStatus">
+                <mat-icon>{{ getStatusIcon(order.orderStatus) }}</mat-icon>
+                <span>{{ order.orderStatus | titlecase }}</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -227,7 +236,7 @@
                 <mat-icon>local_shipping</mat-icon>
                 Mark Delivered
               </button>
-              <!-- Mark as Completed for Dine-in orders (customer finished eating) -->
+              <!-- Mark as Completed for Dine-in orders -->
               <button *ngIf="order.orderStatus === 'delivered' && order.orderType === 'dine-in'"
                       (click)="quickUpdateStatus(order._id, 'completed')"
                       class="quick-action-btn status-completed">

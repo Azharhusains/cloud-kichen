@@ -196,11 +196,12 @@ class MenuFetcher {
    * @returns {Object} - Formatted item
    */
   static formatMenuItem(menuItem, size) {
-    const baseItem = {
+      const baseItem = {
       _id: menuItem._id,
       name: menuItem.name,
       description: menuItem.description,
       price: menuItem.price,
+      costPrice: menuItem.costPrice || 0,
       category: menuItem.category,
       image: menuItem.image,
       ingredients: menuItem.ingredients,

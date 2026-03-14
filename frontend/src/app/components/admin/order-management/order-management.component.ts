@@ -516,6 +516,22 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     return false;
   }
 
+  getPaymentMethodIcon(paymentMethod: string): string {
+    const icons: { [key: string]: string } = {
+      'cash': 'payments',
+      'online': 'payment'
+    };
+    return icons[paymentMethod] || 'help_outline';
+  }
+
+  getPaymentMethodLabel(paymentMethod: string): string {
+    return paymentMethod === 'cash' ? 'CASH' : 'ONLINE';
+  }
+
+  getPaymentMethodColor(paymentMethod: string): string {
+    return paymentMethod === 'cash' ? 'warn' : 'primary';
+  }
+
   testAudio(): void {
     console.log('OrderManagement: Testing audio notification');
     this.audioService.enableAudio();

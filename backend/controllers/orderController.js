@@ -154,6 +154,7 @@ const createOrder = async (req, res) => {
       taxRate,
       taxAmount,
       totalAmount,
+      paymentMethod: 'cash',
       deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
       profit,
     });

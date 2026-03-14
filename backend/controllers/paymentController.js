@@ -120,8 +120,27 @@ const verifyPayment = async (req, res) => {
     const totalAmount = parseFloat(razorpayOrder.amount) / 100;
 
     // Create DB order
+    // Ensure items have costPrice and populate if missing
+    const MenuItem = require('../models/MenuItem');
+    for (let item of items) {
+      if (!item.costPrice && item.menuItem) {
+        const menuItemDoc = await MenuItem.findById(item.menuItem).select('costPrice');
+        item.costPrice = menuItemDoc ? menuItemDoc.costPrice : 0;
+      }
+    }
+
+    // Generate orderNumber using Counter
+    const Counter = require('../models/Counter');
+    const counter = await Counter.findOneAndUpdate(
+      { name: 'orderNumber' },
+      { $inc: { sequence: 1 } },
+      { new: true, upsert: true }
+    );
+
     const dbOrder = new Order({
       user: userId,
+      orderNumber: counter.sequence,
+      orderType: 'delivery',
       items,
       subtotal,
       deliveryCharge,
