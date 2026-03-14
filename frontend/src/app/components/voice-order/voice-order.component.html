@@ -141,11 +141,18 @@
         </div>
       </div>
 
-      <!-- Order Details -->
-      <div class="order-details" *ngIf="lastResponse.order">
+      <!-- NEW: Checkout Guidance -->
+      <div class="checkout-guidance" *ngIf="cartItems.length > 0">
+        <mat-icon>shopping_cart</mat-icon>
+        <p><strong>Ready for Checkout!</strong></p>
+        <p>Items added to cart. You'll be redirected to checkout for payment.</p>
+      </div>
+      
+      <!-- REMOVED: Order details (no longer shown in voice-order) -->
+      <!-- <div class="order-details" *ngIf="lastResponse?.order">
         <p><strong>Order ID:</strong> {{ lastResponse.order._id }}</p>
         <p><strong>Total:</strong> ₹{{ lastResponse.order.totalAmount }}</p>
-      </div>
+      </div> -->
     </mat-card-content>
     <mat-card-actions>
       <button mat-button color="primary" (click)="resetVoice()">

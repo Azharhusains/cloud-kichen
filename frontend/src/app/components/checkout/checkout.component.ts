@@ -73,12 +73,13 @@ export class CheckoutComponent implements OnInit {
   saveAddressForFuture: boolean = false;
   loading: boolean = false;
   newAddressActive: boolean = false;
-  paymentMethod: string = 'cod';
+  paymentMethod: string = 'online';
   couponCode: string = '';
   couponDiscount: number = 0;
   finalTotal: number = 0;
   razorpayResponse: any = null;
   loadingPayment: boolean = false;
+  
   
   // NEW: Order type (delivery or dine-in)
   orderType: 'delivery' | 'dine-in' = 'delivery';
@@ -277,6 +278,7 @@ export class CheckoutComponent implements OnInit {
           console.error('Payment session error:', error);
           this.toastService.show('Payment setup failed: ' + (error.error?.message || error.message), 'error');
           this.loading = false;
+          this.loadingPayment = false;  // Reset payment loading too
         }
       });
     }
@@ -358,7 +360,13 @@ export class CheckoutComponent implements OnInit {
   onRazorpayFailed(error: any): void {
     console.error('Razorpay failed/cancelled:', error);
     this.loadingPayment = false;
-    this.toastService.show('Payment cancelled or failed. Please try again.', 'error');
+    this.loading = false;
+    this.toastService.show('Payment cancelled. Ready to try again.', 'info');
+  }
+
+  ngOnDestroy(): void {
+    this.loading = false;
+    this.loadingPayment = false;
   }
 }
 

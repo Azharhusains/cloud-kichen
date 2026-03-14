@@ -17,7 +17,7 @@ class CommandExecutor {
    * @param {Object} context - Execution context (user, cart, etc.)
    * @returns {Object} - Execution results
    */
-  static async executeCommands(commands, context) {
+static async executeCommands(commands, context) {
     const results = {
       success: true,
       commands: [],
@@ -27,13 +27,8 @@ class CommandExecutor {
       message: ''
     };
 
-    // Hydrate cart items - ensure all items have full menuItem object
+// Hydrate cart items - ensure all items have full menuItem object
     // This handles legacy carts that might have items with just ID
-    try {
-      context.cart = await this.hydrateCartItems(context.cart);
-    } catch (error) {
-      console.error('Error hydrating cart items:', error);
-    }
 
     // Check if payment method is provided in commands
     const hasPaymentCommand = commands.some(c => c.action === 'payment');
@@ -60,27 +55,8 @@ class CommandExecutor {
             result = await this.selectAddress(command, context);
             results.selectedAddress = result.address;
             
-            // AUTO-TRIGGER CHECKOUT when address selected AND payment is specified in voice input
-            // Only if checkout hasn't been completed yet
-            if (result.success && hasPaymentCommand && context.cart && context.cart.length > 0 && !checkoutAlreadyCompleted) {
-              console.log('Auto-triggering checkout after address selection...');
-              const checkoutResult = await this.checkout(context);
-              results.commands.push({
-                action: 'checkout',
-                success: checkoutResult.success,
-                error: checkoutResult.error,
-                details: checkoutResult,
-                autoTriggered: true
-              });
-              results.order = checkoutResult.order;
-              context.order = checkoutResult.order;
-              checkoutAlreadyCompleted = true;
-              
-              if (!checkoutResult.success) {
-                results.success = false;
-                results.message = checkoutResult.error;
-              }
-            }
+// REMOVED: Auto-checkout blocked per new checkout flow
+            // Users must manually proceed to checkout page
             break;
             
           case 'checkout':
@@ -92,8 +68,9 @@ class CommandExecutor {
               result = await this.checkout(context);
               checkoutAlreadyCompleted = true;
             }
-            results.order = result.order;
-            context.order = result.order;
+            // No real order created - use summary for checkout preview
+            // results.order = result.order; // REMOVED
+            context.summary = result.summary; // Store for response
             break;
             
           case 'payment':
@@ -424,7 +401,7 @@ class CommandExecutor {
       return {
         success: false,
         error: 'Cart is empty. Add items before checkout.',
-        order: null
+        summary: null
       };
     }
 
@@ -432,76 +409,49 @@ class CommandExecutor {
       return {
         success: false,
         error: 'Please select a delivery address before checkout.',
-        order: null
+        summary: null
       };
     }
 
-    // Calculate totals
+    // Calculate checkout summary (NO ORDER CREATION)
     let totalAmount = 0;
-    let totalCost = 0;
     
     const orderItems = context.cart.map(item => {
-      // Get price from the full menuItem object (new structure) or fallback to old structure
       const itemPrice = item.menuItem?.price || item.price || 0;
-      const itemCostPrice = item.menuItem?.costPrice || item.costPrice || (itemPrice * 0.6);
-      
       const itemTotal = itemPrice * item.quantity;
       totalAmount += itemTotal;
-      totalCost += itemCostPrice * item.quantity;
-      
-      // Store menuItem ID for the order, not the full object
-      const menuItemId = item.menuItem?._id || item.menuItem;
       
       return {
-        menuItem: menuItemId,
+        menuItem: item.menuItem?._id || item.menuItem,
         quantity: item.quantity,
         price: itemPrice,
-        costPrice: itemCostPrice
+        name: item.menuItem?.name || 'Unknown'
       };
     });
 
-    // Tax and delivery constants (matching cart/checkout)
+    // Tax and delivery (matching frontend)
     const taxRate = 0.05;
     const deliveryCharge = 2.99;
-
-    // Calculate tax and total (matching cart/checkout flow)
     const taxAmount = totalAmount * taxRate;
     const grandTotal = totalAmount + taxAmount + deliveryCharge;
-    const profit = totalAmount - totalCost;
 
-    // Get next order number
-    const orderNumber = await this.getNextOrderNumber();
-
-    // Create order
-    const order = new Order({
-      user: context.userId,
-      orderNumber,
+    const summary = {
       items: orderItems,
       subtotal: totalAmount,
-      taxRate: taxRate,
-      taxAmount: taxAmount,
-      deliveryCharge: deliveryCharge,
+      taxAmount,
+      deliveryCharge,
       totalAmount: grandTotal,
-      deliveryAddress: context.selectedAddress,
-      profit,
-      orderStatus: 'received'
-    });
+      address: context.selectedAddress,
+      readyForCheckout: true
+    };
 
-    await order.save();
-
-    // Clear cart
-    context.cart = [];
+    // DO NOT clear cart - keep for checkout page
+    // DO NOT create Order - checkout page handles this after payment
 
     return {
       success: true,
-      order: {
-        _id: order._id,
-        orderNumber: order.orderNumber,
-        totalAmount,
-        items: orderItems.length,
-        deliveryAddress: context.selectedAddress
-      },
-      message: `Order placed successfully! Order ID: ${order._id}. Total: ₹${totalAmount}`
+      summary,
+      message: `Checkout ready! Total: ₹${grandTotal.toFixed(2)}. Proceed to checkout page for payment.`
     };
   }
 
@@ -512,36 +462,13 @@ class CommandExecutor {
    * @returns {Object} - Result
    */
   static async processPayment(command, context) {
-    const paymentMethod = command.paymentMethod || 'cash';
-    
-    // In a real implementation, this would integrate with payment gateways
-    // For now, we'll simulate payment processing
-    
-    if (!context.order) {
-      return {
-        success: false,
-        error: 'No order found for payment',
-        paymentMethod
-      };
-    }
-
-    // Simulate payment processing
-    const paymentResult = {
-      success: true,
-      paymentMethod,
-      amount: context.order.totalAmount,
-      transactionId: `TXN${Date.now()}`,
-      message: `Payment of ₹${context.order.totalAmount} via ${paymentMethod} processed successfully`
+    // BLOCK ALL PAYMENTS FROM VOICE - Must use checkout page
+    return {
+      success: false,
+      error: 'Payments must be completed manually on the checkout page. Voice ordering cannot process payments.',
+      paymentMethod: command.paymentMethod || 'blocked',
+      message: 'Redirecting to checkout page for secure online payment (UPI, Card, Net Banking).'
     };
-
-    // Update order with payment status
-    await Order.findByIdAndUpdate(context.order._id, {
-      paymentStatus: 'paid',
-      paymentMethod,
-      paymentTransactionId: paymentResult.transactionId
-    });
-
-    return paymentResult;
   }
 
   /**
@@ -578,11 +505,10 @@ class CommandExecutor {
       messages.push(`Address: ${addressCmd.details?.formattedAddress}`);
     }
 
-    // Order placed
+    // Checkout ready (no order placed)
     const checkoutCmd = results.commands.find(c => c.action === 'checkout' && c.success);
-    if (checkoutCmd) {
-      messages.push(`Order ID: ${checkoutCmd.details?.order?._id}`);
-      messages.push(`Total: ₹${checkoutCmd.details?.order?.totalAmount}`);
+    if (checkoutCmd && checkoutCmd.details?.summary) {
+      messages.push(`Checkout ready! Total: ₹${checkoutCmd.details.summary.totalAmount.toFixed(2)}`);
     }
 
     // Payment

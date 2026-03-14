@@ -426,11 +426,9 @@ export class VoiceService {
               (cmd: any) => cmd.action === 'checkout' && cmd.success === true
             );
             
-            // Navigate if: payment was successful OR checkout was successful (cash on delivery)
-            if (paymentCommand || checkoutCommand) {
-              // Order was successfully placed - emit order completed event
-              this.orderCompletedSubject.next(response);
-            }
+            // REMOVED: No longer emit orderCompleted$ from voice
+            // Only checkout page emits order completion after real payment
+            // Voice flow now redirects to checkout, manual payment required
           }
         } else {
           this.updateState({

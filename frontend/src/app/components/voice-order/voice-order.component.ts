@@ -113,12 +113,21 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
     // Reset all voice service states to ensure clean slate for new order
     this.voiceService.resetAllStates();
 
-    // Subscribe to voice state
+    // Subscribe to voice state - NEW: Navigate to checkout when processing completes successfully
     this.voiceService.voiceState$
       .pipe(takeUntil(this.destroy$))
       .subscribe(state => {
         const previousState = this.voiceState;
         this.voiceState = state;
+        
+        // NEW CHECKOUT LOGIC: Navigate to checkout when AI processing completes
+        // Only if cart has items and we're not already processing
+        if (previousState.isProcessing && !state.isProcessing && this.cartItems.length > 0) {
+          console.log('Voice order processing complete with cart items, navigating to checkout...');
+          this.voiceService.stopListening();
+          this.dialogRef.close();
+          this.router.navigate(['/checkout']);
+        }
         
         // Track processing state changes for forced loading
         if (!previousState.isProcessing && state.isProcessing) {
@@ -138,22 +147,11 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Subscribe to order completion - navigate to order page when payment is successful
-    this.voiceService.orderCompleted$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(response => {
-        if (response && response.order) {
-          // Stop voice recognition and reset before navigating
-          this.voiceService.stopListening();
-          this.voiceService.resetTranscript();
-          // Close the dialog
-          this.dialogRef.close();
-          // Navigate to order confirmation page using _id
-          this.router.navigate(['/order-confirmation', response.order._id]);
-        }
-      });
+// REMOVED: Direct order completion navigation
+    // Now redirects to checkout page - manual payment required
+    // Subscribe to voice state for checkout logic
 
-    // Subscribe to cart updates
+// Subscribe to cart updates
     this.cartService.cart$
       .pipe(takeUntil(this.destroy$))
       .subscribe(items => {

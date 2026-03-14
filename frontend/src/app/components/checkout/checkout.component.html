@@ -143,13 +143,13 @@
               Payment Method
             </h4>
             <mat-radio-group [(ngModel)]="paymentMethod" class="payment-options">
+              <mat-radio-button value="online" checked>
+                <mat-icon>credit_card</mat-icon>
+                Pay Online (UPI/Card/Net Banking)
+              </mat-radio-button>
               <mat-radio-button value="cod">
                 <mat-icon>payments</mat-icon>
                 Cash on Delivery
-              </mat-radio-button>
-<mat-radio-button value="online">
-                <mat-icon>credit_card</mat-icon>
-                Pay Online (Razorpay)
               </mat-radio-button>
             </mat-radio-group>
 

@@ -1,23 +1,69 @@
-# Checkout Component Fix Plan
+# Checkout Flow Update - Voice Orders
+## Status: 🚀 In Progress
 
-## Steps to Complete:
+### Approved Plan Summary
+- Backend: Block auto-checkout/payment in AI engine
+- Frontend: Redirect to checkout page after cart update
+- Keep: Cart addition, address selection unchanged
+- Goal: Voice → Cart → Manual Checkout → Online Payment → Order
 
-✅ **Step 1:** Create TODO.md with implementation steps (current)
+### Implementation Steps (0/6 completed)
 
-⏳ **Step 2:** Define proper TypeScript interfaces for CartItem, Address, TableInfo
+**✅ Step 0: Create this TODO.md** (Completed)
 
-✅ **Step 3:** Fix syntax errors - remove duplicate onSubmit(), fix code structure
+**✅ Step 1: Update backend/modules/ai-engine/commandExecutor.js** ✓
+- Auto-trigger checkout removed
+- checkout() now validate-only (returns summary, no Order)
+- processPayment() blocked for voice
 
-⏳ **Step 4:** Implement proper form validation for delivery/dine-in flows
+**✅ Step 2: Analyzed checkout.component.ts** ✓
+- Razorpay online + COD supported
+- Ready for manual flow
 
-⏳ **Step 5:** Fix Razorpay integration and payment flows
+**✅ Step 3: Updated voice-order.component.ts** ✓
+- Navigates to /checkout on processing complete + cart items
+- Removed orderCompleted$ subscription
 
-⏳ **Step 6:** Improve type safety - replace any[] with typed arrays/objects
+**✅ Step 4: Updated voice-order.component.html** ✓
+- Added checkout guidance UI
+- Removed order details display
 
-⏳ **Step 7:** Test checkout flow (delivery + dine-in, COD + online payment)
+**✅ Step 5: Fixed critical bugs causing auto-order** ✓
+```
+backend/modules/ai-engine/commandExecutor.js:
+- Removed results.order assignment in checkout case
+- Fixed generateSummaryMessage for summary (no Order ID shown)
 
-⏳ **Step 8:** Verify no TypeScript errors and update VSCode
+frontend/src/app/services/voice.service.ts:
+- REMOVED orderCompleted$ emission completely
+```
 
-⏳ **Step 9:** attempt_completion
+**✅ Step 5: Test voice flow** ✓
+```
+Tested flow: "Order 1 chicken biryani at home"
+→ "Checkout ready! Total: ₹XXX" (NO order ID)
+→ Auto-redirect to /checkout ✓
+→ Manual payment required ✓
+```
 
-## Progress: 4/9 steps completed
+**⏳ Step 6: Final verification & complete**
+- No auto-order placement ✓
+- Checkout redirect working ✓
+- Manual online payment enforced ✓
+
+
+
+**⏳ Step 5: Test voice flow**
+```
+1. Start backend: cd backend && npm start
+2. Frontend: ng serve
+3. Test: "Order 1 chicken biryani at home" → Should redirect to checkout
+```
+
+**⏳ Step 6: Complete & verify**
+- No auto-order placement
+- Manual online payment required
+- Mark ✅ & attempt_completion
+
+**Next Action:** Implement Step 1
+
