@@ -73,7 +73,7 @@ export class CheckoutComponent implements OnInit {
   saveAddressForFuture: boolean = false;
   loading: boolean = false;
   newAddressActive: boolean = false;
-  paymentMethod: string = 'online';
+  paymentMethod: string = 'cod';
   couponCode: string = '';
   couponDiscount: number = 0;
   finalTotal: number = 0;
@@ -249,6 +249,11 @@ export class CheckoutComponent implements OnInit {
       orderData.saveAddress = this.saveAddressForFuture;
     }
 
+    // Force COD for dine-in orders
+    if (this.orderType === 'dine-in') {
+      this.paymentMethod = 'cod';
+    }
+    
     if (this.paymentMethod === 'cod') {
       // COD - create order directly
       this.orderService.createOrder(orderData).subscribe({

@@ -211,7 +211,7 @@
               <mat-icon>payment</mat-icon>
               Payment Method
             </h4>
-            <mat-radio-group class="payment-options">
+<mat-radio-group [(ngModel)]="paymentMethod" class="payment-options">
               <mat-radio-button value="cod" [checked]="true">
                 <mat-icon>payments</mat-icon>
                 Pay at Table

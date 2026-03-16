@@ -70,6 +70,7 @@ export class TableSelectComponent implements OnInit {
     this.tableForm.reset();
     
     if (type === 'delivery') {
+      this.cartService.clearTableInfo();
       this.router.navigate(['/checkout']);
     }
   }
