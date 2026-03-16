@@ -277,6 +277,7 @@ export class CheckoutComponent implements OnInit {
         next: (response: any) => {
           this.razorpayResponse = response;
           this.loadingPayment = true;
+          this.loading = false;
           this.initiateRazorpayPayment();
         },
         error: (error: any) => {
@@ -307,6 +308,7 @@ export class CheckoutComponent implements OnInit {
       script.onerror = () => {
         this.toastService.show('Failed to load Razorpay', 'error');
         this.loadingPayment = false;
+        this.loading = false;
       };
       document.head.appendChild(script);
     } else {
@@ -330,6 +332,12 @@ export class CheckoutComponent implements OnInit {
       },
       theme: {
         color: '#3399cc'
+      },
+      modal: {
+        ondismiss: () => {
+          console.log('Razorpay dismissed by user');
+          this.onRazorpayFailed(new Error('Payment dismissed by user'));
+        }
       }
     };
 
@@ -350,6 +358,7 @@ export class CheckoutComponent implements OnInit {
     ).subscribe({
       next: (result) => {
         this.loadingPayment = false;
+        this.loading = false;
         this.cartService.clearCart();
         this.toastService.show(`Payment Success! Order ${result.orderNumber}`, 'success');
         this.router.navigate(['/order-confirmation', result.orderId]);
@@ -357,6 +366,7 @@ export class CheckoutComponent implements OnInit {
       error: (err) => {
         console.error('Verify error:', err);
         this.loadingPayment = false;
+        this.loading = false;
         this.toastService.show('Payment verification failed. Contact support.', 'error');
       }
     });
@@ -366,7 +376,7 @@ export class CheckoutComponent implements OnInit {
     console.error('Razorpay failed/cancelled:', error);
     this.loadingPayment = false;
     this.loading = false;
-    this.toastService.show('Payment cancelled. Ready to try again.', 'info');
+    // this.toastService.show('Payment cancelled. Ready to try again.', 'info');
   }
 
   ngOnDestroy(): void {
