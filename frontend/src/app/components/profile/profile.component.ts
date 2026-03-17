@@ -214,7 +214,7 @@ loadOrders(): void {
     
     const labels: { [key: string]: string } = {
       'succeeded': `Refunded ₹${order.refundAmount?.toFixed(2) || 0}`,
-      'manual_pending': 'Cash refund pending',
+      'manual_pending': 'Cash refunded',
       'failed': `Refund failed: ${order.refundNotes || 'Unknown error'}`,
       'processing': 'Refund processing... (30min)'
     };
