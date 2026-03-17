@@ -45,6 +45,13 @@ export class OrderService {
   }
 
   /**
+   * Get formatted invoice data for an order
+   */
+  getInvoice(id: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/orders/${id}/invoice`);
+  }
+
+  /**
    * Cancel an order
    * @param id - Order ID
    * @param reason - Reason for cancellation
@@ -53,4 +60,3 @@ export class OrderService {
     return this.http.put(`${environment.apiUrl}/orders/${id}/cancel`, { reason });
   }
 }
-

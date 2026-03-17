@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { CancelOrderDialogComponent } from '../admin/confirm-dialog/cancel-order-dialog.component';
+import { InvoiceComponent } from '../invoice/invoice.component';
 
 // Angular Animations
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -311,6 +312,36 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   goHome(): void {
     this.router.navigate(['/home']);
+  }
+
+  /**
+   * Check if invoice is available (order is completed or delivered)
+   */
+  canShowInvoice(): boolean {
+    if (!this.order) return false;
+    return ['delivered', 'completed'].includes(this.order.orderStatus);
+  }
+
+  /**
+   * Open invoice dialog
+   */
+  openInvoice(): void {
+    if (!this.order?._id || !this.canShowInvoice()) {
+      this.toastService.warning('Invoice available only for completed orders');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(InvoiceComponent, {
+      width: '60vw',
+      maxWidth: '600px',
+      maxHeight: '95vh',
+      data: { orderId: this.order._id },
+      panelClass: 'invoice-dialog-panel'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      console.log('Invoice dialog closed:', result);
+    });
   }
 
   // Helper methods for price breakdown

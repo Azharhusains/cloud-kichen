@@ -22,6 +22,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { CancelOrderDialogComponent } from '../confirm-dialog/cancel-order-dialog.component';
+import { InvoiceComponent } from '../../invoice/invoice.component';
 
 @Component({
   selector: 'app-order-management',
@@ -446,49 +447,28 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  printOrder(order: any): void {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      const content = `
-        <html>
-          <head>
-            <title>Order #${order.orderNumber}</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              h1 { color: #333; }
-              .info { margin: 10px 0; }
-              .items { margin-top: 20px; }
-              .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-              .total { font-size: 18px; font-weight: bold; margin-top: 20px; }
-              .status { display: inline-block; padding: 4px 12px; background: #667eea; color: white; border-radius: 4px; }
-              .cancelled { background: #dc3545; }
-            </style>
-          </head>
-          <body>
-            <h1>Order #${order.orderNumber}</h1>
-            <div class="info"><strong>Customer:</strong> ${order.user?.name || 'N/A'} (${order.user?.email || 'N/A'})</div>
-            <div class="info"><strong>Date:</strong> ${this.formatDate(order.createdAt)}</div>
-            <div class="info"><strong>Status:</strong> <span class="status ${order.orderStatus === 'cancelled' ? 'cancelled' : ''}">${order.orderStatus}</span></div>
-            ${order.cancellationReason ? `<div class="info"><strong>Cancellation Reason:</strong> ${order.cancellationReason}</div>` : ''}
-            <div class="info"><strong>Delivery Address:</strong> ${order.deliveryAddress?.street}, ${order.deliveryAddress?.city}, ${order.deliveryAddress?.state} ${order.deliveryAddress?.zipCode}</div>
-            <div class="items">
-              <h3>Items:</h3>
-              ${order.items.map((item: any) => `
-                <div class="item">
-                  <span>${item.menuItem?.name || 'Item'} x${item.quantity}</span>
-                  <span>₹${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              `).join('')}
-            </div>
-            <div class="total">Total: ₹${order.totalAmount?.toFixed(2) || '0.00'}</div>
-            ${order.profit ? `<div class="info"><strong>Profit:</strong> ₹${order.profit.toFixed(2)}</div>` : ''}
-          </body>
-        </html>
-      `;
-      printWindow.document.write(content);
-      printWindow.document.close();
-      printWindow.print();
-    }
+  /**
+   * Check if invoice is available for order
+   */
+  canShowInvoice(order: any): boolean {
+    return ['delivered', 'completed'].includes(order.orderStatus);
+  }
+
+  /**
+   * Open invoice dialog from profile
+   */
+  openInvoice(orderId: string): void {
+    const dialogRef = this.dialog.open(InvoiceComponent, {
+      width: '60vw',
+      maxWidth: '600px',
+      maxHeight: '95vh',
+      data: { orderId },
+      panelClass: 'invoice-dialog-panel'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      console.log('Profile invoice dialog closed:', result);
+    });
   }
 
   getTimeAgo(dateString: string): string {

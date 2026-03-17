@@ -257,6 +257,65 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+const getInvoice = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'name phone')
+      .populate('items.menuItem', 'name price image description');
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    // Authorization check
+    if (req.user.role === 'customer' && order.user._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to view this invoice' });
+    }
+    
+    // Format invoice data
+    const invoiceData = {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      orderDate: new Date(order.createdAt).toLocaleDateString('en-IN', { 
+        day: '2-digit', month: '2-digit', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit' 
+      }),
+      customerName: order.user.name,
+      customerPhone: order.user.phone || '',
+      customerEmail: order.user.email || '',
+      items: order.items.map((item) => ({
+        name: item.menuItem.name,
+        quantity: item.quantity,
+        price: item.price,
+        total: item.price * item.quantity
+      })),
+      subtotal: order.subtotal,
+      deliveryCharge: order.deliveryCharge || 0,
+      taxRate: (order.taxRate * 100).toFixed(0) + '% GST',
+      taxAmount: order.taxAmount,
+      totalAmount: order.totalAmount,
+      orderType: order.orderType,
+      deliveryAddress: order.deliveryAddress,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      status: order.orderStatus,
+      // Restaurant details (customizable)
+      restaurant: {
+        name: 'Cloud Kitchen',
+        address: '123 Gourmet Street, Food City, FC 400001',
+        phone: '+91 98765 43210',
+        gstin: '27ABCDE1234F1Z5', // Custom GSTIN as requested
+        logo: `${req.protocol}://${req.get('host')}/assets/logo.png` // Assume logo in frontend/public/assets
+      }
+    };
+    
+    res.json(invoiceData);
+  } catch (error) {
+    console.error('Invoice generation error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const cancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -368,4 +427,4 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getOrder, createOrder, updateOrderStatus, cancelOrder };
+module.exports = { getOrders, getOrder, createOrder, getInvoice, updateOrderStatus, cancelOrder };

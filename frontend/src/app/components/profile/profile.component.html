@@ -168,15 +168,25 @@
                 </div>
               </div>
 
-              <div class="order-footer">
-                <div class="order-total">
-                  <strong>Total: ₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</strong>
+                <div class="order-footer">
+                  <div class="order-total">
+                    <strong>Total: ₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</strong>
+                  </div>
+                  <button mat-stroked-button color="primary" (click)="trackOrder(order._id)">
+                    <mat-icon>local_shipping</mat-icon>
+                    Track Order
+                  </button>
+                  <!-- Invoice Button -->
+                  <button 
+                    *ngIf="canShowInvoice(order)"
+                    mat-raised-button 
+                    color="accent"
+                    (click)="openInvoice(order._id)"
+                    class="invoice-btn">
+                    <mat-icon>receipt_long</mat-icon>
+                    Invoice
+                  </button>
                 </div>
-              <button mat-stroked-button color="primary" (click)="trackOrder(order._id)">
-                  <mat-icon>local_shipping</mat-icon>
-                  Track Order
-                </button>
-              </div>
             </div>
           </div>
 

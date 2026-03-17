@@ -1,21 +1,29 @@
-# Task: Fix Admin Dashboard Revenue Calculation ✅
+# Invoice Functionality Implementation Plan
+## Steps:
 
-**Current Progress:** ✅ Complete - Revenue now excludes cancelled orders
+### 1. Backend Changes [✅]
+- [✅] Add getInvoice endpoint to backend/controllers/orderController.js
+- [✅] Add invoice route to backend/routes/order.js
 
-## Steps Completed:
-- [✅] Step 1: Create TODO.md with implementation steps
-- [✅] Step 2: Edit dashboard.component.ts to filter out cancelled orders in `calculateStatistics()`:
-  ```typescript
-  const validOrders = this.todayOrders.filter(order => order.orderStatus !== 'cancelled');
-  this.totalOrders = validOrders.length;
-  this.totalRevenue = validOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-  ```
-- [✅] Step 3: Verified edit successful (diff shows correct replacement)
-- [✅] Step 4: Updated TODO.md
-- [✅] Step 5: Task complete
+### 2. Frontend Dependencies [✅]
+- [✅] Install jspdf & html2canvas: cd frontend && npm i jspdf html2canvas
 
-**Result:** Admin dashboard now correctly calculates today's revenue by excluding cancelled orders (status !== 'cancelled'). Both `totalRevenue` and `totalOrders` only count valid orders.
+### 3. Frontend Service Update [✅]
+- [✅] Add getInvoice() method to order.service.ts
 
-To test: Navigate to admin dashboard - revenue should exclude today's cancelled orders.
+### 4. Create Shared Invoice Component [✅]
+- [✅] Create frontend/src/app/components/invoice/invoice.component.ts/html/scss (premium UI, PDF download, printable)
 
+### 5. Integrate to Order Tracking [✅]
+- [✅] Add View/Download Invoice button to order-tracking.component.html/ts
+- [✅] Open invoice modal for completed/delivered orders
 
+### 6. Integrate to Profile [✅]
+- [✅] Add View Invoice button to each past order in profile.component.html/ts
+
+### 7. Test [ ]
+- [ ] Backend endpoint test
+- [ ] Frontend invoice view/download
+- [ ] PDF quality/printable check
+
+**Progress: Step 4 ✅ - Integrating to order-tracking next**

@@ -18,6 +18,8 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
 // Services
 import { AuthService } from '../../services/auth.service';
 import { OrderService } from '../../services/order.service';
+import { MatDialog } from '@angular/material/dialog';
+import { InvoiceComponent } from '../invoice/invoice.component';
 
 @Component({
   selector: 'app-profile',
@@ -68,7 +70,8 @@ export class ProfileComponent implements OnInit {
     private fb: FormBuilder,
     private authService: AuthService,
     private orderService: OrderService,
-    private router: Router
+    private router: Router,
+    public dialog: MatDialog
   ) {
     this.addressForm = this.fb.group({
       street: ['', Validators.required],
@@ -202,4 +205,29 @@ loadOrders(): void {
     console.log('labels', labels)
     return labels[order.refundStatus] || order.refundStatus;
   }
+
+  /**
+   * Check if invoice is available for order
+   */
+  canShowInvoice(order: any): boolean {
+    return ['delivered', 'completed'].includes(order.orderStatus);
+  }
+
+  /**
+   * Open invoice dialog from profile
+   */
+  openInvoice(orderId: string): void {
+    const dialogRef = this.dialog.open(InvoiceComponent, {
+      width: '60vw',
+      maxWidth: '600px',
+      maxHeight: '95vh',
+      data: { orderId },
+      panelClass: 'invoice-dialog-panel'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      console.log('Profile invoice dialog closed:', result);
+    });
+  }
 }
+

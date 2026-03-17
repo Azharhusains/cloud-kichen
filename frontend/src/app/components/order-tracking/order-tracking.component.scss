@@ -721,6 +721,23 @@ mat-divider {
       transform: translateY(0);
     }
   }
+
+  /* Invoice Button */
+  .invoice-btn {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%) !important;
+    color: #1e3c72 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
+
+    mat-icon {
+      color: #1e3c72 !important;
+    }
+
+    &:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6) !important;
+    }
+  }
 }
 
 /* Cancellation Alert */

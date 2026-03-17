@@ -359,12 +359,15 @@
               </div>
 
               <div class="action-buttons">
-                <button mat-icon-button 
-                        (click)="printOrder(order)"
-                        matTooltip="Print Order"
-                        class="action-btn print-btn">
-                  <mat-icon>print</mat-icon>
-                </button>
+                                  <button 
+                    *ngIf="canShowInvoice(order)"
+                    mat-raised-button 
+                    color="accent"
+                    (click)="openInvoice(order._id)"
+                    class="invoice-btn">
+                    <mat-icon>receipt_long</mat-icon>
+                    Invoice
+                  </button>
               </div>
             </div>
           </div>

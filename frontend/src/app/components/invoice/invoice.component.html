@@ -1,0 +1,121 @@
+<div class="invoice-dialog" *ngIf="!loading">
+  <!-- Print Container - Hide buttons on print -->
+  <div class="print-container" #invoiceContent>
+    <!-- Header -->
+    <div class="invoice-header">
+      <div class="logo-section">
+        <img [src]="invoiceData?.restaurant.logo || '/assets/logo.png'" alt="Logo" class="logo" />
+        <div class="restaurant-info">
+          <h1>{{ invoiceData?.restaurant.name }}</h1>
+          <p>{{ invoiceData?.restaurant.address }}</p>
+          <p><mat-icon>phone</mat-icon> {{ invoiceData?.restaurant.phone }}</p>
+          <p><strong>GSTIN:</strong> {{ invoiceData?.restaurant.gstin }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice Details -->
+    <div class="invoice-details">
+      <div class="row">
+        <div class="col">
+          <h3>Tax Invoice</h3>
+          <p><strong>Invoice #:</strong> {{ invoiceData?.orderNumber }}</p>
+          <p><strong>Date:</strong> {{ invoiceData?.orderDate }}</p>
+        </div>
+        <div class="col">
+          <h3>Bill To:</h3>
+          <p><strong>{{ invoiceData?.customerName }}</strong></p>
+          <p>{{ invoiceData?.customerPhone }}</p>
+          <p>{{ invoiceData?.customerEmail }}</p>
+          <ng-container *ngIf="invoiceData?.deliveryAddress">
+            <h4>Delivery Address:</h4>
+            <p>{{ invoiceData.deliveryAddress.street }}, {{ invoiceData.deliveryAddress.city }}</p>
+            <p>{{ invoiceData.deliveryAddress.state }} - {{ invoiceData.deliveryAddress.zipCode }}</p>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="items-table">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Rate</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of invoiceData?.items; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>₹{{ item.price | number:'1.2-2' }}</td>
+            <td>₹{{ item.total | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totals -->
+    <div class="totals-section">
+      <div class="total-row">
+        <span>Subtotal:</span>
+        <span>₹{{ invoiceData?.subtotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row" *ngIf="invoiceData?.deliveryCharge > 0">
+        <span>Delivery Charge:</span>
+        <span>₹{{ invoiceData?.deliveryCharge | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row">
+        <span>{{ invoiceData?.taxRate }} GST:</span>
+        <span>₹{{ invoiceData?.taxAmount | number:'1.2-2' }}</span>
+      </div>
+      <div class="grand-total-row">
+        <span><strong>Total Amount:</strong></span>
+        <span><strong>₹{{ invoiceData?.totalAmount | number:'1.2-2' }}</strong></span>
+      </div>
+    </div>
+
+    <!-- Payment & Status -->
+    <div class="payment-info">
+      <div class="row">
+        <div class="col">
+          <p><strong>Payment Method:</strong> {{ invoiceData?.paymentMethod }}</p>
+          <p><strong>Status:</strong> <span [class]="invoiceData?.status">{{ invoiceData?.status | titlecase }}</span></p>
+          <p><strong>Order Type:</strong> {{ invoiceData?.orderType | titlecase }}</p>
+        </div>
+        <div class="col">
+          <p *ngIf="invoiceData?.orderType === 'dine-in'"><strong>Table:</strong> {{ invoiceData.tableNumber }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="invoice-footer">
+      <p>Thank you for your order! Visit again.</p>
+      <p><small>Generated on {{ invoiceData?.orderDate }} | Cloud Kitchen Premium</small></p>
+    </div>
+  </div>
+
+  <!-- Action Buttons (visible only on screen) -->
+  <div class="action-buttons" *ngIf="!loading">
+    <button mat-raised-button color="primary" (click)="downloadPDF()" class="pdf-btn">
+      <mat-icon>picture_as_pdf</mat-icon>
+      Download PDF
+    </button>
+    <button mat-button (click)="close()" class="close-btn">
+      <mat-icon>close</mat-icon>
+      Close
+    </button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading-container" *ngIf="loading">
+  <mat-spinner diameter="50"></mat-spinner>
+  <p>Loading invoice...</p>
+</div>
