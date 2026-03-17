@@ -44,7 +44,7 @@
                 <p class="city">{{ address.city }}, {{ address.state }} {{ address.zipCode }}</p>
                 <p class="country">{{ address.country }}</p>
               </div>
-              <button mat-icon-button color="warn" (click)="removeAddress(i)" matTooltip="Remove">
+              <button mat-icon-button color="warn" (click)="removeAddress(address, i)" matTooltip="Remove address">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
@@ -168,25 +168,25 @@
                 </div>
               </div>
 
-                <div class="order-footer">
-                  <div class="order-total">
-                    <strong>Total: ₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</strong>
-                  </div>
-                  <button mat-stroked-button color="primary" (click)="trackOrder(order._id)">
-                    <mat-icon>local_shipping</mat-icon>
-                    Track Order
-                  </button>
-                  <!-- Invoice Button -->
-                  <button 
-                    *ngIf="canShowInvoice(order)"
-                    mat-raised-button 
-                    color="accent"
-                    (click)="openInvoice(order._id)"
-                    class="invoice-btn">
-                    <mat-icon>receipt_long</mat-icon>
-                    Invoice
-                  </button>
+              <div class="order-footer">
+                <div class="order-total">
+                  <strong>Total: ₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</strong>
                 </div>
+                <button mat-stroked-button color="primary" (click)="trackOrder(order._id)">
+                  <mat-icon>local_shipping</mat-icon>
+                  Track Order
+                </button>
+                <!-- Invoice Button -->
+                <button 
+                  *ngIf="canShowInvoice(order)"
+                  mat-raised-button 
+                  color="accent"
+                  (click)="openInvoice(order._id)"
+                  class="invoice-btn">
+                  <mat-icon>receipt_long</mat-icon>
+                  Invoice
+                </button>
+              </div>
             </div>
           </div>
 
@@ -199,3 +199,4 @@
     </div>
   </div>
 </div>
+

@@ -20,6 +20,7 @@ import { AuthService } from '../../services/auth.service';
 import { OrderService } from '../../services/order.service';
 import { MatDialog } from '@angular/material/dialog';
 import { InvoiceComponent } from '../invoice/invoice.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../admin/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-profile',
@@ -162,13 +163,28 @@ loadOrders(): void {
     }
   }
 
-  removeAddress(index: number): void {
-    this.authService.removeAddress(index).subscribe({
-      next: () => {
-        this.loadUserProfile();
-      },
-      error: (error) => {
-        console.error('Error removing address:', error);
+  removeAddress(address: any, index: number): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Address Confirmation',
+        message: 'Are you sure you want to permanently delete this address?',
+        itemName: address.street,
+        confirmText: 'Delete Permanently',
+        cancelText: 'Keep Address'
+      } as ConfirmDialogData
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.authService.removeAddress(index).subscribe({
+          next: () => {
+            this.loadUserProfile();
+          },
+          error: (error) => {
+            console.error('Error removing address:', error);
+          }
+        });
       }
     });
   }
