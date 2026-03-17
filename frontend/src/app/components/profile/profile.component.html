@@ -149,8 +149,11 @@
                   <mat-icon>receipt</mat-icon>
                   <span>Order #{{ order.orderNumber || order._id }}</span>
                 </div>
-                <div class="order-status" [ngClass]="getStatusClass(order.orderStatus)">
+                <div class="order-status" [ngClass]="getStatusClass(order.orderStatus, order)">
                   {{ order.orderStatus | titlecase }}
+                  <mat-chip *ngIf="getRefundDisplay(order)" class="refund-chip" [color]="'primary'" size="small">
+                    {{ getRefundDisplay(order) }}
+                  </mat-chip>
                 </div>
               </div>
               

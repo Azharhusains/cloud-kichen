@@ -68,7 +68,7 @@ const orderSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
-orderStatus: {
+  orderStatus: {
     type: String,
     default: 'received',
   },
@@ -125,6 +125,14 @@ orderStatus: {
     type: String,
     default: null
   },
+  razorpayOrderId: {
+    type: String,
+    default: null
+  },
+  razorpayPaymentId: {
+    type: String,
+    default: null
+  },
   couponCode: {
     type: String,
     default: null
@@ -132,6 +140,29 @@ orderStatus: {
   couponDiscount: {
     type: Number,
     default: 0
+  },
+  // Premium Refund System Fields
+  refundId: {
+    type: String,
+    default: null
+  },
+  refundStatus: {
+    type: String,
+    enum: ['pending', 'processing', 'succeeded', 'failed', 'manual_pending'],
+    default: null
+  },
+  refundAmount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  refundedAt: {
+    type: Date,
+    default: null
+  },
+  refundNotes: {
+    type: String,
+    default: null
   },
 }, {
   timestamps: true,

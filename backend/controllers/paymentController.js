@@ -177,6 +177,49 @@ const verifyPayment = async (req, res) => {
   }
 };
 
-module.exports = { createPaymentSession, verifyPayment };
+// Premium refund processing for cancelled orders
+const processRefund = async (order) => {
+  try {
+    if (!order || order.paymentMethod !== 'online' || order.paymentStatus !== 'succeeded') {
+      return { success: false, message: 'Refund not applicable' };
+    }
+    if (order.refundStatus === 'succeeded') {
+      return { success: false, message: 'Already refunded' };
+    }
+
+    const Razorpay = require('razorpay');
+    const rzp = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
+
+    const paymentId = order.razorpayPaymentId || order.transactionId;
+    if (!paymentId) {
+      return { success: false, message: 'No payment ID found' };
+    }
+
+    const refund = await rzp.payments.refund(paymentId, {
+      amount: Math.round(order.totalAmount * 100)
+    });
+
+    // Update order
+    order.refundStatus = 'succeeded';
+    order.refundId = refund.id;
+    order.refundAmount = order.totalAmount;
+    order.refundedAt = new Date();
+    order.paymentStatus = 'cancelled';
+    await order.save();
+
+    return { success: true, refund };
+  } catch (error) {
+    console.error('Refund failed:', error);
+    order.refundStatus = 'failed';
+    order.refundNotes = error.message;
+    await order.save();
+    return { success: false, error: error.message };
+  }
+};
+
+module.exports = { createPaymentSession, verifyPayment, processRefund };
 
 

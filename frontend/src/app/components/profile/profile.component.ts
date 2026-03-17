@@ -174,15 +174,32 @@ loadOrders(): void {
     this.router.navigate(['/order-tracking', orderId]);
   }
 
-  getStatusClass(status: string): string {
+  getStatusClass(status: string, order: any): string {
     switch (status) {
       case 'received': return 'status-received';
       case 'preparing': return 'status-preparing';
       case 'ready': return 'status-ready';
       case 'delivered': return 'status-delivered';
       case 'completed': return 'status-completed';
-      case 'cancelled': return 'status-cancelled';
+      case 'cancelled': 
+        if (order?.refundStatus === 'succeeded') {
+          return 'status-refunded';
+        }
+        return 'status-cancelled';
       default: return '';
     }
+  }
+
+  getRefundDisplay(order: any): string {
+    if (!order.refundStatus) return '';
+    
+    const labels: { [key: string]: string } = {
+      'succeeded': `Refunded ₹${order.refundAmount?.toFixed(2) || 0}`,
+      'manual_pending': 'Cash refund pending',
+      'failed': `Refund failed: ${order.refundNotes || 'Unknown error'}`,
+      'processing': 'Refund processing... (30min)'
+    };
+    console.log('labels', labels)
+    return labels[order.refundStatus] || order.refundStatus;
   }
 }

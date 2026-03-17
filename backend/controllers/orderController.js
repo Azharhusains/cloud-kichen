@@ -305,6 +305,27 @@ const cancelOrder = async (req, res) => {
 
     const updatedOrder = await order.save();
 
+    // Universal refund for ALL online payments on cancel (customer/admin)
+    if (order.paymentMethod === 'online' && order.paymentStatus === 'succeeded') {
+      const PaymentController = require('./paymentController');
+      const refundResult = await PaymentController.processRefund(order);
+      
+      if (refundResult.success) {
+        console.log(`✅ Auto-refund succeeded for order ${order.orderNumber}: ${refundResult.refund.id} (${isAdmin ? 'admin' : 'customer'} cancel)`);
+        // Emit refund success
+        const io = req.app.get('io');
+        io.to('adminRoom').emit('refundProcessed', { orderId: order._id, refundId: refundResult.refund.id });
+      } else {
+        console.error(`❌ Auto-refund failed for order ${order.orderNumber}:`, refundResult.error);
+      }
+    } else if (order.paymentMethod === 'cash') {
+      // Cash payments: Mark for manual refund
+      order.refundStatus = 'manual_pending';
+      order.refundNotes = 'Cash refund - process manually';
+      await order.save();
+      console.log(`💰 Cash refund pending (manual) for order ${order.orderNumber}`);
+    }
+
     // Restore inventory stock (only for non-delivered orders)
     if (order.orderStatus !== 'delivered') {
       await restoreStock(order.items);

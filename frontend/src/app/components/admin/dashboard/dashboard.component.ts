@@ -142,8 +142,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   calculateStatistics(): void {
-    this.totalOrders = this.todayOrders.length;
-    this.totalRevenue = this.todayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const validOrders = this.todayOrders.filter(order => order.orderStatus !== 'cancelled');
+    this.totalOrders = validOrders.length;
+    this.totalRevenue = validOrders.reduce((sum, order) => sum + order.totalAmount, 0);
   }
 
   navigateToOrders(): void {

@@ -152,11 +152,22 @@
               <mat-icon>{{ order.orderType === 'dine-in' ? 'restaurant' : 'delivery_dining' }}</mat-icon>
               {{ order.orderType === 'dine-in' ? 'Dine-in' : 'Delivery' }}
             </span>
-            <!-- Payment Method Badge - CENTERED -->
-            <mat-chip class="payment-chip" [color]="getPaymentMethodColor(order.paymentMethod)" selected="true">
-              <mat-icon>{{ getPaymentMethodIcon(order.paymentMethod) }}</mat-icon>
-              {{ getPaymentMethodLabel(order.paymentMethod) }}
-            </mat-chip>
+            <!-- Payment Method + Refund Status - Premium -->
+            <div class="payment-refund-section">
+              <mat-chip class="payment-chip" [color]="getPaymentMethodColor(order.paymentMethod)" selected="true">
+                <mat-icon>{{ getPaymentMethodIcon(order.paymentMethod) }}</mat-icon>
+                {{ getPaymentMethodLabel(order.paymentMethod) }}
+              </mat-chip>
+              
+              <!-- Refund Status Badge ✨ PREMIUM -->
+              <mat-chip *ngIf="order.refundStatus" 
+                        class="refund-chip" 
+                        [color]="getRefundStatusColor(order.refundStatus)"
+                        selected="true">
+                <mat-icon>{{ getRefundStatusIcon(order.refundStatus) }}</mat-icon>
+                {{ getRefundStatusLabel(order.refundStatus) }}
+              </mat-chip>
+            </div>
             <div class="status-badge-wrapper">
               <div class="status-badge" [class]="'status-' + order.orderStatus">
                 <mat-icon>{{ getStatusIcon(order.orderStatus) }}</mat-icon>

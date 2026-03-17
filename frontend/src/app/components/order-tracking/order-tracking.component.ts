@@ -291,7 +291,16 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       case 'ready': return 'Your order is ready and will be picked up by our delivery partner.';
       case 'delivered': return 'Your order has been delivered successfully. Enjoy your meal!';
       case 'completed': return 'Thank you for dining with us! We hope you enjoyed your meal.';
-      case 'cancelled': return 'Your order has been cancelled.';
+      case 'cancelled': 
+        if (this.order?.refundStatus === 'succeeded') {
+          return `Order cancelled - Full refund processed (₹${this.order.refundAmount?.toFixed(2)}). Check your payment method.`;
+        } else if (this.order?.refundStatus === 'manual_pending') {
+          return `Order cancelled - Cash refund will be processed manually. Contact support.`;
+        } else if (this.order?.refundStatus === 'failed') {
+          return `Order cancelled (${this.order.refundNotes || 'reason'}). Contact support for refund.`;
+        }
+        console.log('order', this.order)
+        return 'Your order has been cancelled.';
       default: return 'Order status unknown.';
     }
   }

@@ -532,6 +532,39 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     return paymentMethod === 'cash' ? 'warn' : 'primary';
   }
 
+  // 🔥 PREMIUM: Refund status helpers
+  getRefundStatusColor(refundStatus: string | null): string {
+    const colors: { [key: string]: string } = {
+      'succeeded': 'primary',
+      'processing': 'accent', 
+      'failed': 'warn',
+      'manual_pending': 'warn',
+      null: ''
+    };
+    return colors[refundStatus || ''] || '';
+  }
+
+  getRefundStatusIcon(refundStatus: string | null): string {
+    const icons: { [key: string]: string } = {
+      'succeeded': 'check_circle',
+      'processing': 'autorenew', 
+      'failed': 'error',
+      'manual_pending': 'payments',
+      null: ''
+    };
+    return icons[refundStatus || ''] || 'help_outline';
+  }
+
+  getRefundStatusLabel(refundStatus: string | null): string {
+    const labels: { [key: string]: string } = {
+      'succeeded': 'Refunded ✅',
+      'processing': 'Processing...',
+      'failed': 'Failed ❌', 
+      'manual_pending': 'Cash Manual'
+    };
+    return labels[refundStatus || ''] || 'No Refund';
+  }
+
   testAudio(): void {
     console.log('OrderManagement: Testing audio notification');
     this.audioService.enableAudio();
