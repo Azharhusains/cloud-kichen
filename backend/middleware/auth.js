@@ -25,11 +25,18 @@ const protect = async (req, res, next) => {
 
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'User role not authorized' });
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: `User role '${req.user?.role || 'none'}' not authorized for this action` });
     }
     next();
   };
 };
 
-module.exports = { protect, authorize };
+const restrictToSuperAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'SUPER_ADMIN') {
+    return res.status(403).json({ message: 'Super Admin access required' });
+  }
+  next();
+};
+
+module.exports = { protect, authorize, restrictToSuperAdmin };

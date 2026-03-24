@@ -1,29 +1,14 @@
-# Invoice Functionality Implementation Plan
-## Steps:
+# Fix /api/auth/register 500 Error - "next is not a function"
 
-### 1. Backend Changes [✅]
-- [✅] Add getInvoice endpoint to backend/controllers/orderController.js
-- [✅] Add invoice route to backend/routes/order.js
+## Plan Overview
+Add asyncHandler middleware, logging, better error handling to isolate and fix the issue.
 
-### 2. Frontend Dependencies [✅]
-- [✅] Install jspdf & html2canvas: cd frontend && npm i jspdf html2canvas
+## Steps to Complete:
+- [x] Step 1: Create backend/middleware/asyncHandler.js
+- [x] Step 2: Update backend/routes/auth.js to use asyncHandler
+- [x] Step 3: Add logging and improve error handling in backend/controllers/authController.js
+- [x] Step 4: Add unhandledRejection handler in backend/server.js
+- [ ] Step 5: Restart backend server and test /api/auth/register endpoint
+- [ ] Step 6: Verify fix and cleanup logs if needed
 
-### 3. Frontend Service Update [✅]
-- [✅] Add getInvoice() method to order.service.ts
-
-### 4. Create Shared Invoice Component [✅]
-- [✅] Create frontend/src/app/components/invoice/invoice.component.ts/html/scss (premium UI, PDF download, printable)
-
-### 5. Integrate to Order Tracking [✅]
-- [✅] Add View/Download Invoice button to order-tracking.component.html/ts
-- [✅] Open invoice modal for completed/delivered orders
-
-### 6. Integrate to Profile [✅]
-- [✅] Add View Invoice button to each past order in profile.component.html/ts
-
-### 7. Test [ ]
-- [ ] Backend endpoint test
-- [ ] Frontend invoice view/download
-- [ ] PDF quality/printable check
-
-**Progress: Step 4 ✅ - Integrating to order-tracking next**
+**Current Progress: 4/6 completed**

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -16,10 +17,12 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+    minlength: 6,
   },
   role: {
     type: String,
-    default: 'customer',
+    enum: ['CUSTOMER', 'ADMIN', 'SUPER_ADMIN'],
+    default: 'CUSTOMER',
   },
   addresses: [{
     street: String,
@@ -36,9 +39,22 @@ const userSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Hash password pre-save
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) {
+    next();
+  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
 // Compare password method
-userSchema.methods.comparePassword = function(candidatePassword) {
-  return candidatePassword === this.password;
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
 };
+
+// Unique SUPER_ADMIN constraint (compound index)
+userSchema.index({ role: 'SUPER_ADMIN' }, { unique: true });
 
 module.exports = mongoose.model('User', userSchema);

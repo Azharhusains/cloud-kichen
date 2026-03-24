@@ -60,6 +60,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/user'));
+app.use('/api/revenue', require('./routes/revenue'));
 app.use('/api/menu', require('./routes/menu'));
 app.use('/api/orders', require('./routes/order'));
 app.use('/api/inventory', require('./routes/inventory'));
@@ -81,6 +83,12 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// Global unhandled promise rejection handler
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err);
+  process.exit(1);
+});
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { BehaviorSubject, Observable, map } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 
@@ -18,19 +18,30 @@ export class AuthService {
       this.userSubject.next(this.decodeToken(token));
       const user = this.userSubject.value;
       if (!user.role) {
-        this.http.get(`${environment.apiUrl}/auth/profile`).subscribe({
-          next: (profile: any) => {
-            user.role = profile.role;
-            user.name = profile.name;
-            user.email = profile.email;
-            this.userSubject.next(user);
-          },
-          error: () => {
-            // ignore
-          }
-        });
+        this.loadProfile();
       }
     }
+  }
+
+  private loadProfile(): void {
+    const token = this.getToken();
+    if (!token) return;
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+    this.http.get(`${environment.apiUrl}/auth/profile`, { headers }).subscribe({
+      next: (profile: any) => {
+        const user = this.userSubject.value || {};
+        user.role = profile.role;
+        user.name = profile.name;
+        user.email = profile.email;
+        this.userSubject.next(user);
+      },
+      error: () => {
+        // ignore
+      }
+    });
   }
 
   register(userData: any): Observable<any> {
@@ -69,16 +80,54 @@ export class AuthService {
     return user ? user.role : null;
   }
 
+  // Role checks (normalize backend uppercase to lowercase for guards)
+  normalizeRole(role: string): string {
+    return role ? role.toLowerCase() : '';
+  }
+
+  isAdmin(): boolean {
+    const role = this.normalizeRole(this.getUserRole() || '');
+    return role === 'admin' || role === 'super_admin';
+  }
+
+  isSuperAdmin(): boolean {
+    return this.normalizeRole(this.getUserRole() || '') === 'super_admin';
+  }
+
+  // For register form - returns boolean
+  superAdminAvailable(): Observable<boolean> {
+    return this.http.get<{ superAdminExists: boolean }>(`${environment.apiUrl}/auth/super-admin-available`)
+      .pipe(map(res => res.superAdminExists));
+  }
+
   getProfile(): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/auth/profile`);
+    const token = this.getToken();
+    if (!token) throw new Error('No token');
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+    return this.http.get(`${environment.apiUrl}/auth/profile`, { headers });
   }
 
   addAddress(address: any): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/auth/addresses`, address);
+    const token = this.getToken();
+    if (!token) throw new Error('No token');
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+    return this.http.post(`${environment.apiUrl}/auth/addresses`, address, { headers });
   }
 
   removeAddress(index: number): Observable<any> {
-    return this.http.delete(`${environment.apiUrl}/auth/addresses/${index}`);
+    const token = this.getToken();
+    if (!token) throw new Error('No token');
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+    return this.http.delete(`${environment.apiUrl}/auth/addresses/${index}`, { headers });
   }
 
   private decodeToken(token: string): any {

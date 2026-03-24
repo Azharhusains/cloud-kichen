@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { Observable } from 'rxjs';
 
 // Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
@@ -11,7 +12,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatRadioModule } from '@angular/material/radio';
+import { MatRadioModule, MatRadioGroup } from '@angular/material/radio';
+import { MatRadioChange } from '@angular/material/radio';
 
 // Angular Animations
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -53,6 +55,9 @@ export class RegisterComponent implements OnInit {
   errorMessage: string = '';
   hidePassword: boolean = true;
   hideConfirmPassword: boolean = true;
+  superAdminAvailable: boolean | null = null;
+
+  readonly roles = ['CUSTOMER'];
 
   constructor(
     private fb: FormBuilder,
@@ -64,14 +69,28 @@ export class RegisterComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]],
-      role: ['customer']
+      role: ['CUSTOMER']
     }, { validators: this.passwordMatchValidator });
   }
 
   ngOnInit(): void {
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/home']);
+      return;
     }
+
+    this.authService.superAdminAvailable().subscribe({
+      next: (exists) => {
+        this.superAdminAvailable = exists;
+        if (!exists) {
+          this.roles.unshift('SUPER_ADMIN');
+        }
+      },
+      error: () => {
+        // Fallback to customer only
+        this.superAdminAvailable = true;
+      }
+    });
   }
 
   passwordMatchValidator(form: FormGroup) {
@@ -104,5 +123,9 @@ export class RegisterComponent implements OnInit {
         }
       });
     }
+  }
+
+  onRoleChange(event: MatRadioChange): void {
+    this.registerForm.patchValue({ role: event.value });
   }
 }

@@ -1,0 +1,206 @@
+.user-management-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header-card {
+  margin-bottom: 24px;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      h2 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      .subtitle {
+        font-size: 14px;
+        color: #666;
+        margin-left: 4px;
+      }
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+
+      .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        text-align: center;
+        min-width: 120px;
+
+        .stat-number {
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 4px;
+        }
+
+        .stat-label {
+          font-size: 12px;
+          opacity: 0.9;
+        }
+      }
+    }
+  }
+}
+
+.filters-card {
+  margin-bottom: 24px;
+
+  .filters {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: end;
+
+    .search-field, .role-filter {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    button {
+      height: 56px;
+    }
+  }
+}
+
+.table-card {
+  .table-container {
+    position: relative;
+    min-height: 400px;
+  }
+
+  .user-table {
+    width: 100%;
+
+    .role-cell {
+      .mat-mdc-chip {
+        height: 32px !important;
+        font-weight: 500;
+      }
+    }
+
+    .email {
+      word-break: break-all;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 14px;
+    }
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    color: #666;
+
+    mat-spinner {
+      margin-bottom: 16px;
+    }
+  }
+
+  .no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    color: #999;
+
+    mat-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 14px;
+    }
+  }
+}
+
+mat-paginator {
+  background: white;
+  .mat-mdc-paginator-page-size {
+    label {
+      font-weight: 500;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .user-management-container {
+    padding: 16px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 16px;
+
+    .stats {
+      width: 100%;
+      justify-content: space-around;
+    }
+  }
+
+  .filters {
+    flex-direction: column;
+
+    .search-field, .role-filter {
+      width: 100% !important;
+      min-width: unset !important;
+    }
+  }
+}
+
+.role-cell {
+  .role-chip {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+  }
+}
+
+.role-customer {
+  background: #e3f2fd !important;
+  color: #1976d2 !important;
+}
+
+.role-admin {
+  background: #fff3e0 !important;
+  color: #ef6c00 !important;
+}
+
+.role-super_admin {
+  background: #fce4ec !important;
+  color: #c2185b !important;
+}
