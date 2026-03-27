@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    <div class="stat-card revenue">
+<div *ngIf="isSuperAdmin" class="stat-card revenue">
       <div class="stat-icon">
         <mat-icon>attach_money</mat-icon>
       </div>
@@ -60,7 +60,7 @@
       </div>
     </div>
 
-    <div class="stat-card average">
+    <div *ngIf="isSuperAdmin" class="stat-card average">
       <div class="stat-icon">
         <mat-icon>trending_up</mat-icon>
       </div>

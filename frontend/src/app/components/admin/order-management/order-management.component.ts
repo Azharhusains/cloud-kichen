@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { AuthService } from '../../../services/auth.service';
 import { OrderService } from '../../../services/order.service';
 import { SocketService } from '../../../services/socket.service';
 import { ToastService } from '../../../services/toast.service';
@@ -49,6 +50,7 @@ import { InvoiceComponent } from '../../invoice/invoice.component';
   styleUrls: ['./order-management.component.scss']
 })
 export class OrderManagementComponent implements OnInit, OnDestroy {
+  isSuperAdmin = false;
   orders: any[] = [];
   filteredOrders: any[] = [];
   statusFilter = '';
@@ -86,6 +88,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   cancelReason = '';
 
   constructor(
+    private authService: AuthService,
     private orderService: OrderService,
     private socketService: SocketService,
     private toastService: ToastService,
@@ -95,6 +98,9 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    const userRole = this.authService.getUserRole();
+    this.isSuperAdmin = userRole === 'SUPER_ADMIN';
+    
     this.loadOrders();
     this.setupSocketListeners();
     this.setupVisibilityListener();

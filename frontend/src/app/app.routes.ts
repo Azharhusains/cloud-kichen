@@ -17,6 +17,9 @@ import { CategoryManagementComponent } from './components/admin/category-managem
 import { VoiceOrderComponent } from './components/voice-order/voice-order.component';
 import { TableSelectComponent } from './components/table-select/table-select.component';
 import { TableManagementComponent } from './components/admin/table-management/table-management.component';
+import { UnauthorizedComponent } from './components/unauthorized/unauthorized.component';
+import { UserManagementComponent } from './components/admin/user-management/user-management.component';
+import { RevenueDashboardComponent } from './components/admin/revenue-dashboard/revenue-dashboard.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -32,11 +35,14 @@ export const routes: Routes = [
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
   { path: 'voice-order', component: VoiceOrderComponent, canActivate: [AuthGuard] },
   // Admin routes
-  { path: 'admin/dashboard', component: DashboardComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
-  { path: 'admin/menu', component: MenuManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
-  { path: 'admin/orders', component: OrderManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
-  { path: 'admin/inventory', component: InventoryManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
-  { path: 'admin/categories', component: CategoryManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
-  { path: 'admin/tables', component: TableManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
+  { path: 'admin/dashboard', component: DashboardComponent, canActivate: [AuthGuard], data: { roles: ['ADMIN', 'SUPER_ADMIN'] } },
+  { path: 'admin/menu', component: MenuManagementComponent, canActivate: [AuthGuard], data: { roles: ['ADMIN', 'SUPER_ADMIN'] } },
+  { path: 'admin/orders', component: OrderManagementComponent, canActivate: [AuthGuard], data: { roles: ['ADMIN', 'SUPER_ADMIN'] } },
+  { path: 'admin/inventory', component: InventoryManagementComponent, canActivate: [AuthGuard], data: { roles: ['ADMIN', 'SUPER_ADMIN'] } },
+  { path: 'admin/categories', component: CategoryManagementComponent, canActivate: [AuthGuard], data: { roles: ['ADMIN', 'SUPER_ADMIN'] } },
+  { path: 'admin/tables', component: TableManagementComponent, canActivate: [AuthGuard], data: { roles: ['ADMIN', 'SUPER_ADMIN'] } },
+  { path: 'admin/users', component: UserManagementComponent, canActivate: [AuthGuard], data: { roles: ['ADMIN', 'SUPER_ADMIN'] } },
+  { path: 'admin/revenue', component: RevenueDashboardComponent, canActivate: [AuthGuard], data: { roles: ['SUPER_ADMIN'] } },
+  { path: 'unauthorized', component: UnauthorizedComponent },
   { path: '**', redirectTo: '/home' }
 ];

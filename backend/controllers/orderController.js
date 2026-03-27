@@ -8,7 +8,7 @@ const { deductStock, checkStockAvailability, restoreStock } = require('./invento
 const getOrders = async (req, res) => {
   try {
     let query = {};
-    if (req.user.role === 'customer') {
+    if (req.user.role === 'CUSTOMER') {
       query.user = req.user._id;
     }
     if (req.query.status) {
@@ -31,7 +31,7 @@ const getOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    if (req.user.role === 'customer' && order.user._id.toString() !== req.user._id.toString()) {
+    if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
     }
     res.json(order);
@@ -194,7 +194,8 @@ const createOrder = async (req, res) => {
     
     // Emit real-time event to admin
     const io = req.app.get('io');
-    io.to('adminRoom').emit('newOrder', populatedOrder);
+io.to('adminRoom').emit('newOrder', populatedOrder);
+io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     
     res.status(201).json(createdOrder);
   } catch (error) {
@@ -241,8 +242,9 @@ const updateOrderStatus = async (req, res) => {
     // Emit real-time events
     const io = req.app.get('io');
     
-    // 1. Emit to admin room
-    io.to('adminRoom').emit('orderUpdated', populatedOrder);
+// 1. Emit to admin room
+io.to('adminRoom').emit('orderUpdated', populatedOrder);
+io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     
     // 2. Emit to specific order room
     io.to(orderRoom).emit('orderStatusChanged', populatedOrder);
@@ -268,7 +270,7 @@ const getInvoice = async (req, res) => {
     }
     
     // Authorization check
-    if (req.user.role === 'customer' && order.user._id.toString() !== req.user._id.toString()) {
+    if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to view this invoice' });
     }
     
@@ -295,6 +297,7 @@ const getInvoice = async (req, res) => {
       taxAmount: order.taxAmount,
       totalAmount: order.totalAmount,
       orderType: order.orderType,
+      tableNumber: order.tableNumber,
       deliveryAddress: order.deliveryAddress,
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
@@ -323,8 +326,8 @@ const cancelOrder = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Check if user is admin
-    const isAdmin = req.user.role === 'admin';
+    // Check if user is admin or super admin
+    const isAdmin = req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN';
     
     // Check if order can be cancelled (only for customers)
     if (!isAdmin) {
@@ -370,7 +373,7 @@ const cancelOrder = async (req, res) => {
       const refundResult = await PaymentController.processRefund(order);
       
       if (refundResult.success) {
-        console.log(`✅ Auto-refund succeeded for order ${order.orderNumber}: ${refundResult.refund.id} (${isAdmin ? 'admin' : 'customer'} cancel)`);
+        console.log(`✅ Auto-refund succeeded for order ${order.orderNumber}: ${refundResult.refund.id} (${isAdmin ? 'ADMIN' : 'CUSTOMER'} cancel)`);
         // Emit refund success
         const io = req.app.get('io');
         io.to('adminRoom').emit('refundProcessed', { orderId: order._id, refundId: refundResult.refund.id });
@@ -410,6 +413,7 @@ const cancelOrder = async (req, res) => {
 
     // Emit to admin room
     io.to('adminRoom').emit('orderUpdated', populatedOrder);
+    io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     io.to('adminRoom').emit('orderCancelled', populatedOrder);
 
     // Emit to specific order room

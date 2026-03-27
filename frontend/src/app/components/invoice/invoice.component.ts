@@ -48,6 +48,7 @@ export class InvoiceComponent implements OnInit, AfterViewInit {
     this.orderService.getInvoice(this.data.orderId).subscribe({
       next: (data) => {
         this.invoiceData = data;
+        console.log('data', data);
         this.loading = false;
       },
       error: (err) => {

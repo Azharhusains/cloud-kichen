@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', protect, getOrders);
 router.get('/:id', protect, getOrder);
 router.post('/', protect, createOrder);
-router.put('/:id/status', protect, authorize('admin'), updateOrderStatus);
+router.put('/:id/status', protect, authorize('ADMIN', 'SUPER_ADMIN'), updateOrderStatus);
 router.get('/:id/invoice', protect, getInvoice);
 router.put('/:id/cancel', protect, cancelOrder);
 

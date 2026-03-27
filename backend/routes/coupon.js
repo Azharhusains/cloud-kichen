@@ -5,7 +5,7 @@ const { protect, authorize } = require('../middleware/auth');
 const router = express.Router();
 
 // Admin only
-router.use(protect, authorize('admin'));
+router.use(protect, authorize('ADMIN'));
 router.get('/', getCoupons);
 router.post('/', createCoupon);
 router.delete('/:id', deleteCoupon);

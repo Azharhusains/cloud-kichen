@@ -88,8 +88,8 @@
           <p><strong>Status:</strong> <span [class]="invoiceData?.status">{{ invoiceData?.status | titlecase }}</span></p>
           <p><strong>Order Type:</strong> {{ invoiceData?.orderType | titlecase }}</p>
         </div>
-        <div class="col">
-          <p *ngIf="invoiceData?.orderType === 'dine-in'"><strong>Table:</strong> {{ invoiceData.tableNumber }}</p>
+        <div class="col"> 
+<p *ngIf="invoiceData?.orderType === 'dine-in'"><strong>Table:</strong> {{ invoiceData?.tableNumber || 'N/A' }}</p>
         </div>
       </div>
     </div>

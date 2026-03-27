@@ -85,8 +85,12 @@ export class SocketService {
     });
   }
 
-  // Join admin room to receive all order updates
+  // Join admin room to receive all order updates (idempotent)
   joinAdminRoom(): void {
+    if (this.isAdminRoomJoined) {
+      console.log('SocketService: Already in admin room, skipping');
+      return;
+    }
     console.log('SocketService: Joining admin room');
     this.isAdminRoomJoined = true;
     this.socket.emit('joinAdmin');
@@ -192,6 +196,17 @@ export class SocketService {
     });
   }
 
+// Listen for revenue updates (admin)
+  onRevenueUpdated(): Observable<any> {
+    console.log('SocketService: Listening for revenueUpdated events');
+    return new Observable(observer => {
+      this.socket.on('revenueUpdated', (data) => {
+        console.log('SocketService: Received revenueUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
   // Listen for table updates (general)
   onTableUpdated(): Observable<any> {
     console.log('SocketService: Listening for tableUpdated events');
@@ -203,3 +218,4 @@ export class SocketService {
     });
   }
 }
+

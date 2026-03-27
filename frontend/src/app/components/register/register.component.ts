@@ -53,6 +53,11 @@ export class RegisterComponent implements OnInit {
   errorMessage: string = '';
   hidePassword: boolean = true;
   hideConfirmPassword: boolean = true;
+  showRoleSelection: boolean = false;
+
+  get roleControl() {
+    return this.registerForm.get('role');
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -64,7 +69,7 @@ export class RegisterComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]],
-      role: ['customer']
+      role: ['CUSTOMER']
     }, { validators: this.passwordMatchValidator });
   }
 
@@ -72,6 +77,21 @@ export class RegisterComponent implements OnInit {
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/home']);
     }
+    
+    // Check if Super Admin exists for dynamic role selection
+    this.authService.checkSuperAdminExists().subscribe({
+      next: (response) => {
+        this.showRoleSelection = !response.exists;
+        if (!this.showRoleSelection) {
+          this.registerForm.patchValue({ role: 'CUSTOMER' });
+          this.roleControl!.disable();
+        }
+      },
+      error: (error) => {
+        console.error('Failed to check Super Admin status:', error);
+        this.showRoleSelection = false; // Default to customer-only
+      }
+    });
   }
 
   passwordMatchValidator(form: FormGroup) {

@@ -1,9 +1,11 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { register, login, getProfile, updateProfile, addAddress, removeAddress } = require('../controllers/authController');
+const { register, login, getProfile, updateProfile, addAddress, removeAddress, checkSuperAdminExists } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
+
+router.get('/check-super-admin', checkSuperAdminExists);
 
 router.post(
   '/register',

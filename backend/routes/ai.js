@@ -125,7 +125,7 @@ router.get('/history', protect, async (req, res) => {
 router.get('/stats', protect, async (req, res) => {
   try {
     // Check admin role
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'ADMIN') {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin only.'

@@ -1,0 +1,238 @@
+/* Menu Management Theme - User Management */
+:host {
+  --cp-primary: #667eea;
+  --cp-secondary: #764ba2;
+  --cp-success: #28a745;
+  --cp-warning: #ffc107;
+  --cp-danger: #dc3545;
+  --cp-info: #17a2b8;
+  --cp-bg: #f8f9fa;
+  --cp-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --cp-card-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.15);
+  --cp-border-radius: 12px;
+  --cp-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-management-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: var(--cp-bg);
+  min-height: calc(100vh - 64px);
+}
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  gap: 20px;
+}
+
+.header-content {
+  h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+    color: #2c3e50;
+    background: linear-gradient(135deg, var(--cp-primary) 0%, var(--cp-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  p.subtitle {
+    margin: 4px 0 0;
+    color: #6c757d;
+    font-size: 0.95rem;
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+
+  .search-field {
+    width: 280px;
+    
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+  }
+
+  .add-button {
+    height: 48px;
+    padding: 0 24px;
+    font-weight: 500;
+  }
+}
+
+.table-container {
+  margin-top: 24px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: var(--cp-card-shadow);
+  border-radius: var(--cp-border-radius);
+  overflow: hidden;
+  background: white;
+}
+
+th {
+  font-weight: 600;
+  padding: 16px 12px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.role-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.role-customer {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1976d2;
+}
+
+.role-admin {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%);
+  color: #f57c00;
+}
+
+.role-super_admin {
+  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+  color: #c2185b;
+}
+
+mat-paginator {
+  margin-top: 24px;
+  box-shadow: var(--cp-card-shadow);
+  border-radius: var(--cp-border-radius);
+  overflow: hidden;
+}
+
+::ng-deep .mat-mdc-form-field-flex {
+    padding: 0 16px !important;
+  }
+
+::ng-deep .mat-mdc-paginator-outer-container {
+  justify-content: center !important;
+  background: white;
+}
+
+.promote-btn {
+  transition: var(--cp-transition);
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Custom Pagination Controls (matching order-management theme)
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  margin-top: 16px;
+  border-top: 1px solid #e9ecef;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .pagination-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+
+    .pagination-text {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+  }
+
+  .pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .pagination-btn {
+      color: var(--cp-primary);
+      
+      &:disabled {
+        color: #dee2e6;
+      }
+    }
+
+    .page-number-btn {
+      min-width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      margin: 0 2px;
+      color: #495057;
+      
+      &.active-page {
+        background: linear-gradient(135deg, var(--cp-primary) 0%, var(--cp-secondary) 100%);
+        color: white;
+      }
+
+      &:hover:not(.active-page) {
+        background: #f8f9fa;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .user-management-container {
+    padding: 16px;
+  }
+  
+  .header-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    
+    .search-field {
+      width: 100%;
+    }
+  }
+  
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  table {
+    font-size: 0.9rem;
+    min-width: 600px;
+  }
+  
+  th, td {
+    padding: 12px 8px;
+  }
+}

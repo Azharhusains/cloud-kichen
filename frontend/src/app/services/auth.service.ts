@@ -33,6 +33,10 @@ export class AuthService {
     }
   }
 
+  checkSuperAdminExists(): Observable<{exists: boolean}> {
+    return this.http.get<{exists: boolean}>(`${environment.apiUrl}/auth/check-super-admin`);
+  }
+
   register(userData: any): Observable<any> {
     return this.http.post(`${environment.apiUrl}/auth/register`, userData);
   }

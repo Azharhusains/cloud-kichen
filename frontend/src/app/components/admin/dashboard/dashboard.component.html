@@ -99,9 +99,19 @@
             <mat-icon>receipt_long</mat-icon>
             <span>View Orders</span>
           </button>
-          <button mat-raised-button class="action-btn" (click)="navigateToTables()">
+<button mat-raised-button class="action-btn" (click)="navigateToTables()">
             <mat-icon>table_bar</mat-icon>
             <span>Manage Tables</span>
+          </button>
+          
+          <!-- Super Admin Only Links -->
+          <button *ngIf="isSuperAdmin" mat-raised-button class="action-btn super-admin-btn" (click)="navigateToRevenue()">
+            <mat-icon>bar_chart</mat-icon>
+            <span>Revenue Dashboard</span>
+          </button>
+          <button *ngIf="isSuperAdmin" mat-raised-button class="action-btn super-admin-btn" (click)="navigateToUsers()">
+            <mat-icon>group</mat-icon>
+            <span>User Management</span>
           </button>
         </div>
       </mat-card-content>

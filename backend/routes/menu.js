@@ -8,8 +8,8 @@ router.get('/', getMenuItems);
 router.get('/:id', getMenuItem);
 
 // Handle multipart/form-data for create and update
-router.post('/', protect, authorize('admin'), upload.single('image'), createMenuItem);
-router.put('/:id', protect, authorize('admin'), upload.single('image'), updateMenuItem);
-router.delete('/:id', protect, authorize('admin'), deleteMenuItem);
+router.post('/', protect, authorize('ADMIN', 'SUPER_ADMIN'), upload.single('image'), createMenuItem);
+router.put('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN'), upload.single('image'), updateMenuItem);
+router.delete('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN'), deleteMenuItem);
 
 module.exports = router;

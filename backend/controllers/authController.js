@@ -15,7 +15,7 @@ const register = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role: requestedRole } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
@@ -23,11 +23,23 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // Check Super Admin count
+    const superAdminCount = await User.countDocuments({ role: 'SUPER_ADMIN' });
+    
+    let finalRole;
+    if (superAdminCount === 0 && requestedRole === 'SUPER_ADMIN') {
+      // Allow first Super Admin creation
+      finalRole = 'SUPER_ADMIN';
+    } else {
+      // Force CUSTOMER for all others (security)
+      finalRole = 'CUSTOMER';
+    }
+
     const user = await User.create({
       name,
       email,
       password,
-      role: role || 'customer',
+      role: finalRole,
     });
 
     res.status(201).json({
@@ -180,4 +192,13 @@ const removeAddress = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getProfile, updateProfile, addAddress, removeAddress };
+const checkSuperAdminExists = async (req, res) => {
+  try {
+    const count = await User.countDocuments({ role: 'SUPER_ADMIN' });
+    res.json({ exists: count > 0 });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { register, login, getProfile, updateProfile, addAddress, removeAddress, checkSuperAdminExists };

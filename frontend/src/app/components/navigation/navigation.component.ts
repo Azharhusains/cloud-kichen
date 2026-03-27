@@ -50,7 +50,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.authService.user$.subscribe((user: any) => {
       this.user = user;
-      this.isAdmin = user?.role === 'admin';
+      this.isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role || '');
     });
 
     this.currentUrl = this.router.url;

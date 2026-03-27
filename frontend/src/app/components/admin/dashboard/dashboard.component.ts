@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../services/auth.service';
 import { OrderService } from '../../../services/order.service';
 import { MenuService } from '../../../services/menu.service';
 import { SocketService } from '../../../services/socket.service';
@@ -30,6 +31,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  isSuperAdmin = false;
   todayOrders: any[] = [];
   totalRevenue = 0;
   totalOrders = 0;
@@ -37,6 +39,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   newOrdersCount = 0;
 
   constructor(
+    private authService: AuthService,
     private orderService: OrderService,
     private menuService: MenuService,
     private socketService: SocketService,
@@ -46,6 +49,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    const userRole = this.authService.getUserRole();
+    this.isSuperAdmin = userRole === 'SUPER_ADMIN';
+    
     this.loadDashboardData();
     this.setupSocketListeners();
     this.setupVisibilityListener();
@@ -165,5 +171,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   navigateToTables(): void {
     this.router.navigate(['/admin/tables']);
+  }
+
+  navigateToRevenue(): void {
+    this.router.navigate(['/admin/revenue']);
+  }
+
+  navigateToUsers(): void {
+    this.router.navigate(['/admin/users']);
   }
 }

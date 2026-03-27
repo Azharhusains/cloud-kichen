@@ -1,29 +1,13 @@
-# Invoice Functionality Implementation Plan
-## Steps:
+# Task Progress: Match Pagination & Theme to Order Management
 
-### 1. Backend Changes [✅]
-- [✅] Add getInvoice endpoint to backend/controllers/orderController.js
-- [✅] Add invoice route to backend/routes/order.js
+✅ NG0303 error fixed.
+✅ Mobile responsive tables added.
 
-### 2. Frontend Dependencies [✅]
-- [✅] Install jspdf & html2canvas: cd frontend && npm i jspdf html2canvas
-
-### 3. Frontend Service Update [✅]
-- [✅] Add getInvoice() method to order.service.ts
-
-### 4. Create Shared Invoice Component [✅]
-- [✅] Create frontend/src/app/components/invoice/invoice.component.ts/html/scss (premium UI, PDF download, printable)
-
-### 5. Integrate to Order Tracking [✅]
-- [✅] Add View/Download Invoice button to order-tracking.component.html/ts
-- [✅] Open invoice modal for completed/delivered orders
-
-### 6. Integrate to Profile [✅]
-- [✅] Add View Invoice button to each past order in profile.component.html/ts
-
-### 7. Test [ ]
-- [ ] Backend endpoint test
-- [ ] Frontend invoice view/download
-- [ ] PDF quality/printable check
-
-**Progress: Step 4 ✅ - Integrating to order-tracking next**
+## Steps for Pagination Consistency:
+- [x] 1. Update TODO.md
+- [ ] 2. Read order-management pagination HTML/CSS as reference
+- [x] 3. Replace mat-paginator in user-management.html with custom pagination controls
+- [x] 4. Replace mat-paginator in revenue-dashboard.html with custom pagination controls
+- [x] 5. Add order-mngt pagination CSS to both SCSS files
+- [x] 6. Update TS logic if needed for custom pagination (added getPageNumbers, previousPage, nextPage, goToPage to user-mngt; recent* methods to revenue-mngt)
+- [ ] 7. Complete task
