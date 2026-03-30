@@ -82,8 +82,9 @@ const createOrder = async (req, res) => {
       if (!menuItem || !menuItem.isAvailable) {
         return res.status(400).json({ message: `Item ${menuItem ? menuItem.name : 'unknown'} is not available` });
       }
-      item.price = menuItem.price;
-      item.costPrice = menuItem.costPrice;
+      // Use halfPrice if quantityType is HALF, else full price
+      item.price = item.quantityType === 'HALF' && menuItem.halfPrice ? menuItem.halfPrice : menuItem.price;
+      item.costPrice = menuItem.costPrice; // Cost price unchanged
       subtotal += item.price * item.quantity;
       totalCost += item.costPrice * item.quantity;
     }

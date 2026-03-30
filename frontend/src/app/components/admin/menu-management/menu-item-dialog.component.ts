@@ -102,31 +102,46 @@ export interface MenuItemDialogData {
             </mat-error>
           </mat-form-field>
 
+          <!-- Half Portion Toggle -->
+          <mat-slide-toggle formControlName="supportsHalf" color="accent" class="half-toggle">
+            Enable Half Portions
+          </mat-slide-toggle>
+
+          <!-- Price Fields -->
           <div class="form-row">
-            <mat-form-field appearance="outline" floatLabel="always">
-              <mat-label>Price (₹)</mat-label>
-              <input matInput type="number" formControlName="price" step="0.01" min="0.01">
+            <mat-form-field appearance="outline" class="full-width" floatLabel="always">
+              <mat-label>Full Price (₹)</mat-label>
+              <input matInput type="number" formControlName="fullPrice" step="0.01" min="0.01">
               <mat-icon matPrefix>currency_rupee</mat-icon>
-              <mat-error *ngIf="menuForm.get('price')?.hasError('required')" class="error-text">
-                Price is required
+              <mat-error *ngIf="menuForm.get('fullPrice')?.hasError('required')" class="error-text">
+                Full price is required
               </mat-error>
-              <mat-error *ngIf="menuForm.get('price')?.hasError('min')" class="error-text">
-                Price must be positive
+              <mat-error *ngIf="menuForm.get('fullPrice')?.hasError('min')" class="error-text">
+                Full price must be positive
               </mat-error>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" floatLabel="always">
-              <mat-label>Cost Price (₹)</mat-label>
-              <input matInput type="number" formControlName="costPrice" step="0.01" min="0.01">
+            <mat-form-field appearance="outline" class="full-width" floatLabel="always" *ngIf="menuForm.get('supportsHalf')?.value">
+              <mat-label>Half Price (₹)</mat-label>
+              <input matInput type="number" formControlName="halfPrice" step="0.01" min="0.01">
               <mat-icon matPrefix>currency_rupee</mat-icon>
-              <mat-error *ngIf="menuForm.get('costPrice')?.hasError('required')" class="error-text">
-                Cost price is required
-              </mat-error>
-              <mat-error *ngIf="menuForm.get('costPrice')?.hasError('min')" class="error-text">
-                Cost price must be positive
+              <mat-error *ngIf="menuForm.get('halfPrice')?.hasError('required')" class="error-text">
+                Half price is required
               </mat-error>
             </mat-form-field>
           </div>
+
+          <mat-form-field appearance="outline" class="full-width" floatLabel="always">
+            <mat-label>Cost Price (₹)</mat-label>
+            <input matInput type="number" formControlName="costPrice" step="0.01" min="0.01">
+            <mat-icon matPrefix>currency_rupee</mat-icon>
+            <mat-error *ngIf="menuForm.get('costPrice')?.hasError('required')" class="error-text">
+              Cost price is required
+            </mat-error>
+            <mat-error *ngIf="menuForm.get('costPrice')?.hasError('min')" class="error-text">
+              Cost price must be positive
+            </mat-error>
+          </mat-form-field>
 
           <mat-slide-toggle formControlName="isAvailable" color="primary">
             Available
@@ -143,118 +158,12 @@ export interface MenuItemDialogData {
       </mat-dialog-actions>
     </div>
   `,
-  styles: [`
-    .menu-item-dialog {
-      min-width: 500px;
-      
-      ::ng-deep .mat-mdc-dialog-content {
-        max-height: 60vh;
-      }
-    }
-
-    .menu-form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding-top: 16px;
-
-      .full-width {
-        width: 100%;
-      }
-
-      .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-
-        mat-form-field {
-          width: 100%;
-        }
-      }
-
-      mat-slide-toggle {
-        margin-top: 8px;
-      }
-    }
-
-    .image-upload-section {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-      padding: 16px;
-      border: 2px dashed #ccc;
-      border-radius: 8px;
-      background-color: #fafafa;
-    }
-
-    .image-preview {
-      position: relative;
-      width: 150px;
-      height: 150px;
-      border-radius: 8px;
-      overflow: hidden;
-      
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .remove-image-btn {
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        background: rgba(0, 0, 0, 0.6);
-        color: white;
-      }
-    }
-
-    .image-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 150px;
-      height: 150px;
-      border: 2px dashed #ccc;
-      border-radius: 8px;
-      color: #888;
-      cursor: pointer;
-      
-      mat-icon {
-        font-size: 48px;
-        width: 48px;
-        height: 48px;
-        margin-bottom: 8px;
-      }
-    }
-
-    .upload-btn {
-      width: 100%;
-    }
-
-    ::ng-deep .error-text {
-      color: #f44336 !important;
-    }
-
-    @media (max-width: 600px) {
-      .menu-item-dialog {
-        min-width: auto;
-      }
-      
-      .menu-form .form-row {
-        grid-template-columns: 1fr;
-      }
-    }
-  `]
+  styleUrls: ['./menu-item-dialog.component.scss']
 })
 export class MenuItemDialogComponent implements OnInit {
   menuForm: FormGroup;
   selectedFile: File | null = null;
   imagePreview: string | null = null;
-  private environment = { apiUrl: '' };
 
   constructor(
     private fb: FormBuilder,
@@ -265,15 +174,38 @@ export class MenuItemDialogComponent implements OnInit {
       name: ['', Validators.required],
       category: ['', Validators.required],
       description: ['', [Validators.required, Validators.maxLength(45)]],
-      price: [null, [Validators.required, Validators.min(1)]],
+      fullPrice: [null, [Validators.required, Validators.min(1)]],
+      halfPrice: [null],
+      supportsHalf: [false],
       costPrice: [null, [Validators.required, Validators.min(1)]],
       isAvailable: [true]
+    });
+
+    // Dynamic validation for halfPrice
+    this.menuForm.get('supportsHalf')?.valueChanges.subscribe(supportsHalf => {
+      const halfPriceControl = this.menuForm.get('halfPrice');
+      if (supportsHalf) {
+        halfPriceControl?.setValidators([Validators.required, Validators.min(1)]);
+      } else {
+        halfPriceControl?.setValidators(null);
+        halfPriceControl?.setValue(null);
+      }
+      halfPriceControl?.updateValueAndValidity();
     });
   }
 
   ngOnInit(): void {
     if (this.data.editingItem) {
-      this.menuForm.patchValue(this.data.editingItem);
+      this.menuForm.patchValue({
+        name: this.data.editingItem.name,
+        category: this.data.editingItem.category,
+        description: this.data.editingItem.description,
+        fullPrice: this.data.editingItem.fullPrice || this.data.editingItem.price,
+        halfPrice: this.data.editingItem.halfPrice,
+        supportsHalf: this.data.editingItem.supportsHalf || false,
+        costPrice: this.data.editingItem.costPrice,
+        isAvailable: this.data.editingItem.isAvailable
+      });
     }
   }
 
@@ -282,7 +214,6 @@ export class MenuItemDialogComponent implements OnInit {
     if (input.files && input.files[0]) {
       this.selectedFile = input.files[0];
       
-      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         this.imagePreview = e.target?.result as string;
@@ -298,7 +229,6 @@ export class MenuItemDialogComponent implements OnInit {
 
   getImageUrl(imagePath: string | null): string {
     if (!imagePath) return '';
-    // Handle relative paths
     if (imagePath.startsWith('/uploads/')) {
       return `http://localhost:5000${imagePath}`;
     }
@@ -313,7 +243,6 @@ export class MenuItemDialogComponent implements OnInit {
 
     const formValue = this.menuForm.value;
     
-    // If there's a new image file selected, use FormData approach
     if (this.selectedFile) {
       const result = {
         ...formValue,
@@ -321,8 +250,6 @@ export class MenuItemDialogComponent implements OnInit {
       };
       this.dialogRef.close(result);
     } else {
-      // No new image selected, just return form values
-      // If editing and removing existing image
       if (this.data.editingItem && !this.imagePreview && this.data.editingItem.image) {
         this.dialogRef.close({
           ...formValue,

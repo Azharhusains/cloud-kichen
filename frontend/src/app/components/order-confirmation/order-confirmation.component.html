@@ -80,8 +80,8 @@
             <div class="item-image">
               <mat-icon>restaurant</mat-icon>
             </div>
-            <span class="item-name">{{ item.menuItem.name }} x {{ item.quantity }}</span>
-            <span class="item-price">₹{{ (item.price * item.quantity).toFixed(2) }}</span>
+            <span class="item-name">{{ item.menuItem.name }} {{ getPortionLabel(item) }} x {{ item.quantity }}</span>
+            <span class="item-price">₹{{ (getItemDisplayPrice(item) * item.quantity) | number : '1.2-2' }}</span>
           </div>
         </div>
         

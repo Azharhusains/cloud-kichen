@@ -96,9 +96,19 @@ export class OrderConfirmationComponent implements OnInit {
     this.router.navigate(['/order-tracking', this.orderId]);
   }
 
+  getItemDisplayPrice(item: any): number {
+    // Use the stored price from order (backend sets correct price)
+    return item.price || item.menuItem?.price || 0;
+  }
+
+  getPortionLabel(item: any): string {
+    return item.quantityType === 'HALF' ? '(Half)' : '(Full)';
+  }
+
   goHome(): void {
     this.router.navigate(['/menu']);
   }
+
 
   // Helper methods for price breakdown
   getSubtotal(): number {

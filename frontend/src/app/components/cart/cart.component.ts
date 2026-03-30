@@ -14,6 +14,7 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
 
 // Services
 import { CartService, CartItem } from '../../services/cart.service';
+import { MatChipsModule } from '@angular/material/chips';
 
 @Component({
   selector: 'app-cart',
@@ -23,7 +24,8 @@ import { CartService, CartItem } from '../../services/cart.service';
     MatCardModule, 
     MatButtonModule, 
     MatIconModule, 
-    MatDividerModule
+    MatDividerModule,
+    MatChipsModule
   ],
   templateUrl: './cart.component.html',
   styleUrls: ['./cart.component.scss'],
@@ -52,7 +54,7 @@ export class CartComponent implements OnInit, OnDestroy {
   taxRate: number = 0.05;
   private cartSubscription!: Subscription;
 
-  constructor(private router: Router, private cartService: CartService) {}
+constructor(private router: Router, public cartService: CartService) {}
 
   ngOnInit(): void {
     // Subscribe to cart changes from CartService for real-time updates
@@ -68,11 +70,11 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   increaseQuantity(item: CartItem): void {
-    this.cartService.increaseQuantity(item.menuItem._id);
+    this.cartService.increaseQuantity(item.menuItem._id, item.quantityType);
   }
 
   decreaseQuantity(item: CartItem): void {
-    this.cartService.decreaseQuantity(item.menuItem._id);
+    this.cartService.decreaseQuantity(item.menuItem._id, item.quantityType);
   }
 
   removeFromCart(item: CartItem): void {
@@ -80,10 +82,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   getSubtotal(): number {
-    return this.cart.reduce((sum: number, item: CartItem) => {
-      const price = item.menuItem?.price || 0;
-      return sum + (price * item.quantity);
-    }, 0);
+    return this.cartService.getSubtotal();
   }
 
   getTax(): number {

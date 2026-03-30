@@ -33,6 +33,11 @@ const orderSchema = new mongoose.Schema({
       required: true,
       min: 1,
     },
+    quantityType: {
+      type: String,
+      enum: ['FULL', 'HALF'],
+      default: 'FULL'
+    },
     price: {
       type: Number,
       required: true,

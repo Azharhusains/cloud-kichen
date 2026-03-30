@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 export interface CartItem {
   menuItem: any;
   quantity: number;
+  quantityType: 'FULL' | 'HALF';
 }
 
 export interface TableInfo {
@@ -92,48 +93,81 @@ export class CartService {
     this.loadCartFromLocalStorage();
   }
 
-  addToCart(menuItem: any): void {
+  addToCart(menuItem: any, quantityType: 'FULL' | 'HALF' = 'FULL'): void {
     const cart = this.getCart();
-    const existingItem = cart.find((item: CartItem) => item.menuItem._id === menuItem._id);
+    const existingItemIndex = cart.findIndex((item: CartItem) => 
+      item.menuItem._id === menuItem._id && item.quantityType === quantityType
+    );
     
-    if (existingItem) {
-      existingItem.quantity++;
+    if (existingItemIndex !== -1) {
+      cart[existingItemIndex].quantity++;
     } else {
-      cart.push({ menuItem, quantity: 1 });
+      cart.push({ menuItem, quantity: 1, quantityType });
     }
     
     this.saveCart(cart);
   }
 
-  removeFromCart(menuItemId: string): void {
-    const cart = this.getCart().filter((item: CartItem) => item.menuItem._id !== menuItemId);
+  removeFromCart(menuItemId: string, quantityType?: 'FULL' | 'HALF'): void {
+    let cart = this.getCart();
+    if (quantityType) {
+      cart = cart.filter((item: CartItem) => !(item.menuItem._id === menuItemId && item.quantityType === quantityType));
+    } else {
+      cart = cart.filter((item: CartItem) => item.menuItem._id !== menuItemId);
+    }
     this.saveCart(cart);
   }
 
-  increaseQuantity(menuItemId: string): void {
+  toggleQuantityType(menuItemId: string, currentType: 'FULL' | 'HALF'): void {
+    const newType = currentType === 'FULL' ? 'HALF' : 'FULL';
     const cart = this.getCart();
-    const item = cart.find((i: CartItem) => i.menuItem._id === menuItemId);
-    if (item) {
-      item.quantity++;
+    const itemIndex = cart.findIndex((item: CartItem) => item.menuItem._id === menuItemId && item.quantityType === currentType);
+    if (itemIndex !== -1) {
+      cart[itemIndex].quantityType = newType;
       this.saveCart(cart);
     }
   }
 
-  decreaseQuantity(menuItemId: string): void {
+  increaseQuantity(menuItemId: string, quantityType: 'FULL' | 'HALF'): void {
     const cart = this.getCart();
-    const item = cart.find((i: CartItem) => i.menuItem._id === menuItemId);
-    if (item) {
-      if (item.quantity > 1) {
-        item.quantity--;
+    const itemIndex = cart.findIndex((i: CartItem) => i.menuItem._id === menuItemId && i.quantityType === quantityType);
+    if (itemIndex !== -1) {
+      cart[itemIndex].quantity++;
+      this.saveCart(cart);
+    }
+  }
+
+  decreaseQuantity(menuItemId: string, quantityType: 'FULL' | 'HALF'): void {
+    const cart = this.getCart();
+    const itemIndex = cart.findIndex((i: CartItem) => i.menuItem._id === menuItemId && i.quantityType === quantityType);
+    if (itemIndex !== -1) {
+      if (cart[itemIndex].quantity > 1) {
+        cart[itemIndex].quantity--;
         this.saveCart(cart);
       } else {
-        this.removeFromCart(menuItemId);
+        cart.splice(itemIndex, 1);
+        this.saveCart(cart);
       }
     }
   }
 
   clearCart(): void {
     this.saveCart([]);
+  }
+
+  getCartItemPrice(item: CartItem): number {
+    const menuItem = item.menuItem;
+    if (!menuItem.supportsHalf || item.quantityType === 'FULL') {
+      return menuItem.fullPrice || menuItem.price || 0;
+    }
+    return menuItem.halfPrice || 0;
+  }
+
+  getSubtotal(): number {
+    const cart = this.getCart();
+    return cart.reduce((sum: number, item: CartItem) => {
+      return sum + (this.getCartItemPrice(item) * item.quantity);
+    }, 0);
   }
 
   private saveCart(cart: CartItem[]): void {

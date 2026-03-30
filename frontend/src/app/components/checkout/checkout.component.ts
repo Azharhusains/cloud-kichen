@@ -13,6 +13,8 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 // Razorpay - loaded dynamically
 
@@ -23,7 +25,9 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
 import { OrderService } from '../../services/order.service';
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
+import { MatChipsModule } from '@angular/material/chips';
 import { ToastService } from '../../services/toast.service';
+
 
 @Component({
   selector: 'app-checkout',
@@ -40,11 +44,21 @@ import { ToastService } from '../../services/toast.service';
     MatRadioModule,
     MatCheckboxModule,
     MatDividerModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatTooltipModule,
+    MatProgressSpinnerModule,
+    MatChipsModule
   ],
+
   templateUrl: './checkout.component.html',
   styleUrls: ['./checkout.component.scss'],
   animations: [
+    trigger('premiumSlideIn', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateX(-30px) scale(0.95)' }),
+        animate('0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)', style({ opacity: 1, transform: 'translateX(0) scale(1)' }))
+      ])
+    ]),
     trigger('fadeInUp', [
       transition(':enter', [
         style({ opacity: 0, transform: 'translateY(20px)' }),
@@ -59,6 +73,12 @@ import { ToastService } from '../../services/toast.service';
             animate('0.4s ease-out', style({ opacity: 1, transform: 'translateX(0)' }))
           ])
         ], { optional: true })
+      ])
+    ]),
+    trigger('slideIn', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateX(-20px)' }),
+        animate('0.4s ease-out', style({ opacity: 1, transform: 'translateX(0)' }))
       ])
     ])
   ]
@@ -90,7 +110,7 @@ export class CheckoutComponent implements OnInit {
     private orderService: OrderService,
     private authService: AuthService,
     private router: Router,
-    private cartService: CartService,
+    public cartService: CartService,
     private toastService: ToastService
   ) {
     this.checkoutForm = this.fb.group({
@@ -178,7 +198,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   getSubtotal(): number {
-    return this.cart.reduce((sum: number, item: any) => sum + (item.menuItem.price * item.quantity), 0);
+    return this.cartService.getSubtotal();
   }
 
   getTax(): number {
@@ -196,6 +216,24 @@ export class CheckoutComponent implements OnInit {
 
   private updateTotals(): void {
     this.finalTotal = this.getTotal() - this.couponDiscount;
+  }
+
+  increaseQuantity(item: any): void {
+    this.cartService.increaseQuantity(item.menuItem._id, item.quantityType);
+  }
+
+  decreaseQuantity(item: any): void {
+    this.cartService.decreaseQuantity(item.menuItem._id, item.quantityType);
+  }
+
+  toggleItemType(item: any): void {
+    this.cartService.toggleQuantityType(item.menuItem._id, item.quantityType);
+  }
+
+  removeFromCart(item: any): void {
+    this.cartService.removeFromCart(item.menuItem._id, item.quantityType);
+    this.loadCart();
+    this.toastService.show('Item removed from cart', 'info');
   }
 
   goBack(): void {
@@ -226,7 +264,8 @@ export class CheckoutComponent implements OnInit {
       items: this.cart.map((item: any) => ({
         menuItem: item.menuItem._id,
         quantity: item.quantity,
-        price: item.menuItem.price
+        quantityType: item.quantityType,
+        price: this.cartService.getCartItemPrice(item)
       })),
       subtotal: this.getSubtotal(),
       taxAmount: this.getTax(),

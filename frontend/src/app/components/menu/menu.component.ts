@@ -188,28 +188,72 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   addToCart(item: MenuItem): void {
-    this.cartService.addToCart(item);
+    this.cartService.addToCart(item, 'FULL');
   }
 
   increaseQuantity(menuItem: any): void {
-    this.cartService.increaseQuantity(menuItem._id);
+    const type = this.getCurrentPortionType(menuItem);
+    this.cartService.increaseQuantity(menuItem._id, type);
   }
 
   decreaseQuantity(menuItem: any): void {
-    this.cartService.decreaseQuantity(menuItem._id);
+    const type = this.getCurrentPortionType(menuItem);
+    this.cartService.decreaseQuantity(menuItem._id, type);
   }
 
   getItemQuantity(item: MenuItem): number {
-    const cartItem = this.cart.find((c: any) => c.menuItem._id === item._id);
+    const fullQty = this.cart.find((c: any) => c.menuItem._id === item._id && c.quantityType === 'FULL')?.quantity || 0;
+    const halfQty = this.cart.find((c: any) => c.menuItem._id === item._id && c.quantityType === 'HALF')?.quantity || 0;
+    return fullQty + halfQty;
+  }
+
+  getCurrentPortionType(item: MenuItem): 'FULL' | 'HALF' {
+    const halfItem = this.cart.find((c: any) => c.menuItem._id === item._id && c.quantityType === 'HALF');
+    if (halfItem && halfItem.quantity > 0) return 'HALF';
+    return 'FULL';
+  }
+
+  getCurrentQuantity(item: MenuItem): number {
+    const type = this.getCurrentPortionType(item);
+    const cartItem = this.cart.find((c: any) => c.menuItem._id === item._id && c.quantityType === type);
     return cartItem ? cartItem.quantity : 0;
+  }
+
+  addCurrentPortion(item: MenuItem): void {
+    this.cartService.addToCart(item, this.getCurrentPortionType(item));
+  }
+
+  togglePortion(item: MenuItem): void {
+    const cart = this.cartService.getCart();
+    const hasHalf = cart.some(c => c.menuItem._id === item._id && c.quantityType === 'HALF' && c.quantity > 0);
+    const targetType = hasHalf ? 'FULL' : 'HALF';
+    
+    // Remove existing target (cleanup if any)
+    this.cartService.removeFromCart(item._id, targetType);
+    // Remove opposite
+    const oppositeType = targetType === 'FULL' ? 'HALF' : 'FULL';
+    this.cartService.removeFromCart(item._id, oppositeType);
+    
+    // Add target portion qty=1
+    this.cartService.addToCart(item, targetType);
   }
 
   removeFromCart(menuItem: any): void {
     this.cartService.removeFromCart(menuItem._id);
   }
 
+  getItemPrice(item: MenuItem, quantityType: 'FULL' | 'HALF' = 'FULL'): number {
+    if (!item.supportsHalf || quantityType === 'FULL') {
+      return item.fullPrice || item.price || 0;
+    }
+    return item.halfPrice || 0;
+  }
+
   getTotalPrice(): number {
-    return this.cart.reduce((sum, item: any) => sum + (item.menuItem.price * item.quantity), 0);
+    return this.cart.reduce((sum, cartItem: any) => {
+      const price = this.getItemPrice(cartItem.menuItem, cartItem.quantityType || 'FULL');
+      return sum + (price * cartItem.quantity);
+    }, 0);
   }
 
   checkout(): void {
@@ -217,8 +261,7 @@ export class MenuComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login']);
       return;
     }
-    // Navigate to table select first to choose between dine-in or delivery
-    this.router.navigate(['/table-select']);
+    this.router.navigate(['/cart']);
   }
 
   openItemDetails(item: MenuItem): void {

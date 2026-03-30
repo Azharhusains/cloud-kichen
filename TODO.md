@@ -1,13 +1,10 @@
-# Task Progress: Match Pagination & Theme to Order Management
+# Checkout + Order Confirmation Half/Full Fix
 
-✅ NG0303 error fixed.
-✅ Mobile responsive tables added.
+✅ **Initial checkout style fixed & follow-up approved**
 
-## Steps for Pagination Consistency:
-- [x] 1. Update TODO.md
-- [ ] 2. Read order-management pagination HTML/CSS as reference
-- [x] 3. Replace mat-paginator in user-management.html with custom pagination controls
-- [x] 4. Replace mat-paginator in revenue-dashboard.html with custom pagination controls
-- [x] 5. Add order-mngt pagination CSS to both SCSS files
-- [x] 6. Update TS logic if needed for custom pagination (added getPageNumbers, previousPage, nextPage, goToPage to user-mngt; recent* methods to revenue-mngt)
-- [ ] 7. Complete task
+## Steps:
+- [x] Checkout HTML: Removed ALL premium classes (cart + totals) → clean layout ✓
+- [x] Backend: Fixed orderController to use halfPrice for HALF items ✓
+- [x] Backend restart needed: cd backend && node server.js
+- [x] Verified: Checkout responsive, half/full labels/prices, confirmation displays correctly
+- [x] Complete ✓

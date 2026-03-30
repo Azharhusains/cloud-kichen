@@ -80,6 +80,21 @@ const createMenuItem = async (req, res) => {
     if (req.file) {
       req.body.image = `/uploads/menu-images/${req.file.filename}`;
     }
+
+    // Validation for half portions
+    if (req.body.supportsHalf === 'true') {
+      if (!req.body.halfPrice || parseFloat(req.body.halfPrice) <= 0) {
+        return res.status(400).json({ message: 'Half price is required when supportsHalf is true' });
+      }
+      if (parseFloat(req.body.halfPrice) >= parseFloat(req.body.fullPrice)) {
+        return res.status(400).json({ message: 'Half price must be less than full price' });
+      }
+    }
+
+    // Backward compatibility: if no fullPrice provided but price exists, use price
+    if (!req.body.fullPrice && req.body.price) {
+      req.body.fullPrice = parseFloat(req.body.price);
+    }
     
     const menuItem = new MenuItem(req.body);
     const createdItem = await menuItem.save();
@@ -116,6 +131,23 @@ const updateMenuItem = async (req, res) => {
           fs.unlinkSync(oldImagePath);
         }
       }
+      req.body.image = null;
+    }
+
+    // Validation for half portions
+    const supportsHalf = req.body.supportsHalf === 'true' || req.body.supportsHalf === true;
+    if (supportsHalf) {
+      if (!req.body.halfPrice || parseFloat(req.body.halfPrice) <= 0) {
+        return res.status(400).json({ message: 'Half price is required when supportsHalf is true' });
+      }
+      if (parseFloat(req.body.halfPrice) >= parseFloat(req.body.fullPrice || menuItem.fullPrice)) {
+        return res.status(400).json({ message: 'Half price must be less than full price' });
+      }
+    }
+
+    // Backward compatibility: if fullPrice not provided but price changed, update fullPrice
+    if (req.body.price && !req.body.fullPrice) {
+      req.body.fullPrice = parseFloat(req.body.price);
     }
     
     Object.assign(menuItem, req.body);

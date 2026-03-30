@@ -295,6 +295,68 @@
       .add-to-cart-container {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .portion-selector {
+        display: flex;
+        gap: 4px;
+        background: white;
+        border-radius: 25px;
+        padding: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+        .portion-btn {
+          flex: 1;
+          padding: 8px 12px;
+          border-radius: 20px;
+          border: none;
+          font-size: 0.85rem;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          cursor: pointer;
+
+          &.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
+          }
+
+          &.half-btn {
+            color: #ff6b6b;
+            border: 2px solid rgba(255, 107, 107, 0.2);
+          }
+
+          &.full-btn {
+            color: #667eea;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+          }
+
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          }
+
+          small {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            display: block;
+          }
+        }
+      }
+
+      .qty-add-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .add-btn {
+          white-space: nowrap;
+        }
       }
 
       .add-btn {

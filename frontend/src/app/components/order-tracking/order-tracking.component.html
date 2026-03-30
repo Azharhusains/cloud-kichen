@@ -151,11 +151,11 @@
               <mat-icon>restaurant</mat-icon>
             </div>
             <div class="item-info">
-              <span class="item-name">{{ item.menuItem.name }}</span>
+              <span class="item-name">{{ item.menuItem.name }}{{ getPortionLabel(item) }}</span>
               <span class="item-qty">Qty: {{ item.quantity }}</span>
             </div>
             <span class="item-price"
-              >₹{{ (item.price * item.quantity).toFixed(2) }}</span
+              >₹{{ (getItemDisplayPrice(item) * item.quantity) | number : '1.2-2' }}</span
             >
           </div>
         </div>

@@ -55,32 +55,51 @@
         
         <p class="item-description">{{ item.description }}</p>
         
-        <div class="item-footer">
-          <span class="price">₹{{ item.price.toFixed(2) }}</span>
-          
+        <div class="item-footer">          
           <!-- Enhanced Add to Cart Button -->
           <div class="add-to-cart-container" *ngIf="item.isAvailable">
-            <!-- Quantity Controls (when item is in cart) -->
-            <div class="quantity-controls" *ngIf="getItemQuantity(item) > 0">
-              <button mat-mini-fab class="qty-btn qty-decrease" (click)="decreaseQuantity(item); $event.stopPropagation()">
-                <mat-icon>remove</mat-icon>
+            <!-- Portion Selector (Swiggy/Zomato style) -->
+            <div class="portion-selector" *ngIf="item.supportsHalf">
+              <button 
+                class="portion-btn half-btn"
+                [class.active]="getCurrentPortionType(item) === 'HALF'"
+                (click)="togglePortion(item); $event.stopPropagation()"
+                mat-stroked-button
+                size="small">
+                Half<br><small>₹{{ item.halfPrice | number:'1.0-0' }}</small>
               </button>
-              <span class="qty-badge">{{ getItemQuantity(item) }}</span>
-              <button mat-mini-fab class="qty-btn qty-increase" (click)="increaseQuantity(item); $event.stopPropagation()">
-                <mat-icon>add</mat-icon>
+              <button 
+                class="portion-btn full-btn active"
+                [class.active]="getCurrentPortionType(item) === 'FULL'"
+                (click)="togglePortion(item); $event.stopPropagation()"
+                mat-stroked-button
+                size="small">
+                Full<br><small>₹{{ item.fullPrice | number:'1.0-0' }}</small>
               </button>
             </div>
-            
-            <!-- Add Button (when item not in cart) -->
-            <button 
-              mat-raised-button 
-              class="add-btn" 
-              *ngIf="getItemQuantity(item) === 0"
-              (click)="addToCart(item); $event.stopPropagation()">
-              <mat-icon class="cart-icon">add_shopping_cart</mat-icon>
-              <span class="btn-text">Add</span>
-              <span class="btn-price">₹{{ item.price.toFixed(0) }}</span>
-            </button>
+            <!-- Qty/Add Wrapper -->
+            <div class="qty-add-wrapper">
+              <!-- Quantity for current portion -->
+              <div class="quantity-controls" *ngIf="getCurrentQuantity(item) > 0">
+                <button mat-mini-fab class="qty-btn qty-decrease" (click)="decreaseQuantity(item); $event.stopPropagation()">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <span class="qty-badge">{{ getCurrentQuantity(item) }}</span>
+                <button mat-mini-fab class="qty-btn qty-increase" (click)="increaseQuantity(item); $event.stopPropagation()">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+              <!-- Add current portion -->
+              <button 
+                mat-raised-button 
+                class="add-btn" 
+                *ngIf="getCurrentQuantity(item) === 0"
+                (click)="addCurrentPortion(item); $event.stopPropagation()">
+                <mat-icon class="cart-icon">add_shopping_cart</mat-icon>
+                Add
+                <span class="btn-price">₹{{ getItemPrice(item, getCurrentPortionType(item)) | number:'1.0-0' }}</span>
+              </button>
+            </div>
           </div>
           
           <!-- Unavailable Item Button -->

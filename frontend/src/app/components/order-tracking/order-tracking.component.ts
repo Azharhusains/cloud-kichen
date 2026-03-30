@@ -310,6 +310,17 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     this.router.navigate(['/profile']);
   }
 
+  getItemDisplayPrice(item: any): number {
+    if (item.quantityType === 'HALF' && item.menuItem?.halfPrice) {
+      return item.menuItem.halfPrice;
+    }
+    return item.menuItem?.fullPrice || item.menuItem?.price || item.price || 0;
+  }
+
+  getPortionLabel(item: any): string {
+    return item.quantityType === 'HALF' ? '(Half)' : '';
+  }
+
   goHome(): void {
     this.router.navigate(['/home']);
   }

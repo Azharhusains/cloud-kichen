@@ -195,7 +195,7 @@ export class MenuManagementComponent implements OnInit {
     });
   }
 
-  getImageUrl(imagePath: string | null): string {
+getImageUrl(imagePath: string | null): string {
     if (!imagePath) return '';
     // Handle relative paths
     if (imagePath.startsWith('/uploads/')) {
@@ -204,5 +204,12 @@ export class MenuManagementComponent implements OnInit {
       return `${baseUrl}${imagePath}`;
     }
     return imagePath;
+  }
+
+  getPriceDisplay(item: any): string {
+    if (item.supportsHalf && item.halfPrice) {
+      return `₹${item.fullPrice.toFixed(2)} / ₹${item.halfPrice.toFixed(2)}`;
+    }
+    return `₹${(item.fullPrice || item.price || 0).toFixed(2)}`;
   }
 }

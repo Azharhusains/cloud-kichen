@@ -9,7 +9,10 @@ export interface MenuItem {
   name: string;
   category: string;
   description: string;
-  price: number;
+  supportsHalf: boolean;
+  fullPrice: number;
+  halfPrice?: number;
+  price?: number; // virtual backward compat
   costPrice: number;
   image: string | null;
   isAvailable: boolean;
@@ -44,7 +47,9 @@ export class MenuService {
       formData.append('name', item.name || '');
       formData.append('category', item.category || '');
       formData.append('description', item.description || '');
-      formData.append('price', String(item.price || 0));
+      formData.append('fullPrice', String(item.fullPrice || 0));
+      if (item.halfPrice !== undefined) formData.append('halfPrice', String(item.halfPrice));
+      formData.append('supportsHalf', String(item.supportsHalf || false));
       formData.append('costPrice', String(item.costPrice || 0));
       formData.append('isAvailable', String(item.isAvailable !== false));
       return this.http.post<MenuItem>(`${environment.apiUrl}/menu`, formData);
@@ -61,7 +66,9 @@ export class MenuService {
       if (item.name) formData.append('name', item.name);
       if (item.category) formData.append('category', item.category);
       if (item.description) formData.append('description', item.description);
-      if (item.price !== undefined) formData.append('price', String(item.price));
+      if (item.fullPrice !== undefined) formData.append('fullPrice', String(item.fullPrice));
+      if (item.halfPrice !== undefined) formData.append('halfPrice', String(item.halfPrice));
+      if (item.supportsHalf !== undefined) formData.append('supportsHalf', String(item.supportsHalf));
       if (item.costPrice !== undefined) formData.append('costPrice', String(item.costPrice));
       formData.append('isAvailable', String(item.isAvailable !== false));
       return this.http.put<MenuItem>(`${environment.apiUrl}/menu/${id}`, formData);

@@ -56,13 +56,15 @@
             </div>
             
             <div class="price-info">
-<div class="price">
+              <div class="price">
                 <mat-icon>currency_rupee</mat-icon>
-                <span class="amount">{{ item.price.toFixed(2) }}</span>
+                <span class="full-price">{{ (item.fullPrice || item.price || 0).toFixed(2) }}</span>
+                <span *ngIf="item.supportsHalf && item.halfPrice" class="half-price">/ {{ item.halfPrice.toFixed(2) }}</span>
               </div>
+              <mat-chip *ngIf="item.supportsHalf" class="half-chip">Half Available</mat-chip>
               <div class="cost-price">
                 <span class="label">Cost:</span>
-                <span class="amount">₹{{ item.costPrice.toFixed(2) }}</span>
+                <span class="amount">₹{{ (item.costPrice || 0).toFixed(2) }}</span>
               </div>
             </div>
           </div>
