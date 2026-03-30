@@ -1,1 +1,11 @@
-# Global Form Error Styling Implementation Plan\n\n## Status: ✅ Approved by user\n\n### Step 1: [PENDING] Create TODO.md\n✅ Completed\n\n### Step 2: [PENDING] Add exact error styles to frontend/src/styles.scss\n- Insert provided ::ng-deep block to global styles\n\n### Step 3: [PENDING] Remove error styles from component SCSS files\n- login.component.scss\n- register.component.scss\n- checkout.component.scss\n\n### Step 4: [PENDING] Test implementation\n- Run `ng serve` (cd frontend &amp;&amp; ng serve)\n- Verify red error styling on login/register/checkout forms\n- Check no regressions in other forms\n\n### Step 5: [PENDING] Mark complete &amp; attempt_completion\n\n---\n*Updated by BLACKBOXAI*
+# Fix Menu Item Update Image Removal Issue
+
+## Steps:
+- [x] Step 0: Analyzed files and confirmed root cause in menu-item-dialog.component.ts onSubmit()
+- [x] Step 1: Edit `frontend/src/app/components/admin/menu-management/menu-item-dialog.component.ts`:
+  * In onSubmit(): Preserve `image: this.data.editingItem.image` when editing + no new image selected
+  * Fix getImageUrl(): Import and use `environment.apiUrl` consistently (path fixed to '../../../../environments/environment')
+- [ ] Step 2: Test update without image change → image should persist
+- [ ] Step 3: Mark complete
+
+**Next Action**: Test the fix (Step 2)

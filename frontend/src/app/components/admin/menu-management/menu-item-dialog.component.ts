@@ -11,6 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { environment } from '../../../../environments/environment';
 
 export interface MenuItemDialogData {
   editingItem?: any;
@@ -229,8 +230,10 @@ export class MenuItemDialogComponent implements OnInit {
 
   getImageUrl(imagePath: string | null): string {
     if (!imagePath) return '';
+    // Handle relative paths
     if (imagePath.startsWith('/uploads/')) {
-      return `http://localhost:5000${imagePath}`;
+      const baseUrl = environment.apiUrl.replace('/api', '');
+      return `${baseUrl}${imagePath}`;
     }
     return imagePath;
   }
@@ -250,12 +253,12 @@ export class MenuItemDialogComponent implements OnInit {
       };
       this.dialogRef.close(result);
     } else {
-      if (this.data.editingItem && !this.imagePreview && this.data.editingItem.image) {
-        this.dialogRef.close({
-          ...formValue,
-          image: null
-        });
-      } else {
+    if (this.data.editingItem && !this.imagePreview && this.data.editingItem.image) {
+      this.dialogRef.close({
+        ...formValue,
+        image: this.data.editingItem.image
+      });
+    } else {
         this.dialogRef.close(formValue);
       }
     }
