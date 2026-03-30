@@ -370,12 +370,26 @@ export class MenuItemDialogComponent implements OnInit {
     return item.halfPrice || 0;
   }
 
+  getHalfQuantity(): number {
+    const itemId = this.data.viewingItem?._id;
+    const cartItem = this.cart.find((c: any) => c.menuItem._id === itemId && c.quantityType === 'HALF');
+    return cartItem ? cartItem.quantity : 0;
+  }
 
+  getFullQuantity(): number {
+    const itemId = this.data.viewingItem?._id;
+    const cartItem = this.cart.find((c: any) => c.menuItem._id === itemId && c.quantityType === 'FULL');
+    return cartItem ? cartItem.quantity : 0;
+  }
 
   selectPortionDialog(portionType: 'HALF' | 'FULL'): void {
-    const itemId = this.data.viewingItem._id;
-    this.cartService.clearItemById(itemId);
     this.currentPortion = portionType;
+    if (this.data.viewingItem) {
+      const currentQty = portionType === 'HALF' ? this.getHalfQuantity() : this.getFullQuantity();
+      if (currentQty === 0) {
+        this.cartService.addToCart(this.data.viewingItem, portionType);
+      }
+    }
   }
 
 

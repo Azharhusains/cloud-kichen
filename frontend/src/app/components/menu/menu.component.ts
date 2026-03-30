@@ -92,7 +92,7 @@ export class MenuComponent implements OnInit, OnDestroy {
     public router: Router,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private cartService: CartService
+    public cartService: CartService
   ) {}
 
   ngOnInit(): void {
@@ -101,10 +101,10 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.loadCart();
     this.isLoggedIn = this.authService.isAuthenticated();
 
-    // Subscribe to cart count from CartService for real-time updates
-    this.cartSubscription = this.cartService.cartItemCount$.subscribe((count: number) => {
-      this.cartItemCount = count;
-      this.cart = this.cartService.getCart();
+    // Subscribe to cart changes for real-time updates
+    this.cartSubscription = this.cartService.cart$.subscribe((cart: any[]) => {
+      this.cart = cart;
+      this.cartItemCount = cart.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
     });
   }
 
@@ -135,7 +135,7 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   loadCart(): void {
     this.cart = this.cartService.getCart();
-    this.cartItemCount = this.cartService.getCartItemCount();
+    this.cartItemCount = this.cart.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
   }
 
   selectCategory(categoryName: string): void {
@@ -188,17 +188,17 @@ export class MenuComponent implements OnInit, OnDestroy {
   }
 
   addToCart(item: MenuItem): void {
-    this.cartService.addToCart(item, 'FULL');
+    this.cartService.addToCart(item);
   }
 
-  increaseQuantity(menuItem: any): void {
-    const type = this.getCurrentPortionType(menuItem);
-    this.cartService.increaseQuantity(menuItem._id, type);
+  increaseQuantity(item: MenuItem): void {
+    const type = this.getCurrentPortionType(item);
+    this.cartService.increaseQuantity(item._id, type);
   }
 
-  decreaseQuantity(menuItem: any): void {
-    const type = this.getCurrentPortionType(menuItem);
-    this.cartService.decreaseQuantity(menuItem._id, type);
+  decreaseQuantity(item: MenuItem): void {
+    const type = this.getCurrentPortionType(item);
+    this.cartService.decreaseQuantity(item._id, type);
   }
 
   getItemQuantity(item: MenuItem): number {
@@ -207,10 +207,19 @@ export class MenuComponent implements OnInit, OnDestroy {
     return fullQty + halfQty;
   }
 
+  private lastPortionTypes: { [key: string]: 'HALF' | 'FULL' } = {};
+
   getCurrentPortionType(item: MenuItem): 'FULL' | 'HALF' {
+    // Prioritize last selected type for immediate feedback
+    if (this.lastPortionTypes[item._id]) {
+      return this.lastPortionTypes[item._id];
+    }
     const halfItem = this.cart.find((c: any) => c.menuItem._id === item._id && c.quantityType === 'HALF');
-    if (halfItem && halfItem.quantity > 0) return 'HALF';
-    return 'FULL';
+    const fullItem = this.cart.find((c: any) => c.menuItem._id === item._id && c.quantityType === 'FULL');
+    const halfQty = halfItem?.quantity || 0;
+    const fullQty = fullItem?.quantity || 0;
+    // Prefer the portion with higher quantity; fallback to FULL
+    return fullQty > halfQty ? 'FULL' : (halfQty > 0 ? 'HALF' : 'FULL');
   }
 
   getCurrentQuantity(item: MenuItem): number {
@@ -219,17 +228,37 @@ export class MenuComponent implements OnInit, OnDestroy {
     return cartItem ? cartItem.quantity : 0;
   }
 
+  getHalfQuantity(item: MenuItem): number {
+    const cartItem = this.cart.find((c: any) => c.menuItem._id === item._id && c.quantityType === 'HALF');
+    return cartItem ? cartItem.quantity : 0;
+  }
+
+  getFullQuantity(item: MenuItem): number {
+    const cartItem = this.cart.find((c: any) => c.menuItem._id === item._id && c.quantityType === 'FULL');
+    return cartItem ? cartItem.quantity : 0;
+  }
+
+  getQtyForPortion(item: MenuItem, type: 'FULL' | 'HALF'): number {
+    const cartItem = this.cart.find((c: any) => c.menuItem._id === item._id && c.quantityType === type);
+    return cartItem ? cartItem.quantity : 0;
+  }
+
   addCurrentPortion(item: MenuItem): void {
     this.cartService.addToCart(item, this.getCurrentPortionType(item));
   }
 
+  togglePortion(item: MenuItem): void {
+    const currentType = this.getCurrentPortionType(item);
+    const newType = currentType === 'FULL' ? 'HALF' : 'FULL';
+    this.selectPortion(item, newType);
+  }
+
   selectPortion(item: MenuItem, portionType: 'HALF' | 'FULL'): void {
-    // Remove all existing portions for this item
-    this.cartService.removeFromCart(item._id, 'HALF');
-    this.cartService.removeFromCart(item._id, 'FULL');
-    
-    // Add selected portion with qty=1
-    this.cartService.addToCart(item, portionType);
+    this.lastPortionTypes[item._id] = portionType;
+    const currentQty = this.getQtyForPortion(item, portionType);
+    if (currentQty === 0) {
+      this.cartService.addToCart(item, portionType);
+    }
   }
 
   removeFromCart(menuItem: any): void {
@@ -309,3 +338,4 @@ export class MenuComponent implements OnInit, OnDestroy {
     return imagePath;
   }
 }
+

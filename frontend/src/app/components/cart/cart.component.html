@@ -34,7 +34,7 @@
               
               <div class="item-details">
                 <h3>{{ item.menuItem.name }}
-                  <mat-chip class="quantity-type-chip">
+                  <mat-chip class="quantity-type-chip" *ngIf="item.menuItem?.supportsHalf">
                     {{ item.quantityType === 'HALF' ? 'Half' : 'Full' }}
                   </mat-chip>
                 </h3>

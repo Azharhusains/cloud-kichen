@@ -51,7 +51,7 @@
         <tbody>
           <tr *ngFor="let item of invoiceData?.items; let i = index">
             <td>{{ i + 1 }}</td>
-            <td>{{ item.menuItem?.name || item.name }}{{ item.quantityType === 'HALF' ? ' (Half)' : '' }}</td>
+            <td>{{ item.menuItem?.name || item.name }}<span *ngIf="item.menuItem?.supportsHalf && item.quantityType === 'HALF'"> (Half)</span></td>
             <td>{{ item.quantity }}</td>
             <td>₹{{ (item.quantityType === 'HALF' ? item.menuItem?.halfPrice : item.menuItem?.fullPrice || item.price) | number:'1.2-2' }}</td>
             <td>₹{{ item.total | number:'1.2-2' }}</td>

@@ -78,7 +78,7 @@ constructor(private router: Router, public cartService: CartService) {}
   }
 
   removeFromCart(item: CartItem): void {
-    this.cartService.removeFromCart(item.menuItem._id);
+    this.cartService.removeFromCart(item.menuItem._id, item.quantityType);
   }
 
   getSubtotal(): number {

@@ -1,11 +1,10 @@
-# Fix Half Item Cart Duplication Issue
+# TODO: Implement Full/Half Toggle Logic (No Increment on Active Button)
 
-## Plan Steps:
-- [x] Step 1: Edit menu.component.ts to remove duplicate addToCart call in openItemDetails() ✅
-- [ ] Step 2: Test the fix by adding half item from dialog
-- [ ] Step 3: Verify only single HALF item in cart
-- [ ] Complete
+## Steps:
 
-**Current Progress: Core fix implemented. Test in browser: Menu → Dialog → Toggle Half → Add to Cart → Check cart shows only HALF item.**
-
-
+- [x] 1. Add helper method `getQtyForPortion` to menu.component.ts
+- [x] 2. Update `selectPortion` in menu.component.ts: gate addToCart on qty===0
+- [x] 3. Add helper methods `getHalfQuantity()` and `getFullQuantity()` to menu-item-dialog.component.ts
+- [x] 4. Update `selectPortionDialog` in menu-item-dialog.component.ts: gate addToCart on qty===0
+- [x] 5. Fixed cartItemCount display issue by computing locally from cart array in subscription and loadCart
+- [x] 6. attempt_completion

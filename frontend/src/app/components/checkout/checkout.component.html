@@ -27,7 +27,7 @@
           <div *ngFor="let item of cart" class="order-item">
             <div class="item-info">
               <span class="item-name">{{ item.menuItem.name }}</span>
-              <span class="item-qty"> {{ item.quantityType === 'HALF' ? '(Half)' : '(Full)' }}</span>
+              <span class="item-qty" *ngIf="item.menuItem?.supportsHalf"> {{ item.quantityType === 'HALF' ? '(Half)' : '(Full)' }}</span>
               <span class="item-qty">x{{ item.quantity }}</span>
             </div>
             <div class="item-price">
