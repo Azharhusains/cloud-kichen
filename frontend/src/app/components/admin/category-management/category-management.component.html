@@ -69,6 +69,12 @@
             <mat-icon>sort</mat-icon>
             <span>Sort Order: {{ category.sortOrder }}</span>
           </div>
+          <div class="audit-info" *ngIf="category.updatedBy">
+            <div class="audit-badge" *ngIf="category.updatedBy">
+              <mat-icon>person_add</mat-icon>
+              <span>Created / Updated = {{ category.updatedAt | date:'short' }} by {{ category.updatedBy.name }}</span>
+            </div>
+          </div>
           <div class="detail-item">
             <mat-slide-toggle 
               [checked]="category.isActive" 

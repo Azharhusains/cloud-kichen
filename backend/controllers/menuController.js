@@ -47,7 +47,7 @@ const getMenuItems = async (req, res) => {
     if (category) {
       query.category = category;
     }
-    const menuItems = await MenuItem.find(query).sort({ createdAt: -1 });
+    const menuItems = await MenuItem.find(query).populate('createdBy updatedBy', 'name').sort({ createdAt: -1 });
     
     // Get all unique categories from the database (from Category collection)
     const categories = await Category.find({ isActive: true }).sort({ sortOrder: 1 });
@@ -96,7 +96,12 @@ const createMenuItem = async (req, res) => {
       req.body.fullPrice = parseFloat(req.body.price);
     }
     
-    const menuItem = new MenuItem(req.body);
+    const menuItemData = {
+      ...req.body,
+      createdBy: req.user._id,
+      updatedBy: req.user._id
+    };
+    const menuItem = new MenuItem(menuItemData);
     const createdItem = await menuItem.save();
     res.status(201).json(createdItem);
   } catch (error) {
@@ -151,6 +156,7 @@ const updateMenuItem = async (req, res) => {
     }
     
     Object.assign(menuItem, req.body);
+    menuItem.updatedBy = req.user._id;
     const updatedItem = await menuItem.save();
     res.json(updatedItem);
   } catch (error) {

@@ -2,7 +2,7 @@ const Coupon = require('../models/Coupon');
 
 const getCoupons = async (req, res) => {
   try {
-    const coupons = await Coupon.find({ isActive: true }).sort({ validUntil: 1 });
+    const coupons = await Coupon.find({}).populate('createdBy updatedBy', 'name').sort({ validUntil: 1 });
     res.json(coupons);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -11,7 +11,12 @@ const getCoupons = async (req, res) => {
 
 const createCoupon = async (req, res) => {
   try {
-    const coupon = new Coupon(req.body);
+    const couponData = {
+      ...req.body,
+      createdBy: req.user._id,
+      updatedBy: req.user._id
+    };
+    const coupon = new Coupon(couponData);
     await coupon.save();
     res.status(201).json(coupon);
   } catch (error) {

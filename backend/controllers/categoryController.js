@@ -4,7 +4,7 @@ const MenuItem = require('../models/MenuItem');
 // Get all categories (for admin)
 const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ sortOrder: 1, createdAt: -1 });
+    const categories = await Category.find().populate('createdBy updatedBy', 'name').sort({ sortOrder: 1, createdAt: -1 });
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -50,7 +50,9 @@ const createCategory = async (req, res) => {
       displayName,
       description,
       isActive: isActive !== undefined ? isActive : true,
-      sortOrder: sortOrder || 0
+      sortOrder: sortOrder || 0,
+      createdBy: req.user._id,
+      updatedBy: req.user._id
     });
 
     const createdCategory = await category.save();
@@ -83,6 +85,7 @@ const updateCategory = async (req, res) => {
     if (description !== undefined) category.description = description;
     if (isActive !== undefined) category.isActive = isActive;
     if (sortOrder !== undefined) category.sortOrder = sortOrder;
+    category.updatedBy = req.user._id;
 
     const updatedCategory = await category.save();
     res.json(updatedCategory);

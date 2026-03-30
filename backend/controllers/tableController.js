@@ -2,7 +2,7 @@ const Table = require('../models/Table');
 
 const getTables = async (req, res) => {
   try {
-    const tables = await Table.find({ isActive: true }).sort({ tableNumber: 1 });
+    const tables = await Table.find({}).populate('createdBy updatedBy', 'name').sort({ tableNumber: 1 });
     res.json(tables);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -35,6 +35,8 @@ const createTable = async (req, res) => {
       tableNumber,
       capacity: capacity || 4,
       location,
+      createdBy: req.user._id,
+      updatedBy: req.user._id
     });
 
     const createdTable = await table.save();
@@ -65,6 +67,7 @@ const updateTable = async (req, res) => {
     if (capacity) table.capacity = capacity;
     if (status) table.status = status;
     if (location) table.location = location;
+    table.updatedBy = req.user._id;
 
     const updatedTable = await table.save();
 

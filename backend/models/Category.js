@@ -25,12 +25,28 @@ const categorySchema = new mongoose.Schema({
   sortOrder: {
     type: Number,
     default: 0
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   }
 }, {
   timestamps: true
 });
 
-// Index for faster queries
+// Additional indexes for audit trail
+categorySchema.index({ createdBy: 1 });
+categorySchema.index({ updatedBy: 1, updatedAt: -1 });
+
+// Indexes for faster queries and audit trail
 categorySchema.index({ isActive: 1, sortOrder: 1 });
+categorySchema.index({ createdBy: 1 });
+categorySchema.index({ updatedBy: 1, updatedAt: -1 });
 
 module.exports = mongoose.model('Category', categorySchema);

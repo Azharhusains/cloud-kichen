@@ -28,6 +28,11 @@ interface InventoryItem {
   unit: string;
   minStockLevel?: number;
   isActive?: boolean;
+  updatedAt?: Date;
+  updatedBy?: {
+    _id: string;
+    name: string;
+  };
 }
 
 @Component({

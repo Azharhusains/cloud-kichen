@@ -70,6 +70,13 @@
               </div>
             </div>
 
+            <div class="audit-info" *ngIf="item.updatedBy">
+            <div class="audit-badge" *ngIf="item.updatedBy">
+              <mat-icon>person_add</mat-icon>
+              <span>Created / Updated = {{ item.updatedAt | date:'short' }} by {{ item.updatedBy.name }}</span>
+            </div>
+          </div>
+
           </div>
           
           <div class="availability-toggle">

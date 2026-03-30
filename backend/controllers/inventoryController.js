@@ -2,7 +2,7 @@ const Inventory = require('../models/Inventory');
 
 const getInventory = async (req, res) => {
   try {
-    const inventory = await Inventory.find({});
+    const inventory = await Inventory.find({}).populate('createdBy updatedBy', 'name');
     res.json(inventory);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -40,11 +40,14 @@ const updateInventory = async (req, res) => {
           if (minStockLevel !== undefined) {
             inventoryItem.minStockLevel = minStockLevel;
           }
+          inventoryItem.updatedBy = req.user._id;
           await inventoryItem.save();
         } else {
           inventoryItem = new Inventory({
             ...item,
-            isActive: isActive !== undefined ? isActive : true
+            isActive: isActive !== undefined ? isActive : true,
+            createdBy: req.user._id,
+            updatedBy: req.user._id
           });
           await inventoryItem.save();
         }
@@ -63,11 +66,14 @@ const updateInventory = async (req, res) => {
         if (minStockLevel !== undefined) {
           inventoryItem.minStockLevel = minStockLevel;
         }
+        inventoryItem.updatedBy = req.user._id;
         await inventoryItem.save();
       } else {
         inventoryItem = new Inventory({
           ...inventoryData,
-          isActive: isActive !== undefined ? isActive : true
+          isActive: isActive !== undefined ? isActive : true,
+          createdBy: req.user._id,
+          updatedBy: req.user._id
         });
         await inventoryItem.save();
       }

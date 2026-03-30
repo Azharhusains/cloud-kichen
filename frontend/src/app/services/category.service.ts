@@ -12,6 +12,14 @@ export interface Category {
   sortOrder: number;
   createdAt?: Date;
   updatedAt?: Date;
+  createdBy?: {
+    _id: string;
+    name: string;
+  };
+  updatedBy?: {
+    _id: string;
+    name: string;
+  };
 }
 
 @Injectable({

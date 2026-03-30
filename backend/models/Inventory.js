@@ -24,8 +24,22 @@ const inventorySchema = new mongoose.Schema({
     default: 10,
     min: 0,
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
 }, {
   timestamps: true,
 });
+
+// Indexes for audit trail
+inventorySchema.index({ createdBy: 1 });
+inventorySchema.index({ updatedBy: 1, updatedAt: -1 });
 
 module.exports = mongoose.model('Inventory', inventorySchema);

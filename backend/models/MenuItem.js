@@ -41,9 +41,23 @@ const menuItemSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
 }, {
   timestamps: true,
 });
+
+// Indexes for audit trail
+menuItemSchema.index({ createdBy: 1 });
+menuItemSchema.index({ updatedBy: 1, updatedAt: -1 });
 
 // Virtual for backward compatibility - return fullPrice as 'price'
 menuItemSchema.virtual('price').get(function() {

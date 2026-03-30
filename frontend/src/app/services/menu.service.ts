@@ -18,6 +18,14 @@ export interface MenuItem {
   isAvailable: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+  createdBy?: {
+    _id: string;
+    name: string;
+  };
+  updatedBy?: {
+    _id: string;
+    name: string;
+  };
 }
 
 export interface MenuResponse {

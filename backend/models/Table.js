@@ -29,9 +29,23 @@ const tableSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
 }, {
   timestamps: true,
 });
+
+// Indexes for audit trail
+tableSchema.index({ createdBy: 1 });
+tableSchema.index({ updatedBy: 1, updatedAt: -1 });
 
 // Generate QR code URL based on table number
 tableSchema.methods.generateQRCodeUrl = function(baseUrl) {
