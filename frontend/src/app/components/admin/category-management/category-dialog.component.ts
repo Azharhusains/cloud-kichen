@@ -115,9 +115,29 @@ export interface CategoryDialogData {
       }
     }
 
-    ::ng-deep .error-text {
-      color: #f44336 !important;
-    }
+/* Component-level Error Styling - Moved to Global (exact match from login/register/checkout) */
+::ng-deep {
+  .mat-mdc-form-field-error {
+    color: #f44336 !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+  }
+
+  .mat-mdc-error {
+    color: #f44336 !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+  }
+
+  // Additional Angular Material error states
+  .mat-form-field-invalid .mat-mdc-form-field-flex {
+    border-bottom-color: #f44336 !important;
+  }
+
+  .mat-mdc-form-field-invalid .mdc-text-field__input {
+    caret-color: #f44336 !important;
+  }
+}
 
     @media (max-width: 600px) {
       .category-dialog {

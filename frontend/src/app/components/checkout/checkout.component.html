@@ -105,7 +105,7 @@
           
           <!-- New Address Form -->
           <form [formGroup]="checkoutForm" class="address-form" *ngIf="newAddressActive || addresses.length === 0">
-            <mat-form-field appearance="outline" class="full-width">
+            <mat-form-field appearance="outline" class="full-width" floatLabel="always">
               <mat-label>Street Address</mat-label>
               <input matInput formControlName="street" placeholder="Enter your street address">
               <mat-icon matPrefix>home</mat-icon>
@@ -113,12 +113,12 @@
             </mat-form-field>
 
             <div class="form-row">
-              <mat-form-field appearance="outline" class="half-width">
+              <mat-form-field appearance="outline" class="half-width" floatLabel="always">
                 <mat-label>City</mat-label>
                 <input matInput formControlName="city">
                 <mat-error *ngIf="checkoutForm.get('city')?.invalid">City is required</mat-error>
               </mat-form-field>
-              <mat-form-field appearance="outline" class="half-width">
+              <mat-form-field appearance="outline" class="half-width" floatLabel="always">
                 <mat-label>State</mat-label>
                 <input matInput formControlName="state">
                 <mat-error *ngIf="checkoutForm.get('state')?.invalid">State is required</mat-error>
@@ -126,12 +126,12 @@
             </div>
 
             <div class="form-row">
-              <mat-form-field appearance="outline" class="half-width">
+              <mat-form-field appearance="outline" class="half-width" floatLabel="always">
                 <mat-label>ZIP Code</mat-label>
                 <input matInput formControlName="zipCode">
                 <mat-error *ngIf="checkoutForm.get('zipCode')?.invalid">ZIP code is required</mat-error>
               </mat-form-field>
-              <mat-form-field appearance="outline" class="half-width">
+              <mat-form-field appearance="outline" class="half-width" floatLabel="always">
                 <mat-label>Country</mat-label>
                 <input matInput formControlName="country">
                 <mat-error *ngIf="checkoutForm.get('country')?.invalid">Country is required</mat-error>

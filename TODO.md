@@ -1,10 +1,1 @@
-# TODO: Implement Full/Half Toggle Logic (No Increment on Active Button)
-
-## Steps:
-
-- [x] 1. Add helper method `getQtyForPortion` to menu.component.ts
-- [x] 2. Update `selectPortion` in menu.component.ts: gate addToCart on qty===0
-- [x] 3. Add helper methods `getHalfQuantity()` and `getFullQuantity()` to menu-item-dialog.component.ts
-- [x] 4. Update `selectPortionDialog` in menu-item-dialog.component.ts: gate addToCart on qty===0
-- [x] 5. Fixed cartItemCount display issue by computing locally from cart array in subscription and loadCart
-- [x] 6. attempt_completion
+# Global Form Error Styling Implementation Plan\n\n## Status: ✅ Approved by user\n\n### Step 1: [PENDING] Create TODO.md\n✅ Completed\n\n### Step 2: [PENDING] Add exact error styles to frontend/src/styles.scss\n- Insert provided ::ng-deep block to global styles\n\n### Step 3: [PENDING] Remove error styles from component SCSS files\n- login.component.scss\n- register.component.scss\n- checkout.component.scss\n\n### Step 4: [PENDING] Test implementation\n- Run `ng serve` (cd frontend &amp;&amp; ng serve)\n- Verify red error styling on login/register/checkout forms\n- Check no regressions in other forms\n\n### Step 5: [PENDING] Mark complete &amp; attempt_completion\n\n---\n*Updated by BLACKBOXAI*
