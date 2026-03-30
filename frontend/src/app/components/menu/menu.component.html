@@ -63,7 +63,7 @@
               <button 
                 class="portion-btn half-btn"
                 [class.active]="getCurrentPortionType(item) === 'HALF'"
-                (click)="togglePortion(item); $event.stopPropagation()"
+                (click)="selectPortion(item, 'HALF'); $event.stopPropagation()"
                 mat-stroked-button
                 size="small">
                 Half<br><small>₹{{ item.halfPrice | number:'1.0-0' }}</small>
@@ -71,7 +71,7 @@
               <button 
                 class="portion-btn full-btn active"
                 [class.active]="getCurrentPortionType(item) === 'FULL'"
-                (click)="togglePortion(item); $event.stopPropagation()"
+                (click)="selectPortion(item, 'FULL'); $event.stopPropagation()"
                 mat-stroked-button
                 size="small">
                 Full<br><small>₹{{ item.fullPrice | number:'1.0-0' }}</small>

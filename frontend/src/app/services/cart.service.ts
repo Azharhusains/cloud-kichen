@@ -170,9 +170,17 @@ export class CartService {
     }, 0);
   }
 
-  private saveCart(cart: CartItem[]): void {
+
+  saveCart(cart: CartItem[]): void {
     this.cartSubject.next(cart);
     this.updateCartCount(cart);
     localStorage.setItem('cart', JSON.stringify(cart));
   }
+
+  clearItemById(menuItemId: string): void {
+    const cart = this.getCart();
+    const filteredCart = cart.filter((item: CartItem) => item.menuItem._id !== menuItemId);
+    this.saveCart(filteredCart);
+  }
+
 }

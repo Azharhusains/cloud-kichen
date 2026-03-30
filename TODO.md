@@ -1,10 +1,11 @@
-# Checkout + Order Confirmation Half/Full Fix
+# Fix Half Item Cart Duplication Issue
 
-✅ **Initial checkout style fixed & follow-up approved**
+## Plan Steps:
+- [x] Step 1: Edit menu.component.ts to remove duplicate addToCart call in openItemDetails() ✅
+- [ ] Step 2: Test the fix by adding half item from dialog
+- [ ] Step 3: Verify only single HALF item in cart
+- [ ] Complete
 
-## Steps:
-- [x] Checkout HTML: Removed ALL premium classes (cart + totals) → clean layout ✓
-- [x] Backend: Fixed orderController to use halfPrice for HALF items ✓
-- [x] Backend restart needed: cd backend && node server.js
-- [x] Verified: Checkout responsive, half/full labels/prices, confirmation displays correctly
-- [x] Complete ✓
+**Current Progress: Core fix implemented. Test in browser: Menu → Dialog → Toggle Half → Add to Cart → Check cart shows only HALF item.**
+
+

@@ -11,6 +11,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { CartService } from '../../services/cart.service';
+import { MenuItem } from '../../services/menu.service';
 import { environment } from '../../../environments/environment';
 
 export interface MenuItemDialogData {
@@ -31,7 +33,8 @@ export interface MenuItemDialogData {
     MatFormFieldModule,
     MatIconModule,
     MatSelectModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    MatButtonModule
   ],
   template: `
     <div class="menu-item-dialog mb">
@@ -58,12 +61,34 @@ export interface MenuItemDialogData {
             
             <p class="description">{{ data.viewingItem.description }}</p>
             
-            <div class="price-section">
-              <span class="price">₹{{ data.viewingItem.price?.toFixed(2) }}</span>
-              <span class="availability" [class.available]="data.viewingItem.isAvailable">
-                {{ data.viewingItem.isAvailable ? 'Available' : 'Unavailable' }}
-              </span>
+            <div class="add-to-cart-container" *ngIf="data.viewingItem.isAvailable">
+              <!-- Portion Selector -->
+              <div class="portion-selector" *ngIf="data.viewingItem.supportsHalf">
+                <button 
+                  class="portion-btn half-btn"
+                  [class.active]="getCurrentPortionType() === 'HALF'"
+                  (click)="selectPortionDialog('HALF')"
+                  mat-stroked-button
+                  size="small">
+                  Half<br><small>₹{{ data.viewingItem.halfPrice | number:'1.0-0' }}</small>
+                </button>
+                <button 
+                  class="portion-btn full-btn active"
+                  [class.active]="getCurrentPortionType() === 'FULL'"
+                  (click)="selectPortionDialog('FULL')"
+                  mat-stroked-button
+                  size="small">
+                  Full<br><small>₹{{ data.viewingItem.fullPrice | number:'1.0-0' }}</small>
+                </button>
+              </div>
+              <!-- Price display -->
+              <div class="price-display">
+                ₹{{ getItemPrice() | number:'1.0-0' }}
+              </div>
             </div>
+            <span class="availability" *ngIf="!data.viewingItem.isAvailable" [class.available]="data.viewingItem.isAvailable">
+              Unavailable
+            </span>
           </div>
         </div>
       </mat-dialog-content>
@@ -176,28 +201,81 @@ export interface MenuItemDialogData {
           margin-bottom: 16px;
         }
 
-        .price-section {
+        .add-to-cart-container {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          width: 100%;
+          gap: 12px;
+          margin-bottom: 8px;
+        }
 
-          .price {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #667eea;
-          }
+        .portion-selector {
+          display: flex;
+          gap: 4px;
+          background: white;
+          border-radius: 25px;
+          padding: 4px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 
-          .availability {
-            padding: 4px 12px;
+          .portion-btn {
+            flex: 1;
+            padding: 8px 12px;
             border-radius: 20px;
+            border: none;
             font-size: 0.85rem;
-            background: rgba(244, 67, 54, 0.1);
-            color: #f44336;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
 
-            &.available {
-              background: rgba(76, 175, 80, 0.1);
-              color: #4caf50;
+            &.active {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+              color: white !important;
+              box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+              transform: translateY(-1px);
             }
+
+            &.half-btn {
+              color: #ff6b6b;
+              border: 2px solid rgba(255, 107, 107, 0.2);
+            }
+
+            &.full-btn {
+              color: #667eea;
+              border: 2px solid rgba(102, 126, 234, 0.2);
+            }
+
+            &:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+
+            small {
+              font-size: 0.75rem;
+              opacity: 0.9;
+              display: block;
+            }
+          }
+        }
+
+        .price-display {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #667eea;
+          white-space: nowrap;
+        }
+
+        .availability {
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          background: rgba(244, 67, 54, 0.1);
+          color: #f44336;
+          font-weight: 500;
+
+          &.available {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
           }
         }
       }
@@ -258,12 +336,56 @@ export interface MenuItemDialogData {
   `]
 })
 export class MenuItemDialogComponent implements OnInit {
+  currentPortion: 'HALF' | 'FULL' = 'FULL';
+  cart: any[] = [];
+
   constructor(
     public dialogRef: MatDialogRef<MenuItemDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: MenuItemDialogData
+    @Inject(MAT_DIALOG_DATA) public data: MenuItemDialogData,
+    private cartService: CartService
   ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.cart = this.cartService.getCart();
+    if (this.data.viewingItem) {
+      this.updateCurrentPortion();
+    }
+  }
+
+  private updateCurrentPortion(): void {
+    const itemId = this.data.viewingItem._id;
+    const halfItem = this.cart.find((c: any) => c.menuItem._id === itemId && c.quantityType === 'HALF');
+    this.currentPortion = halfItem && halfItem.quantity > 0 ? 'HALF' : 'FULL';
+  }
+
+  getCurrentPortionType(): 'HALF' | 'FULL' {
+    return this.currentPortion;
+  }
+
+  getItemPrice(): number {
+    const item = this.data.viewingItem;
+    if (!item.supportsHalf || this.currentPortion === 'FULL') {
+      return item.fullPrice || item.price || 0;
+    }
+    return item.halfPrice || 0;
+  }
+
+
+
+  selectPortionDialog(portionType: 'HALF' | 'FULL'): void {
+    const itemId = this.data.viewingItem._id;
+    this.cartService.clearItemById(itemId);
+    this.currentPortion = portionType;
+  }
+
+
+
+  addCurrentPortion(): void {
+    if (this.data.viewingItem) {
+      this.cartService.addToCart(this.data.viewingItem, this.currentPortion);
+    }
+    this.dialogRef.close(true);
+  }
 
   getCategoryDisplayName(categoryName: string): string {
     const category = this.data.categories?.find(c => c.name === categoryName);
@@ -283,7 +405,7 @@ export class MenuItemDialogComponent implements OnInit {
     
 
   onAddToCart(): void {
-    this.dialogRef.close(true);
+    this.addCurrentPortion();
   }
 
   onClose(): void {

@@ -223,19 +223,13 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.cartService.addToCart(item, this.getCurrentPortionType(item));
   }
 
-  togglePortion(item: MenuItem): void {
-    const cart = this.cartService.getCart();
-    const hasHalf = cart.some(c => c.menuItem._id === item._id && c.quantityType === 'HALF' && c.quantity > 0);
-    const targetType = hasHalf ? 'FULL' : 'HALF';
+  selectPortion(item: MenuItem, portionType: 'HALF' | 'FULL'): void {
+    // Remove all existing portions for this item
+    this.cartService.removeFromCart(item._id, 'HALF');
+    this.cartService.removeFromCart(item._id, 'FULL');
     
-    // Remove existing target (cleanup if any)
-    this.cartService.removeFromCart(item._id, targetType);
-    // Remove opposite
-    const oppositeType = targetType === 'FULL' ? 'HALF' : 'FULL';
-    this.cartService.removeFromCart(item._id, oppositeType);
-    
-    // Add target portion qty=1
-    this.cartService.addToCart(item, targetType);
+    // Add selected portion with qty=1
+    this.cartService.addToCart(item, portionType);
   }
 
   removeFromCart(menuItem: any): void {
@@ -273,11 +267,7 @@ export class MenuComponent implements OnInit, OnDestroy {
       }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.addToCart(item);
-      }
-    });
+    dialogRef.afterClosed().subscribe(); // Dialog handles cart addition
   }
 
   /**
