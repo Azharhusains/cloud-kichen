@@ -20,12 +20,15 @@ import { TableManagementComponent } from './components/admin/table-management/ta
 import { UnauthorizedComponent } from './components/unauthorized/unauthorized.component';
 import { UserManagementComponent } from './components/admin/user-management/user-management.component';
 import { RevenueDashboardComponent } from './components/admin/revenue-dashboard/revenue-dashboard.component';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'home', component: HomeComponent },
   { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+{ path: 'register', component: RegisterComponent },
+ { path: 'reset-password/:token', component: ForgotPasswordComponent },
   { path: 'menu', component: MenuComponent, canActivate: [AuthGuard] },
   { path: 'cart', component: CartComponent, canActivate: [AuthGuard] },
   { path: 'table-select', component: TableSelectComponent, canActivate: [AuthGuard] },

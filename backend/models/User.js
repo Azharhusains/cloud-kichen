@@ -22,6 +22,8 @@ const userSchema = new mongoose.Schema({
     enum: ['CUSTOMER', 'ADMIN', 'SUPER_ADMIN'],
     default: 'CUSTOMER'
   },
+  resetToken: String,
+  resetTokenExpiry: Date,
 
   addresses: [{
     street: String,

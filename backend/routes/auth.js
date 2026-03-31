@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { register, login, getProfile, updateProfile, addAddress, removeAddress, checkSuperAdminExists } = require('../controllers/authController');
+const { register, login, getProfile, updateProfile, addAddress, removeAddress, checkSuperAdminExists, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -29,6 +29,23 @@ router.post(
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
 router.post('/addresses', protect, addAddress);
+router.post(
+  '/forgot-password',
+  [
+    body('email').isEmail().withMessage('Please provide a valid email'),
+  ],
+  forgotPassword
+);
+
+router.post(
+  '/reset-password',
+  [
+    body('token').notEmpty().withMessage('Reset token is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  ],
+  resetPassword
+);
+
 router.delete('/addresses/:index', protect, removeAddress);
 
 module.exports = router;

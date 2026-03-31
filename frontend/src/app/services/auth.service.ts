@@ -81,6 +81,14 @@ export class AuthService {
     return this.http.post(`${environment.apiUrl}/auth/addresses`, address);
   }
 
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/auth/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, password: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/auth/reset-password`, { token, password });
+  }
+
   removeAddress(index: number): Observable<any> {
     return this.http.delete(`${environment.apiUrl}/auth/addresses/${index}`);
   }

@@ -34,6 +34,8 @@
           </mat-error>
         </mat-form-field>
 
+        <a mat-button color="primary" routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+
         <button mat-raised-button color="primary" type="submit" class="login-btn" [disabled]="!loginForm.valid || loading">
           <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
           <span *ngIf="!loading">Sign In</span>

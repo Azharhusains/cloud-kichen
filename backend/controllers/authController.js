@@ -201,4 +201,91 @@ const checkSuperAdminExists = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getProfile, updateProfile, addAddress, removeAddress, checkSuperAdminExists };
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+const forgotPassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Email not found' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    user.resetToken = crypto.randomBytes(20).toString('hex');
+    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    await user.save();
+
+    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:4200'}/reset-password/${user.resetToken}`;
+
+    const message = `
+      <h2>Password Reset Request</h2>
+      <p>You requested a password reset. Click the link below to reset your password:</p>
+      <a href="${resetUrl}" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Reset Password</a>
+      <p>This link expires in 15 minutes.</p>
+      <p>If you didn't request this, please ignore this email.</p>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_USER,
+      to: user.email,
+      subject: 'Password Reset - Cloud Kitchen',
+      html: message
+    });
+
+    res.status(200).json({ message: 'Reset link sent to your email' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { token, password } = req.body;
+
+  try {
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    user.password = password;
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { register, login, getProfile, updateProfile, addAddress, removeAddress, checkSuperAdminExists, forgotPassword, resetPassword };
