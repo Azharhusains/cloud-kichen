@@ -1,0 +1,79 @@
+<div class="recommendations-container" [@staggerFadeIn] *ngIf="recommendations">
+  <div class="section-header">
+    <h2>{{ getSectionTitle() }}</h2>
+    <mat-chip *ngIf="section === 'user' && !isLoggedIn" class="login-chip">
+      <mat-icon>login</mat-icon>
+      Login to see personalized recs
+    </mat-chip>
+  </div>
+
+  <!-- User-based or Popular Items -->
+  <div class="items-grid" *ngIf="section !== 'combos'">
+    <mat-card 
+      class="rec-card" 
+      *ngFor="let rec of recommendations; trackBy: trackByFn"
+      [class.popular-card]="section === 'popular'">
+    >
+      <div class="rec-image" [style.background-image]="'url(' + getImageUrl(rec.item.image) + ')'">
+        <div class="rec-badge" *ngIf="rec.totalQty && section === 'popular'">
+          {{ rec.totalQty | number:'1.0-0' }}+ ordered
+        </div>
+      </div>
+      <mat-card-content>
+        <div class="item-name">{{ rec.item.name }}</div>
+        <div class="item-category" *ngIf="rec.item.category !== 'Uncategorized'">
+          {{ rec.item.category }}
+        </div>
+        <div class="item-price">₹{{ rec.item.fullPrice | number:'1.0-0' }}</div>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button color="primary" (click)="addToCart(rec)">
+          <mat-icon>add_shopping_cart</mat-icon>
+          Add
+        </button>
+        <button mat-icon-button *ngIf="rec.item.supportsHalf" matTooltip="Add Half Portion" (click)="addToCart(rec, 'HALF')">
+          <mat-icon>restaurant_menu</mat-icon>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <!-- Combos -->
+  <div class="combos-grid" *ngIf="section === 'combos'">
+    <mat-card class="rec-card combo-card" *ngFor="let combo of recommendations; let i = index; trackBy: trackByFn">
+      <div class="combo-items">
+        <div class="combo-item" *ngFor="let item of combo.items" [style.background-image]="'url(' + getImageUrl(item.image) + ')'">
+          <div class="combo-overlay">
+            <span class="combo-name">{{ item.name }}</span>
+          </div>
+        </div>
+      </div>
+      <mat-card-content>
+        <div class="combo-title">
+          Combo #{{ i + 1 }} 
+          <mat-chip class="popularity-chip">{{ combo.count }}+ customers love this</mat-chip>
+        </div>
+        <div class="combo-price">
+          Save by ordering together!
+        </div>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-raised-button color="primary" (click)="addCombo(combo.items)">
+          <mat-icon>shopping_bag</mat-icon>
+          Add Combo
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div class="empty-state" *ngIf="!recommendations || recommendations.length === 0">
+    <mat-icon>recommendation</mat-icon>
+    <p>No recommendations yet. Order something to get personalized suggestions!</p>
+  </div>
+</div>
+
+<div class="loading" *ngIf="loading">
+  <mat-spinner diameter="40"></mat-spinner>
+  Loading recommendations...
+</div>
+

@@ -78,6 +78,7 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/coupons', require('./routes/coupon'));
 app.use('/api/tables', require('./routes/table'));
+app.use('/api/recommendations', require('./routes/recommendations'));
 
 // Centralized error handler (replaces basic one)
 app.use(require('./middleware/errorHandler').handleError);

@@ -1,17 +1,23 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { switchMap, take } from 'rxjs';
 
 // Angular Material Modules
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 // Angular Animations
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 
-// Auth Service
+// Components
+import { RecommendationsComponent } from '../recommendations/recommendations.component';
+
+// Services
 import { AuthService } from '../../services/auth.service';
+import { OrderService } from '../../services/order.service';
 
 @Component({
   selector: 'app-home',
@@ -20,7 +26,9 @@ import { AuthService } from '../../services/auth.service';
     CommonModule,
     MatButtonModule,
     MatIconModule,
-    MatCardModule
+    MatCardModule,
+    MatProgressSpinnerModule,
+    RecommendationsComponent
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
@@ -55,16 +63,51 @@ import { AuthService } from '../../services/auth.service';
     ])
   ]
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
   features = [
     { icon: 'local_shipping', title: 'Fast Delivery', description: 'Hot and fresh meals delivered to your doorstep' },
     { icon: 'eco', title: 'Fresh Ingredients', description: 'We use only the finest, freshest ingredients' },
     { icon: 'favorite', title: 'Made with Love', description: 'Traditional recipes crafted with care' }
   ];
 
-  constructor(private router: Router) {}
+  popularItems: any[] = [];
+  loadingPopular = true;
+  userId = '';
+
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private orderService: OrderService
+  ) {}
+
+  ngOnInit(): void {
+    this.loadPopularItems();
+    if (this.authService.isAuthenticated()) {
+      const user = this.authService.getCurrentUser();
+      if (user?._id) {
+        this.userId = user._id;
+      }
+    }
+  }
+
+  loadPopularItems(): void {
+    // Always load popular items (global)
+    this.loadingPopular = true;
+    this.orderService.getRecommendations('global-popular-trick').pipe(
+      take(1)
+    ).subscribe({
+      next: (data) => {
+        this.popularItems = data.data.popular || [];
+        this.loadingPopular = false;
+      },
+      error: () => {
+        this.loadingPopular = false;
+      }
+    });
+  }
 
   orderNow(): void {
     this.router.navigate(['/menu']);
   }
 }
+

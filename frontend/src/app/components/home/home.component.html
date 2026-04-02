@@ -16,6 +16,19 @@
     </div>
   </div>
   
+  <!-- Recommendations Section -->
+  <section class="recommendations-section">
+    <div class="container">
+      <app-recommendations 
+        *ngIf="!loadingPopular" 
+        [recommendations]="popularItems" 
+        section="popular" 
+        title="Popular Right Now">
+      </app-recommendations>
+      <mat-spinner *ngIf="loadingPopular" class="page-spinner"></mat-spinner>
+    </div>
+  </section>
+
   <!-- Features Section -->
   <div class="features-section" @staggerFadeIn>
     <mat-card *ngFor="let feature of features; let i = index" class="feature-card animate-item">

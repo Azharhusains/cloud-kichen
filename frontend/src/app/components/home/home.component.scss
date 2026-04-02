@@ -172,6 +172,23 @@
   }
 }
 
+/* Recommendations Section */
+.recommendations-section {
+  background: #ffffff;
+  padding: 60px 24px;
+  margin: 0;
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .page-spinner {
+    display: block;
+    margin: 4rem auto;
+  }
+}
+
 /* CTA Section */
 .cta-section {
   max-width: 1200px;

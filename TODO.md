@@ -1,57 +1,40 @@
-# Cloud Kitchen Production Readiness TODO
+# AI Recommendation System V1 Implementation Plan
 
-Status: ✅ Plan Approved | 📝 In Progress | ✅ Completed | ⏳ Blocked
+## Overview
+✅ Plan approved by user. Implementing rule-based recommendations using Order/Menu models.
 
-## Breakdown of Approved Plan (Step-by-step)
+## Steps (Completed: ✅ | In Progress: 🔄 | Pending: ⬜)
 
-### Phase 1: Dependencies & Setup
-- ✅ **1.1** Update backend/package.json → add express-rate-limit@^7.4.0, joi@^17.13.3, sharp@^0.33.5
-- ✅ **1.2** Run `cd backend && npm install`
-- ✅ **1.3** Verify no breaking deps
+### Backend (9 steps)
+✅ 1. Create `backend/services/recommendation.service.js` - Core aggregation logic ✓
+✅ 2. Create `backend/controllers/recommendationController.js` - Handles GET /:userId ✓
+✅ 3. Create `backend/routes/recommendations.js` - Route definition with protect middleware ✓
+⬜ 4. Edit `backend/server.js` - Mount /api/recommendations route
+⬜ 5. Test backend API endpoint (manual curl/Postman)
 
-**Next Step: Phase 2.1 - Create backend/middleware/rateLimit.js**
+### Frontend (6 steps)
+⬜ 6. Edit `frontend/src/app/services/order.service.ts` - Add getRecommendations()
+⬜ 7. Create `frontend/src/app/components/recommendations/recommendations.component.*` (ts/html/scss)
+⬜ 8. Edit `frontend/src/app/components/home/home.component.*` - Add Recommendations section
+⬜ 9. Edit `frontend/src/app/components/menu/menu.component.*` - Add Combos section at top
+⬜ 10. Update imports/declarations if needed (standalone → just inject)
 
-### Phase 2: Create New Middleware Files
-- ✅ **2.1** `backend/middleware/rateLimit.js` (global + auth limiter)
-- ✅ **2.2** `backend/middleware/validation.js` (Joi schemas + validateRequest)
-- ✅ **2.3** `backend/middleware/errorHandler.js` (centralized JSON errors)
-- ✅ **2.4** `backend/middleware/imageCompress.js` (sharp middleware for multer)
-- ✅ **2.5** `backend/middleware/sanitize.js` (input sanitization)
+### Testing & Optimization (3 steps)
+⬜ 11. Backend: Test aggregations speed (<300ms), error handling
+⬜ 12. Frontend: Test integration, addToCart, responsive, auth-gated
+⬜ 13. Add indexes to scripts/create_indexes.js if needed, run `node backend/scripts/create_indexes.js`
 
-**Next Step: Phase 3.1 - Update backend/models/Order.js indexes**
+## Commands to run after completion:
+```
+# Backend
+cd backend && npm run dev
 
-### Phase 3: Update Models (Add Indexes)
-- ✅ **3.1** backend/models/Order.js → indexes: {user+createdAt}, {orderStatus+createdAt}
-- ✅ **3.2** backend/models/MenuItem.js → {category+name}, {isAvailable}
-- ✅ **3.3** backend/models/User.js → {email}, {role}
-- ✅ **3.4** Created index migration: backend/scripts/create_indexes.js
-**Run once: `node backend/scripts/create_indexes.js` then mark ✅**
+# Frontend  
+cd frontend && ng serve
 
-**Next Step: Phase 3.4 - Create index migration script**
+# Test indexes (optional)
+cd backend && node scripts/create_indexes.js
+```
 
-### Phase 4: Update Core Files
-- ✅ **4.1** backend/server.js → add middleware chain + errorHandler
+**Next step: 7. Create frontend/src/app/components/recommendations/recommendations.component.ts/html/scss**
 
-**Next Step: Phase 4.2 - Update routes/controllers (starting with auth)**
-- [ ] **4.2** Convert routes/controllers:
-  - [ ] auth.js + authController.js (Joi)
-  - [ ] order.js + orderController.js (validate create/update)
-  - [ ] menu.js + menuController.js (multer → imageCompress)
-  - [ ] users.js + usersController.js (profile update)
-- [ ] **4.3** middleware/auth.js → JWT refresh support
-
-### Phase 5: Security & Image Optimization
-- [ ] **5.1** utils/refreshTokens.js (JWT rotation)
-- [ ] **5.2** Test image compression (upload → verify filesize)
-
-### Phase 6: Testing & Verification
-- [ ] **6.1** Test all APIs (no breaking changes)
-- [ ] **6.2** Rate limit test (artillery / manual)
-- [ ] **6.3** Index verification (Mongo shell)
-- [ ] **6.4** Load test + monitor
-
-**Next Step: Phase 1.1 - Update package.json**
-
-**Progress Tracker:**
-- ✅ User approved plan
-- 📝 Ready for implementation

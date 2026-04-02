@@ -70,5 +70,16 @@ export class OrderService {
       responseType: 'blob' 
     });
   }
+
+  /**
+   * Get AI recommendations for user
+   * @param userId - User ID (authenticated user's ID)
+   * @returns Observable recommendation data
+   */
+  getRecommendations(userId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/recommendations/${userId}`);
+  }
 }
+
+
 
