@@ -71,11 +71,19 @@ class IntentDetector {
     'dinner': 1, 'lunch': 1, 'meal': 1
   };
 
-  // Size keywords
+// Size keywords
   static sizeKeywords = {
     'small': 'small', 's': 'small', 'medium': 'medium', 'm': 'medium',
     'large': 'large', 'l': 'large', 'xl': 'extra-large', 'extra-large': 'extra-large'
   };
+
+  // Spice keywords (NEW for customizations)
+  static spiceKeywords = {
+    'low': 'low', 'less': 'low', 'mild': 'low', 'light': 'low',
+    'medium': 'medium', 'normal': 'medium',
+    'high': 'high', 'spicy': 'high', 'hot': 'high', 'extra spicy': 'high'
+  };
+
 
   /**
    * Detect all intents from voice input
@@ -93,9 +101,11 @@ class IntentDetector {
       items: [],
       quantities: [],
       sizes: [],
+      spices: [],  // NEW: Spice customizations
       addresses: [],
       paymentMethod: null
     };
+
 
     // Check each intent pattern
     for (const [intent, patterns] of Object.entries(this.intentPatterns)) {
@@ -120,8 +130,10 @@ class IntentDetector {
     this.extractItems(normalizedInput, entities);
     this.extractQuantities(normalizedInput, entities);
     this.extractSizes(normalizedInput, entities);
+    this.extractSpice(normalizedInput, entities); // NEW: Spice extraction
     this.extractPaymentMethod(normalizedInput, entities);
     this.extractAddress(normalizedInput, entities);
+
 
     // Sort intents by confidence
     detectedIntents.sort((a, b) => b.confidence - a.confidence);
@@ -310,6 +322,24 @@ class IntentDetector {
 
     entities.sizes = [...new Set(entities.sizes)];
   }
+
+  /**
+   * Extract spice levels from input (NEW)
+   * @param {string} input - Normalized input
+   * @param {Object} entities - Entities object to populate
+   */
+  static extractSpice(input, entities) {
+    for (const [keyword, spice] of Object.entries(this.spiceKeywords)) {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      regex.lastIndex = 0;
+      if (regex.test(input)) {
+        entities.spices.push(spice);
+        return; // Use first match
+      }
+    }
+    entities.spices = [...new Set(entities.spices)];
+  }
+
 
   /**
    * Extract payment method from input

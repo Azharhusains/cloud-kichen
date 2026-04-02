@@ -29,6 +29,11 @@ const inventorySchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  kitchenId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Kitchen',
+    required: true
+  },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -39,6 +44,7 @@ const inventorySchema = new mongoose.Schema({
 });
 
 // Indexes for audit trail
+inventorySchema.index({ kitchenId: 1 });
 inventorySchema.index({ createdBy: 1 });
 inventorySchema.index({ updatedBy: 1, updatedAt: -1 });
 

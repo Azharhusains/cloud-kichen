@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['CUSTOMER', 'ADMIN', 'SUPER_ADMIN'],
+enum: ['CUSTOMER', 'KITCHEN_OWNER', 'ADMIN', 'SUPER_ADMIN'],
     default: 'CUSTOMER'
   },
   resetToken: String,
@@ -39,7 +39,15 @@ const userSchema = new mongoose.Schema({
   loyalty: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Loyalty'
-  }
+  },
+  currentKitchen: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Kitchen'
+  },
+  ownedKitchens: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Kitchen'
+  }]
 }, {
   timestamps: true,
 });
@@ -49,6 +57,8 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ email: 1 });
 // role: admin queries, role-based filtering
 userSchema.index({ role: 1 });
+userSchema.index({ currentKitchen: 1 });
+userSchema.index({ 'ownedKitchens': 1 });
 
 // Compare password method
 userSchema.methods.comparePassword = function(candidatePassword) {

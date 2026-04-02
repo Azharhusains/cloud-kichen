@@ -32,4 +32,11 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { protect, authorize };
+module.exports = { 
+  protect, 
+  authorize,
+  // Kitchen-aware auth chains
+  protectWithKitchen: [protect, require('../middleware/kitchenAuth').requireKitchenContext],
+  adminWithKitchen: [protect, require('../middleware/kitchenAuth').requireKitchenContext, authorize('ADMIN', 'SUPER_ADMIN')],
+  kitchenOwner: [protect, require('../middleware/kitchenAuth').requireKitchenContext, require('../middleware/kitchenAuth').authorizeKitchenAccess()]
+};

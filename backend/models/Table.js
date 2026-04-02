@@ -34,6 +34,11 @@ const tableSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  kitchenId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Kitchen',
+    required: true
+  },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -44,6 +49,7 @@ const tableSchema = new mongoose.Schema({
 });
 
 // Indexes for audit trail
+tableSchema.index({ kitchenId: 1 });
 tableSchema.index({ createdBy: 1 });
 tableSchema.index({ updatedBy: 1, updatedAt: -1 });
 

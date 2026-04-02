@@ -148,4 +148,56 @@ router.get('/stats', protect, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/ai/process-voice (NEW - Multi-turn voice with sessions)
+ * Body: { voiceInput: string, sessionId?: string }
+ */
+router.post('/process-voice', protect, async (req, res) => {
+  try {
+    const { voiceInput, sessionId } = req.body;
+    if (!voiceInput) {
+      return res.status(400).json({ success: false, message: 'Voice input required' });
+    }
+
+    const VoiceService = require('../services/voice.service');
+    const result = await VoiceService.processVoice(voiceInput, req.user._id, sessionId);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Voice process error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/ai/voice-session (NEW - Session management)
+ * Body: { sessionId?: string } - returns/creates session
+ */
+router.post('/voice-session', protect, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    const VoiceSession = require('../models/VoiceSession');
+    const VoiceService = require('../services/voice.service');
+    
+    let session;
+    if (sessionId) {
+      session = await VoiceSession.findOne({ sessionId, userId: req.user._id });
+    }
+    
+    if (!session) {
+      const newSessionId = VoiceService.generateSessionId(req.user._id);
+      session = await VoiceSession.getSession(req.user._id, newSessionId);
+    }
+
+    res.json({
+      success: true,
+      sessionId: session.sessionId,
+      cartItems: session.cartState || [],
+      currentIntent: session.currentIntent
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

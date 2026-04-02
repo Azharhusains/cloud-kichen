@@ -4,7 +4,7 @@ const MenuItem = require('../models/MenuItem');
 // Get all categories (for admin)
 const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find().populate('createdBy updatedBy', 'name').sort({ sortOrder: 1, createdAt: -1 });
+const categories = await Category.find({ kitchenId: req.kitchen._id }).populate('createdBy updatedBy', 'name').sort({ sortOrder: 1, createdAt: -1 });
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: error.message });

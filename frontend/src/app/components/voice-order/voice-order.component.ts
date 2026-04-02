@@ -74,6 +74,11 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
 
   // AI Response
   lastResponse: AIResponse | null = null;
+  chatHistory: AIResponse[] = [];
+  sessionId: string = '';
+  showPreview = false;
+  interpretedPreview = '';
+  showConfirm = false;
 
   // Cart items
   cartItems: CartItem[] = [];
@@ -120,6 +125,8 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
         const previousState = this.voiceState;
         this.voiceState = state;
         
+        this.sessionId = this.voiceService.getSessionId() || '';
+        
         // NEW CHECKOUT LOGIC: Navigate to checkout when AI processing completes
         // Only if cart has items and we're not already processing
         if (previousState.isProcessing && !state.isProcessing && this.cartItems.length > 0) {
@@ -144,6 +151,18 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
           this.stopForcedLoading();
           this.showNotification(state.error, 'error');
           this.voiceService.clearError();
+        }
+      });
+
+    // Subscribe to last AI response for preview/history
+    this.voiceService.lastResponse$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(response => {
+        this.lastResponse = response;
+        if (response && response.success) {
+          this.chatHistory.unshift(response);
+          if (this.chatHistory.length > 5) this.chatHistory.pop();
+          this.updatePreview(response);
         }
       });
 
@@ -325,4 +344,33 @@ export class VoiceOrderComponent implements OnInit, OnDestroy {
     }
     this.showForcedLoading = false;
   }
+
+  updatePreview(response: AIResponse) {
+    if (response.commands && response.commands.length > 0) {
+      this.interpretedPreview = response.commands.map(c => {
+        let cmd = c.action.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+        if (c.item) cmd += ` ${c.item}`;
+        if (c.customization) cmd += ` (${JSON.stringify(c.customization)})`;
+        return cmd;
+      }).join(', ');
+      this.showPreview = true;
+    }
+  }
+
+  confirmOrder() {
+    this.showConfirm = false;
+    this.showNotification('Order confirmed! Redirecting to checkout...', 'success');
+    this.router.navigate(['/checkout']);
+  }
+
+  editCommand() {
+    this.showConfirm = false;
+    this.showPreview = false;
+    this.resetVoice();
+  }
+
+  getInterpretedPreview(): string {
+    return this.interpretedPreview || 'No command parsed yet';
+  }
 }
+

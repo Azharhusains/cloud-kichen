@@ -5,7 +5,6 @@ const categorySchema = new mongoose.Schema({
     type: String,
     required: [true, 'Category name is required'],
     trim: true,
-    unique: true,
     lowercase: true
   },
   displayName: {
@@ -26,6 +25,11 @@ const categorySchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  kitchenId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Kitchen',
+    required: true
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -45,7 +49,8 @@ categorySchema.index({ createdBy: 1 });
 categorySchema.index({ updatedBy: 1, updatedAt: -1 });
 
 // Indexes for faster queries and audit trail
-categorySchema.index({ isActive: 1, sortOrder: 1 });
+categorySchema.index({ kitchenId: 1, isActive: 1, sortOrder: 1 });
+categorySchema.index({ kitchenId: 1, name: 1 });
 categorySchema.index({ createdBy: 1 });
 categorySchema.index({ updatedBy: 1, updatedAt: -1 });
 

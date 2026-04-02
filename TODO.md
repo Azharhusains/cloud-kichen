@@ -1,40 +1,37 @@
-# Loyalty System Implementation TODO
+# Multi-Kitchen SaaS Conversion TODO
+Status: [IN PROGRESS]
 
-## Status: [IN PROGRESS] 0/17 ✅
+## Implementation Steps (from approved plan)
 
-### Backend (8/8)
-✅ 1. Create backend/models/Loyalty.js
-✅ 2. Edit backend/models/User.js (add loyalty field)
-✅ 3. Edit backend/models/Order.js (add loyalty fields)
-✅ 4. Create backend/services/loyalty.service.js
-✅ 5. Create backend/controllers/loyaltyController.js
-✅ 6. Edit backend/controllers/orderController.js (add points earning)
-✅ 7. Create backend/routes/loyalty.js
-✅ 8. Edit backend/server.js (mount loyalty routes)
+### 1. Create New Models ✅
+- ✅ `backend/models/Kitchen.js`
+- ✅ `backend/models/Subscription.js`
 
-### Frontend (9/9)
-✅ 9. Create frontend/src/app/services/loyalty.service.ts
-✅ 10. Edit frontend/src/app/services/order.service.ts (pass loyaltyDiscount)
-✅ 11. Edit frontend/src/app/services/auth.service.ts (populate loyalty in profile)
-✅ 12. Edit frontend/src/app/components/checkout/checkout.component.ts (add points redeem)
-✅ 13. Edit frontend/src/app/components/checkout/checkout.component.html (UI for points)
-✅ 14. Edit frontend/src/app/components/checkout/checkout.component.scss (styles)
-✅ 15. Edit frontend/src/app/components/profile/profile.component.ts (show loyalty)
-✅ 16. Edit frontend/src/app/components/profile/profile.component.html (display points/tier/history)
-✅ 17. Edit frontend/src/app/components/profile/profile.component.scss (styles)
+### 2. Update Existing Models ✅
+- ✅ User.js (add currentKitchen, ownedKitchens, KITCHEN_OWNER role)
+- ✅ Order.js (add kitchenId)
+- ✅ MenuItem.js (add kitchenId, category ref)
+- ✅ Category.js (add kitchenId)
+- ✅ Inventory.js, Table.js, Coupon.js (add kitchenId)
 
-## ALL 17 STEPS ✅ COMPLETE!
+### 3. Middleware ✅
+- ✅ `backend/middleware/kitchenAuth.js` (new)
+- ✅ Update auth.js
 
-### Next:
-1. Backend: `cd backend && npm run dev`
-2. Frontend: `cd frontend && ng serve`
-3. Test: Login → Profile (see points) → Checkout (redeem points) → Order → Status delivered → Check points earned
+### 4. Controllers & APIs
+- ✅ `backend/controllers/kitchenController.js` (new)
+- ✅ `backend/controllers/adminController.js` (new)
+- ✅ Update existing controllers (order, menu etc. with kitchen filters)
+- ✅ New routes + update server.js
 
-### Testing/Validation
-- [ ] Backend APIs working
-- [ ] Frontend integration complete
-- [ ] Full end-to-end flow tested
-- [ ] Update this TODO with ✅ as completed
+### 5. Validation & Migration ✅
+- ✅ Update validation.js (kitchen schemas)
+- ✅ Migration script `backend/scripts/migrateToMultiKitchen.js`
 
-**Next: Backend model creation → Restart server → Test APIs → Frontend**
+### 6. Testing & Completion
+- [ ] Test APIs
+- [ ] Run migration
+- [ ] attempt_completion
+
+**Progress: 4/6 phases complete**
 

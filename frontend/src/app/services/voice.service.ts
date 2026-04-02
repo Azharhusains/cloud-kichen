@@ -49,6 +49,9 @@ export class VoiceService {
   private orderCompletedSubject = new BehaviorSubject<AIResponse | null>(null);
   public orderCompleted$ = this.orderCompletedSubject.asObservable();
 
+  private lastResponseSubject = new BehaviorSubject<AIResponse | null>(null);
+  public lastResponse$ = this.lastResponseSubject.asObservable();
+
   // Silence detection
   private silenceTimeout: any = null;
   private silenceDelay = 5000; // 5 seconds
@@ -373,15 +376,16 @@ export class VoiceService {
     // Get browser info
     const browserInfo = navigator.userAgent;
 
+    const sessionId = localStorage.getItem('voiceSessionId') || '';
     this.http.post<AIResponse>(
-      `${environment.apiUrl}/ai/process`,
+      `${environment.apiUrl}/ai/process-voice`,
       {
         voiceInput: transcript,
-        cart: cart,
-        browserInfo
+        sessionId
       },
       { headers }
     ).pipe(
+
       finalize(() => {
         this.updateState({ 
           isProcessing: false,
@@ -391,8 +395,14 @@ export class VoiceService {
     ).subscribe({
       next: (response) => {
         console.log('AI Response:', response);
+        this.lastResponseSubject.next(response);
         
         if (response.success) {
+          // Save sessionId for multi-turn
+          if (response.sessionId) {
+            localStorage.setItem('voiceSessionId', response.sessionId);
+          }
+          
           this.updateState({
             transcript: '',
             interimTranscript: ''
@@ -403,6 +413,7 @@ export class VoiceService {
             localStorage.setItem('cart', JSON.stringify(response.cartItems));
             this.cartService.reloadCart();
           }
+
 
           // Handle order completion - navigate when order is placed
           // Either with payment or without (cash on delivery default)
@@ -425,12 +436,14 @@ export class VoiceService {
             // Voice flow now redirects to checkout, manual payment required
           }
         } else {
+          this.lastResponseSubject.next(response);
           this.updateState({
             error: response.message
           });
         }
       },
       error: (error) => {
+        this.lastResponseSubject.next(null);
         console.error('AI processing error:', error);
         
         // Extract the actual error message from backend response
@@ -542,6 +555,10 @@ export class VoiceService {
   resetAllStates(): void {
     // Reset order completed
     this.orderCompletedSubject.next(null);
+    this.lastResponseSubject.next(null);
+    
+    // Clear session
+    localStorage.removeItem('voiceSessionId');
     
     // Reset voice state to initial values
     this.voiceStateSubject.next({
@@ -567,4 +584,12 @@ export class VoiceService {
     
     console.log('Voice service all states reset');
   }
+
+  /**
+   * Get current session ID
+   */
+  getSessionId(): string | null {
+    return localStorage.getItem('voiceSessionId');
+  }
 }
+

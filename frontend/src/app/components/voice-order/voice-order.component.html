@@ -105,7 +105,7 @@
   </div>
 
   <!-- Response Summary Card -->
-  <mat-card class="response-card" *ngIf="lastResponse">
+<mat-card class="response-card" *ngIf="lastResponse">
     <mat-card-header>
       <mat-card-title>
         <mat-icon>{{ lastResponse.success ? 'check_circle' : 'error' }}</mat-icon>
@@ -113,6 +113,12 @@
       </mat-card-title>
     </mat-card-header>
     <mat-card-content>
+      <!-- Interpreted Preview -->
+      <div class="preview-section" *ngIf="showPreview">
+        <mat-icon color="primary">lightbulb</mat-icon>
+        <p class="preview-text">Understood as: {{ getInterpretedPreview() }}</p>
+      </div>
+
       <p class="response-message">{{ lastResponse.message }}</p>
       
       <!-- Intents Detected -->
@@ -123,6 +129,11 @@
             {{ intent.replace('_', ' ') }}
           </mat-chip>
         </mat-chip-set>
+      </div>
+
+      <!-- Session Info -->
+      <div class="session-info" *ngIf="sessionId">
+        <small>Session: {{ sessionId.substring(0,8) }}...</small>
       </div>
 
       <!-- Cart Items -->
@@ -147,17 +158,24 @@
         <p><strong>Ready for Checkout!</strong></p>
         <p>Items added to cart. You'll be redirected to checkout for payment.</p>
       </div>
-      
-      <!-- REMOVED: Order details (no longer shown in voice-order) -->
-      <!-- <div class="order-details" *ngIf="lastResponse?.order">
-        <p><strong>Order ID:</strong> {{ lastResponse.order._id }}</p>
-        <p><strong>Total:</strong> ₹{{ lastResponse.order.totalAmount }}</p>
-      </div> -->
+
+      <!-- Chat History -->
+      <div class="history-section" *ngIf="chatHistory.length > 1">
+        <mat-card-subtitle>Recent Commands</mat-card-subtitle>
+        <div class="history-list">
+          <mat-chip *ngFor="let history of chatHistory.slice(0,3)" [color]="history.success ? 'primary' : 'warn'">
+            {{ history.message.substring(0,30) }}...
+          </mat-chip>
+        </div>
+      </div>
     </mat-card-content>
     <mat-card-actions>
       <button mat-button color="primary" (click)="resetVoice()">
         <mat-icon>refresh</mat-icon>
         New Order
+      </button>
+      <button mat-raised-button color="accent" *ngIf="cartItems.length > 0" (click)="confirmOrder()">
+        Confirm & Checkout
       </button>
     </mat-card-actions>
   </mat-card>

@@ -46,6 +46,11 @@ const couponSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  kitchenId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Kitchen',
+    required: true
+  },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -54,6 +59,7 @@ const couponSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Indexes for audit trail
+couponSchema.index({ kitchenId: 1 });
 couponSchema.index({ createdBy: 1 });
 couponSchema.index({ updatedBy: 1, updatedAt: -1 });
 

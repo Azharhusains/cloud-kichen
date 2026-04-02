@@ -11,7 +11,7 @@ const path = require('path');
 const fs = require('fs').promises;
 
 const getOrders = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
-  let query = {};
+let query = { kitchenId: req.kitchen._id };
   if (req.user.role === 'CUSTOMER') {
     query.user = req.user._id;
   }
@@ -43,7 +43,11 @@ const getOrder = async (req, res) => {
 
 const createOrder = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   try {
-    const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMethod } = req.body;
+const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMethod, kitchenId } = req.body;
+    if (!req.kitchen && !kitchenId) {
+      return res.status(400).json({ message: 'Kitchen ID required' });
+    }
+    const finalKitchenId = req.kitchen?._id || kitchenId;
     if (paymentMethod === 'online') {
       return res.status(400).json({ message: 'Online payments must use /api/payment/create-session. Use COD for direct order creation.' });
     }
@@ -145,8 +149,9 @@ const createOrder = require('../middleware/errorHandler').asyncHandler(async (re
     }
 
     // Create order with orderNumber and charge breakdown
-    const order = new Order({
+const order = new Order({
       user: req.user._id,
+      kitchenId: finalKitchenId,
       orderNumber,
       orderType: orderType || 'delivery',
       tableNumber: orderType === 'dine-in' ? tableNumber : null,

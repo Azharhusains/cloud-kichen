@@ -22,6 +22,11 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  kitchenId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Kitchen',
+    required: true
+  },
   items: [{
     menuItem: {
       type: mongoose.Schema.Types.ObjectId,
@@ -184,8 +189,12 @@ const orderSchema = new mongoose.Schema({
 });
 
 // Production indexes for optimal query performance
-// user + createdAt: customer order history, recent orders
-orderSchema.index({ user: 1, createdAt: -1 });
+// kitchenId + createdAt: kitchen order history
+orderSchema.index({ kitchenId: 1, createdAt: -1 });
+// user + kitchenId + createdAt: customer orders per kitchen
+orderSchema.index({ user: 1, kitchenId: 1, createdAt: -1 });
+// orderStatus + createdAt: dashboard filtering (pending/recent)
+orderSchema.index({ orderStatus: 1, createdAt: -1 });
 // orderStatus + createdAt: dashboard filtering (pending/recent)
 orderSchema.index({ orderStatus: 1, createdAt: -1 });
 

@@ -7,8 +7,9 @@ const menuItemSchema = new mongoose.Schema({
     trim: true,
   },
   category: {
-    type: String,
-    required: true,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: true
   },
   description: {
     type: String,
@@ -51,6 +52,11 @@ const menuItemSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  kitchenId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Kitchen',
+    required: true
+  }
 }, {
   timestamps: true,
 });
@@ -60,8 +66,10 @@ menuItemSchema.index({ createdBy: 1 });
 menuItemSchema.index({ updatedBy: 1, updatedAt: -1 });
 
 // Production indexes:
-// category + name: menu filtering/search by category/name
-menuItemSchema.index({ category: 1, name: 1 });
+// kitchenId + category + name: per kitchen menu search
+menuItemSchema.index({ kitchenId: 1, category: 1, name: 1 });
+// kitchenId + isAvailable: availability check
+menuItemSchema.index({ kitchenId: 1, isAvailable: 1 });
 // isAvailable: quick availability filtering
 menuItemSchema.index({ isAvailable: 1 });
 
