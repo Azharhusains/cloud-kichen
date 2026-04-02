@@ -255,10 +255,6 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   selectPortion(item: MenuItem, portionType: 'HALF' | 'FULL'): void {
     this.lastPortionTypes[item._id] = portionType;
-    const currentQty = this.getQtyForPortion(item, portionType);
-    if (currentQty === 0) {
-      this.cartService.addToCart(item, portionType);
-    }
   }
 
   removeFromCart(menuItem: any): void {

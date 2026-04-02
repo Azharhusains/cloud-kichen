@@ -384,12 +384,6 @@ export class MenuItemDialogComponent implements OnInit {
 
   selectPortionDialog(portionType: 'HALF' | 'FULL'): void {
     this.currentPortion = portionType;
-    if (this.data.viewingItem) {
-      const currentQty = portionType === 'HALF' ? this.getHalfQuantity() : this.getFullQuantity();
-      if (currentQty === 0) {
-        this.cartService.addToCart(this.data.viewingItem, portionType);
-      }
-    }
   }
 
 
