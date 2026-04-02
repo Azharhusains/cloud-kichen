@@ -61,7 +61,7 @@ export interface MenuItemDialogData {
             
             <p class="description">{{ data.viewingItem.description }}</p>
             
-            <div class="add-to-cart-container" *ngIf="data.viewingItem.isAvailable">
+            <div class="add-to-cart-container">
               <!-- Portion Selector -->
               <div class="portion-selector" *ngIf="data.viewingItem.supportsHalf">
                 <button 
@@ -69,7 +69,8 @@ export interface MenuItemDialogData {
                   [class.active]="getCurrentPortionType() === 'HALF'"
                   (click)="selectPortionDialog('HALF')"
                   mat-stroked-button
-                  size="small">
+                  size="small"
+                  [disabled]="!data.viewingItem?.isAvailable">
                   Half<br><small>₹{{ data.viewingItem.halfPrice | number:'1.0-0' }}</small>
                 </button>
                 <button 
@@ -77,7 +78,8 @@ export interface MenuItemDialogData {
                   [class.active]="getCurrentPortionType() === 'FULL'"
                   (click)="selectPortionDialog('FULL')"
                   mat-stroked-button
-                  size="small">
+                  size="small"
+                  [disabled]="!data.viewingItem?.isAvailable">
                   Full<br><small>₹{{ data.viewingItem.fullPrice | number:'1.0-0' }}</small>
                 </button>
               </div>
