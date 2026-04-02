@@ -4,6 +4,11 @@ const User = require('../models/User');
 const Counter = require('../models/Counter');
 const Table = require('../models/Table');
 const { deductStock, checkStockAvailability, restoreStock } = require('./inventoryController');
+const nodemailer = require('nodemailer');
+const { generateInvoicePDF, savePDFToFile } = require('../utils/pdfGenerator');
+const { generateOrderConfirmationEmail } = require('../utils/emailTemplate');
+const path = require('path');
+const fs = require('fs').promises;
 
 const getOrders = async (req, res) => {
   try {
@@ -161,6 +166,69 @@ const createOrder = async (req, res) => {
     });
 
     const createdOrder = await order.save();
+
+    // ===== NEW: Generate PDF Invoice and Send Confirmation Email =====
+    try {
+      // Populate order for email/PDF
+      const populatedOrder = await Order.findById(createdOrder._id)
+        .populate('user', 'name email phone')
+        .populate('items.menuItem');
+
+      // Handle customer email (prefer DB user, fallback to request body)
+      const customerEmail = populatedOrder.user?.email || req.body.customerEmail;
+      const customerName = populatedOrder.user?.name || req.body.customerName;
+      
+      if (!customerEmail) {
+        console.warn('No customer email found for order', createdOrder.orderNumber);
+      } else {
+        // Generate PDF buffer
+        const pdfBuffer = await generateInvoicePDF(populatedOrder);
+        
+        // Save PDF file
+        const pdfFilePath = await savePDFToFile(pdfBuffer, createdOrder.orderNumber);
+        console.log(`PDF saved: ${pdfFilePath}`);
+
+        // Build PDF download URL
+        const pdfDownloadUrl = `${req.protocol}://${req.get('host')}/api/orders/${createdOrder.orderNumber}/invoice`;
+
+        // Generate HTML email
+        const htmlEmail = generateOrderConfirmationEmail(populatedOrder.toObject(), pdfDownloadUrl);
+
+        // Create nodemailer transporter
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || process.env.EMAIL_HOST,
+          port: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587'),
+          secure: false,
+          auth: {
+            user: process.env.SMTP_USER || process.env.EMAIL_USER,
+            pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
+          },
+        });
+
+        // Email options
+        const mailOptions = {
+          from: process.env.EMAIL_FROM || process.env.SMTP_USER || '"Cloud Kitchen" <no-reply@cloudkitchen.com>',
+          to: customerEmail,
+          subject: `Order Confirmed #${createdOrder.orderNumber} — Cloud Kitchen`,
+          html: htmlEmail,
+          attachments: [
+            {
+              filename: `Invoice_#${createdOrder.orderNumber}.pdf`,
+              path: pdfFilePath,
+              contentType: 'application/pdf',
+            },
+          ],
+        };
+
+        // Send email
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Confirmation email + PDF sent to ${customerEmail} for order #${createdOrder.orderNumber}`);
+      }
+    } catch (emailError) {
+      console.error('Email/PDF generation failed:', emailError);
+      // Don't fail the order creation on email error
+    }
+    // ===== END EMAIL/PDF =====
 
     // Deduct stock
     await deductStock(items);
@@ -320,6 +388,50 @@ const getInvoice = async (req, res) => {
   }
 };
 
+const getOrderInvoicePDF = async (req, res) => {
+  try {
+    const { orderNumber } = req.params;
+    
+    // Find order by orderNumber
+    const order = await Order.findOne({ orderNumber: parseInt(orderNumber) })
+      .populate('user', 'name email')
+      .populate('items.menuItem');
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    // Authorization: any auth user can download if order exists (admin/customer)
+    if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    
+    const fileName = `Invoice_#${orderNumber}.pdf`;
+    const filePath = path.join(__dirname, '../../uploads/invoices/', fileName);
+    
+    // Try to serve existing file first
+    try {
+      await fs.access(filePath);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.sendFile(path.resolve(filePath));
+      return;
+    } catch (fileError) {
+      console.log('PDF file not found, generating on-the-fly:', fileError.message);
+    }
+    
+    // Fallback: generate PDF buffer
+    const pdfBuffer = await generateInvoicePDF(order);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.send(pdfBuffer);
+    
+  } catch (error) {
+    console.error('PDF invoice error:', error);
+    res.status(500).json({ message: 'Failed to generate invoice PDF' });
+  }
+};
+
 const cancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -432,4 +544,4 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getOrder, createOrder, getInvoice, updateOrderStatus, cancelOrder };
+module.exports = { getOrders, getOrder, createOrder, getInvoice, getOrderInvoicePDF, updateOrderStatus, cancelOrder };

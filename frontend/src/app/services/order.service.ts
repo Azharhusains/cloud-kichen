@@ -59,4 +59,16 @@ export class OrderService {
   cancelOrder(id: string, reason: string): Observable<any> {
     return this.http.put(`${environment.apiUrl}/orders/${id}/cancel`, { reason });
   }
+
+  /**
+   * Download PDF invoice for order (server-generated)
+   * @param orderNumber - Order number as string (e.g. "16")
+   * @returns Observable<Blob> for browser download
+   */
+  downloadInvoice(orderNumber: string): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/orders/${orderNumber}/invoice`, { 
+      responseType: 'blob' 
+    });
+  }
 }
+
