@@ -27,6 +27,8 @@ import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
 import { MatChipsModule } from '@angular/material/chips';
 import { ToastService } from '../../services/toast.service';
+import { LoyaltyService } from '../../services/loyalty.service';
+
 
 
 @Component({
@@ -100,6 +102,13 @@ export class CheckoutComponent implements OnInit {
   razorpayResponse: any = null;
   loadingPayment: boolean = false;
   
+  // Loyalty points
+  loyalty: any = null;
+  loyaltyLoading: boolean = false;
+  useLoyaltyPoints: boolean = false;
+  loyaltyPointsToUse: number = 0;
+  loyaltyDiscount: number = 0;
+  maxRedeemPoints: number = 0;
   
   // NEW: Order type (delivery or dine-in)
   orderType: 'delivery' | 'dine-in' = 'delivery';
@@ -111,7 +120,8 @@ export class CheckoutComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     public cartService: CartService,
-    private toastService: ToastService
+  private toastService: ToastService,
+    private loyaltyService: LoyaltyService
   ) {
     this.checkoutForm = this.fb.group({
       street: ['', Validators.required],
@@ -127,6 +137,23 @@ export class CheckoutComponent implements OnInit {
     this.loadCart();
     this.loadAddresses();
     this.loadTableInfo();
+    this.loadLoyalty();
+  }
+
+  loadLoyalty(): void {
+    this.loyaltyLoading = true;
+    this.loyaltyService.getLoyalty().subscribe({
+      next: (data) => {
+        this.loyalty = data;
+        this.maxRedeemPoints = Math.floor(this.loyalty.points / 10) * 10;
+        this.loyaltyLoading = false;
+        this.updateTotals();
+      },
+      error: (err) => {
+        console.error('Failed to load loyalty:', err);
+        this.loyaltyLoading = false;
+      }
+    });
   }
 
   applyCoupon(): void {
@@ -215,7 +242,27 @@ export class CheckoutComponent implements OnInit {
   }
 
   private updateTotals(): void {
-    this.finalTotal = this.getTotal() - this.couponDiscount;
+    let total = this.getTotal() - this.couponDiscount;
+    if (this.useLoyaltyPoints && this.loyaltyDiscount > 0) {
+      total -= this.loyaltyDiscount;
+    }
+    this.finalTotal = total;
+  }
+
+  toggleLoyaltyPoints(): void {
+    this.useLoyaltyPoints = !this.useLoyaltyPoints;
+    if (!this.useLoyaltyPoints) {
+      this.loyaltyPointsToUse = 0;
+      this.loyaltyDiscount = 0;
+    }
+    this.updateTotals();
+  }
+
+  updateLoyaltyPoints(): void {
+    this.loyaltyPointsToUse = Math.floor(this.loyaltyPointsToUse / 10) * 10;
+    this.loyaltyPointsToUse = Math.min(this.loyaltyPointsToUse, this.maxRedeemPoints);
+    this.loyaltyDiscount = this.loyaltyPointsToUse / 10;
+    this.updateTotals();
   }
 
   increaseQuantity(item: any): void {
@@ -274,7 +321,8 @@ export class CheckoutComponent implements OnInit {
       couponCode: this.couponCode,
       couponDiscount: this.couponDiscount,
       paymentMethod: this.paymentMethod,
-      orderType: this.orderType
+      orderType: this.orderType,
+      loyaltyDiscountUsed: this.loyaltyDiscount
     };
 
     // Add table info for dine-in

@@ -140,6 +140,42 @@
     padding: 8px 0;
     color: #666;
 
+  .loyalty-section {
+    padding: 12px 0;
+    margin: 12px 0;
+
+    .loyalty-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+      font-size: 1rem;
+
+      mat-icon {
+        font-size: 20px;
+      }
+    }
+
+    .points-input {
+      margin: 8px 0;
+
+      mat-form-field {
+        width: 100%;
+      }
+    }
+
+    .loyalty-discount {
+      margin-top: 4px;
+    }
+  }
+
+  .highlight {
+    color: #4caf50 !important;
+    font-weight: 600 !important;
+  }
+
     .free {
       color: #4caf50;
       font-weight: 600;

@@ -10,10 +10,18 @@ export class OrderService {
   constructor(private http: HttpClient) {}
 
   createOrder(orderData: any): Observable<any> {
+    // Ensure loyaltyDiscountUsed is sent as points count (₹ * 10)
+    if (orderData.loyaltyDiscountUsed) {
+      orderData.loyaltyDiscountUsed = Math.round(orderData.loyaltyDiscountUsed * 10);
+    }
     return this.http.post(`${environment.apiUrl}/orders`, orderData);
   }
 
   createPaymentSession(orderData: any, couponCode?: string): Observable<any> {
+    // Ensure loyaltyDiscountUsed is sent as points count (₹ * 10)
+    if (orderData.loyaltyDiscountUsed) {
+      orderData.loyaltyDiscountUsed = Math.round(orderData.loyaltyDiscountUsed * 10);
+    }
     const body = { 
       orderData,
       couponCode: couponCode || ''

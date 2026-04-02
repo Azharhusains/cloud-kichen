@@ -21,6 +21,7 @@ import { OrderService } from '../../services/order.service';
 import { MatDialog } from '@angular/material/dialog';
 import { InvoiceComponent } from '../invoice/invoice.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../admin/confirm-dialog/confirm-dialog.component';
+import { LoyaltyService } from '../../services/loyalty.service';
 
 @Component({
   selector: 'app-profile',
@@ -66,15 +67,19 @@ export class ProfileComponent implements OnInit {
   showAddressForm: boolean = false;
   addressForm: FormGroup;
   searchTerm: string = '';
+  loyalty: any = null;
+
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private orderService: OrderService,
+    private loyaltyService: LoyaltyService,
     private router: Router,
     public dialog: MatDialog
   ) {
     this.addressForm = this.fb.group({
+
       street: ['', Validators.required],
       city: ['', Validators.required],
       state: ['', Validators.required],
@@ -85,7 +90,19 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUserProfile();
+    this.loadLoyalty();
     this.loadOrders();
+  }
+
+  loadLoyalty(): void {
+    this.loyaltyService.getLoyalty().subscribe({
+      next: (data) => {
+        this.loyalty = data;
+      },
+      error: (err) => {
+        console.error('Failed to load loyalty:', err);
+      }
+    });
   }
 
   loadUserProfile(): void {

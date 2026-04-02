@@ -74,7 +74,7 @@ export class AuthService {
   }
 
   getProfile(): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/auth/profile`);
+    return this.http.get(`${environment.apiUrl}/auth/profile?populateLoyalty=true`);
   }
 
   addAddress(address: any): Observable<any> {

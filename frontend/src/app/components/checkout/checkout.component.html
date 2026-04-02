@@ -48,6 +48,37 @@
               <span class="label">GST (5%)</span>
               <span>₹{{ getTax() | number : '1.2-2' }}</span>
             </div>
+
+            <!-- Loyalty Points Section -->
+            <ng-container *ngIf="loyalty">
+              <mat-divider class="loyalty-divider"></mat-divider>
+              <div class="loyalty-section">
+                <div class="loyalty-header">
+                  <mat-icon color="primary">star</mat-icon>
+                  <span>Loyalty Points: {{ loyalty.points }} ({{ loyalty.tier }})</span>
+                </div>
+                <mat-checkbox [(ngModel)]="useLoyaltyPoints" (change)="toggleLoyaltyPoints()">
+                  Use Points
+                </mat-checkbox>
+                
+                <div class="points-input" *ngIf="useLoyaltyPoints">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Points to Use ({{ maxRedeemPoints } } max)</mat-label>
+                    <input matInput type="number" [(ngModel)]="loyaltyPointsToUse" 
+                           (input)="updateLoyaltyPoints()" [max]="maxRedeemPoints" min="0">
+                    <mat-hint>₹{{ loyaltyDiscount | number : '1.2-2' }} discount (1 point = ₹0.1)</mat-hint>
+                  </mat-form-field>
+                </div>
+                
+                <div class="loyalty-discount" *ngIf="useLoyaltyPoints && loyaltyDiscount > 0">
+                  <div class="total-row">
+                    <span class="label">Loyalty Discount</span>
+                    <span class="highlight">-₹{{ loyaltyDiscount | number : '1.2-2' }}</span>
+                  </div>
+                </div>
+              </div>
+              <mat-divider></mat-divider>
+            </ng-container>
             <div class="total-row" *ngIf="orderType === 'delivery'">
               <span class="label">Delivery Fee</span>
               <span>₹{{ getDeliveryCharge() | number : '1.2-2' }}</span>

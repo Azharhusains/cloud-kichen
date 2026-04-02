@@ -169,6 +169,16 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  loyaltyPointsEarned: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  loyaltyDiscountUsed: {
+    type: Number,
+    default: 0,
+    min: 0
+  }
 }, {
   timestamps: true,
 });

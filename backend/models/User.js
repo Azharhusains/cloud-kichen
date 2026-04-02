@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  loyalty: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Loyalty'
+  }
 }, {
   timestamps: true,
 });

@@ -21,7 +21,63 @@
     </div>
   </div>
 
-  <div class="profile-content">
+<div class="profile-content">
+    <!-- Loyalty Section -->
+    <div class="section" *ngIf="loyalty">
+      <mat-card class="section-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>star</mat-icon>
+            Loyalty Program
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="loyalty-stats">
+            <div class="loyalty-card bronze" *ngIf="loyalty.tier === 'Bronze'">
+              <mat-icon>star_border</mat-icon>
+              <div>
+                <h3>{{ loyalty.tier }}</h3>
+                <p>{{ loyalty.points }} points</p>
+              </div>
+            </div>
+            <div class="loyalty-card silver" *ngIf="loyalty.tier === 'Silver'">
+              <mat-icon>star_half</mat-icon>
+              <div>
+                <h3>{{ loyalty.tier }}</h3>
+                <p>{{ loyalty.points }} points</p>
+              </div>
+            </div>
+            <div class="loyalty-card gold" *ngIf="loyalty.tier === 'Gold'">
+              <mat-icon>star</mat-icon>
+              <div>
+                <h3>{{ loyalty.tier }}</h3>
+                <p>{{ loyalty.points }} points</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent History -->
+          <div class="loyalty-history" *ngIf="loyalty.history && loyalty.history.length > 0">
+            <h4>Recent Activity</h4>
+            <div *ngFor="let transaction of loyalty.history.slice(0,5)" class="history-item">
+              <mat-icon>{{ transaction.type === 'earn' ? 'trending_up' : 'trending_down' }}</mat-icon>
+              <div>
+                <span class="type">{{ transaction.type === 'earn' ? '+' : '-' }}{{ transaction.points }} points</span>
+                <span class="reason">{{ transaction.reason }}</span>
+              </div>
+              <small>{{ transaction.date | date:'short' }}</small>
+            </div>
+          </div>
+
+          <div *ngIf="!loyalty.history || loyalty.history.length === 0" class="no-history">
+            <mat-icon>history</mat-icon>
+            <p>No transactions yet. Earn points on your next order!</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
     <!-- Addresses Section -->
     <div class="section">
       <mat-card class="section-card">

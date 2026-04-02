@@ -159,6 +159,7 @@ const createOrder = require('../middleware/errorHandler').asyncHandler(async (re
       paymentMethod: 'cash',
       deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
       profit,
+      loyaltyDiscountUsed: req.body.loyaltyDiscountUsed || 0
     });
 
     const createdOrder = await order.save();
@@ -282,6 +283,25 @@ const updateOrderStatus = require('../middleware/errorHandler').asyncHandler(asy
     console.log('New Status:', req.body.status);
     
     order.orderStatus = req.body.status;
+    
+    // Loyalty points earning - auto add when order completes successfully
+    const successStatuses = ['delivered', 'completed'];
+    if (successStatuses.includes(req.body.status) && 
+        order.loyaltyPointsEarned === undefined || 
+        order.loyaltyPointsEarned === 0) {
+      
+      const { addPoints } = require('../services/loyalty.service');
+      const points = Math.floor(order.totalAmount / 10);
+      
+      if (points > 0) {
+        const reason = `Order #${order.orderNumber}`;
+        const result = await addPoints(order.user, points, reason, order._id);
+        
+        order.loyaltyPointsEarned = points;
+        console.log(`🎁 Loyalty points added: ${points} for order ${order.orderNumber}`);
+      }
+    }
+    
     const updatedOrder = await order.save();
 
     // For dine-in orders, when status is 'completed', set table back to available
