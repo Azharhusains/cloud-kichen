@@ -59,6 +59,12 @@ const menuItemSchema = new mongoose.Schema({
 menuItemSchema.index({ createdBy: 1 });
 menuItemSchema.index({ updatedBy: 1, updatedAt: -1 });
 
+// Production indexes:
+// category + name: menu filtering/search by category/name
+menuItemSchema.index({ category: 1, name: 1 });
+// isAvailable: quick availability filtering
+menuItemSchema.index({ isAvailable: 1 });
+
 // Virtual for backward compatibility - return fullPrice as 'price'
 menuItemSchema.virtual('price').get(function() {
   return this.fullPrice;

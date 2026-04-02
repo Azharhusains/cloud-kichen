@@ -1,6 +1,6 @@
 const User = require('../models/User');
 
-const getUsers = async (req, res) => {
+const getUsers = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   try {
     const users = await User.find({})
       .select('-password')
@@ -17,11 +17,11 @@ const getUsers = async (req, res) => {
 
     res.json(usersWithStats);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    throw error;
   }
-};
+});
 
-const promoteToAdmin = async (req, res) => {
+const promoteToAdmin = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -49,9 +49,9 @@ const promoteToAdmin = async (req, res) => {
       user: targetUser
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    throw error;
   }
-};
+});
 
 module.exports = { getUsers, promoteToAdmin };
 

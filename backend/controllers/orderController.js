@@ -10,25 +10,21 @@ const { generateOrderConfirmationEmail } = require('../utils/emailTemplate');
 const path = require('path');
 const fs = require('fs').promises;
 
-const getOrders = async (req, res) => {
-  try {
-    let query = {};
-    if (req.user.role === 'CUSTOMER') {
-      query.user = req.user._id;
-    }
-    if (req.query.status) {
-      query.orderStatus = req.query.status;
-    }
-    // Filter by order type (delivery or dine-in)
-    if (req.query.orderType) {
-      query.orderType = req.query.orderType;
-    }
-    const orders = await Order.find(query).populate('user', 'name email').populate('items.menuItem').sort({ createdAt: -1 });
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+const getOrders = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
+  let query = {};
+  if (req.user.role === 'CUSTOMER') {
+    query.user = req.user._id;
   }
-};
+  if (req.query.status) {
+    query.orderStatus = req.query.status;
+  }
+  // Filter by order type (delivery or dine-in)
+  if (req.query.orderType) {
+    query.orderType = req.query.orderType;
+  }
+  const orders = await Order.find(query).populate('user', 'name email').populate('items.menuItem').sort({ createdAt: -1 });
+  res.json(orders);
+});
 
 const getOrder = async (req, res) => {
   try {
@@ -45,7 +41,7 @@ const getOrder = async (req, res) => {
   }
 };
 
-const createOrder = async (req, res) => {
+const createOrder = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   try {
     const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMethod } = req.body;
     if (paymentMethod === 'online') {
@@ -269,11 +265,11 @@ io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     res.status(201).json(createdOrder);
   } catch (error) {
     console.error('Error creating order:', error);
-    res.status(500).json({ message: error.message });
+    throw error;
   }
-};
+});
 
-const updateOrderStatus = async (req, res) => {
+const updateOrderStatus = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
@@ -324,9 +320,9 @@ io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     res.json(updatedOrder);
   } catch (error) {
     console.error('Error updating order status:', error);
-    res.status(500).json({ message: error.message });
+    throw error;
   }
-};
+});
 
 const getInvoice = async (req, res) => {
   try {

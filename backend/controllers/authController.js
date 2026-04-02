@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { validationResult } = require('express-validator');
+// const { validationResult } = require('express-validator'); // Replaced by Joi
 const User = require('../models/User');
 const LoginAttempt = require('../models/LoginAttempt');
 
@@ -9,12 +9,7 @@ const generateToken = (id, role, name, email) => {
   });
 };
 
-const register = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
+const register = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   const { name, email, password, role: requestedRole } = req.body;
 
   try {
@@ -50,16 +45,11 @@ const register = async (req, res) => {
       token: generateToken(user._id, user.role, user.name, user.email),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    throw error; // Pass to centralized error handler
   }
-};
+});
 
-const login = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
+const login = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -106,22 +96,18 @@ const login = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+});
 
-const getProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      addresses: user.addresses,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+const getProfile = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  res.json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    addresses: user.addresses,
+  });
+});
 
 const updateProfile = async (req, res) => {
   try {
@@ -214,12 +200,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-const forgotPassword = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
+const forgotPassword = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -256,14 +237,9 @@ const forgotPassword = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+});
 
-const resetPassword = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
+const resetPassword = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   const { token, password } = req.body;
 
   try {
@@ -286,6 +262,6 @@ const resetPassword = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+});
 
 module.exports = { register, login, getProfile, updateProfile, addAddress, removeAddress, checkSuperAdminExists, forgotPassword, resetPassword };

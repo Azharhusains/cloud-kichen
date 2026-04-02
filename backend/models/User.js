@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Production indexes:
+// email: unique lookup (already indexed by unique:true, ensure compound)
+userSchema.index({ email: 1 });
+// role: admin queries, role-based filtering
+userSchema.index({ role: 1 });
+
 // Compare password method
 userSchema.methods.comparePassword = function(candidatePassword) {
   return candidatePassword === this.password;

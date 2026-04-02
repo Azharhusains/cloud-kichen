@@ -8,8 +8,8 @@ router.get('/', getMenuItems);
 router.get('/:id', getMenuItem);
 
 // Handle multipart/form-data for create and update
-router.post('/', protect, authorize('ADMIN', 'SUPER_ADMIN'), upload.single('image'), createMenuItem);
-router.put('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN'), upload.single('image'), updateMenuItem);
+router.post('/', protect, authorize('ADMIN', 'SUPER_ADMIN'), require('../middleware/sanitize').sanitizeBody, require('../middleware/imageCompress').upload.single('image'), require('../middleware/validation').menuCreate, createMenuItem);
+router.put('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN'), require('../middleware/sanitize').sanitizeBody, require('../middleware/imageCompress').upload.single('image'), require('../middleware/validation').menuUpdate, updateMenuItem);
 router.delete('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN'), deleteMenuItem);
 
 module.exports = router;

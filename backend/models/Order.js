@@ -173,4 +173,10 @@ const orderSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Production indexes for optimal query performance
+// user + createdAt: customer order history, recent orders
+orderSchema.index({ user: 1, createdAt: -1 });
+// orderStatus + createdAt: dashboard filtering (pending/recent)
+orderSchema.index({ orderStatus: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Order', orderSchema);

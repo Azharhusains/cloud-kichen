@@ -48,12 +48,20 @@ io.on('connection', (socket) => {
   });
 });
 
-// Middleware
+// Production middleware stack (optimized order)
+// Security first
 app.use(helmet());
+// Rate limiting (global)
+app.use(require('./middleware/rateLimit').limiter);
+// CORS
 app.use(cors());
+// Logging
 app.use(morgan('combined'));
+// Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+// Input sanitization (XSS prevention)
+app.use(require('./middleware/sanitize'));
 
 // Serve uploaded files statically at root /uploads path
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -71,15 +79,15 @@ app.use('/api/payment', require('./routes/payment'));
 app.use('/api/coupons', require('./routes/coupon'));
 app.use('/api/tables', require('./routes/table'));
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
+// Centralized error handler (replaces basic one)
+app.use(require('./middleware/errorHandler').handleError);
 
-// 404 handler
+// 404 handler (after error handler)
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({ 
+    error: 'Route not found',
+    code: 'NOT_FOUND'
+  });
 });
 
 const PORT = process.env.PORT || 5000;
