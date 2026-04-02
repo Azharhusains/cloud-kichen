@@ -306,6 +306,21 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     }
   }
 
+  // NEW: Carbon Score helpers
+  getCarbonScoreClass(score: number): 'eco-excellent' | 'eco-good' | 'eco-moderate' | 'eco-high' {
+    if (score <= 30) return 'eco-excellent';
+    if (score <= 60) return 'eco-good';
+    if (score <= 80) return 'eco-moderate';
+    return 'eco-high';
+  }
+
+  getCarbonScoreLabel(score: number): string {
+    if (score <= 30) return 'Excellent 🌿';
+    if (score <= 60) return 'Good 👍';
+    if (score <= 80) return 'Moderate ⚠️';
+    return 'High 🚨';
+  }
+
   goBack(): void {
     this.router.navigate(['/profile']);
   }

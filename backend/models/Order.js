@@ -111,6 +111,9 @@ const orderSchema = new mongoose.Schema({
     state: String,
     zipCode: String,
     country: String,
+    // NEW: For carbon score calculation
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
   },
   profit: {
     type: Number,
@@ -183,6 +186,13 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: 0
+  },
+  // NEW: Sustainability tracking
+  carbonScore: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
   }
 }, {
   timestamps: true,
@@ -193,8 +203,6 @@ const orderSchema = new mongoose.Schema({
 orderSchema.index({ kitchenId: 1, createdAt: -1 });
 // user + kitchenId + createdAt: customer orders per kitchen
 orderSchema.index({ user: 1, kitchenId: 1, createdAt: -1 });
-// orderStatus + createdAt: dashboard filtering (pending/recent)
-orderSchema.index({ orderStatus: 1, createdAt: -1 });
 // orderStatus + createdAt: dashboard filtering (pending/recent)
 orderSchema.index({ orderStatus: 1, createdAt: -1 });
 

@@ -33,6 +33,48 @@
   --transition-slow: 0.5s ease;
 }
 
+/* Dark theme CSS vars override */
+.dark-theme {
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --bg-light: #1a1a2e;
+  --bg-white: #2d2d44;
+  --border-color: #334155;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* NEW: Carbon Score Styles */
+.carbon-score-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(139, 195, 74, 0.1) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  mat-icon {
+    color: #4caf50;
+    font-size: 20px;
+  }
+  span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2d5a2a;
+  }
+  .score-indicator {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    &.eco-excellent { background: rgba(76, 175, 80, 0.2); color: #2d5a2a; }
+    &.eco-good { background: rgba(139, 195, 74, 0.2); color: #4a7c2a; }
+    &.eco-moderate { background: rgba(255, 193, 7, 0.2); color: #856404; }
+    &.eco-high { background: rgba(244, 67, 54, 0.2); color: #721c24; }
+  }
+}
+
 /* Global Animations */
 @keyframes fadeIn {
   from {

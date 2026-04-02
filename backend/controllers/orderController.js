@@ -9,6 +9,13 @@ const { generateInvoicePDF, savePDFToFile } = require('../utils/pdfGenerator');
 const { generateOrderConfirmationEmail } = require('../utils/emailTemplate');
 const path = require('path');
 const fs = require('fs').promises;
+const { getDistance } = require('geolib'); // NEW: For carbon score distance calc
+
+// Haversine helper (kitchen coords - assume from env or Kitchen model)
+const KITCHEN_COORDS = {
+  lat: parseFloat(process.env.KITCHEN_LAT) || 19.0760, // Mumbai default
+  lng: parseFloat(process.env.KITCHEN_LNG) || 72.8777
+};
 
 const getOrders = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
 let query = { kitchenId: req.kitchen._id };
@@ -108,6 +115,23 @@ const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMeth
 
     const profit = totalAmount - totalCost - deliveryCharge - taxAmount;
 
+    // NEW: Calculate carbonScore (sustainability metric 0-100)
+    let carbonScore = 0;
+    if (orderType === 'delivery' && deliveryAddress && deliveryAddress.lat && deliveryAddress.lng) {
+      const distanceKm = getDistance(
+        { latitude: KITCHEN_COORDS.lat, longitude: KITCHEN_COORDS.lng },
+        { latitude: deliveryAddress.lat, longitude: deliveryAddress.lng }
+      ) / 1000; // meters to km
+
+      // Packaging factor: assume 0.2kg per item
+      const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+      const packagingKg = totalItems * 0.2;
+
+      // Formula: distance * 0.2 + packaging * 1.5, clamped 0-100
+      carbonScore = Math.max(0, Math.min(100, (distanceKm * 0.2) + (packagingKg * 1.5)));
+    }
+    console.log(`Carbon Score: ${carbonScore.toFixed(1)} (distance: ${distanceKm?.toFixed(1) || 'N/A'}km, items: ${totalItems})`);
+
     // Get global order number using Counter
     // Check if it's a new day (midnight) FIRST, then reset if needed before incrementing
     const now = new Date();
@@ -164,6 +188,7 @@ const order = new Order({
       paymentMethod: 'cash',
       deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
       profit,
+      carbonScore, // NEW
       loyaltyDiscountUsed: req.body.loyaltyDiscountUsed || 0
     });
 
@@ -197,7 +222,7 @@ const order = new Order({
         const htmlEmail = generateOrderConfirmationEmail(populatedOrder.toObject(), pdfDownloadUrl);
 
         // Create nodemailer transporter
-        const transporter = nodemailer.createTransport({
+        const transporter = nodemailer.createTransporter({
           host: process.env.SMTP_HOST || process.env.EMAIL_HOST,
           port: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587'),
           secure: false,
@@ -386,6 +411,7 @@ const getInvoice = async (req, res) => {
       taxRate: (order.taxRate * 100).toFixed(0) + '% GST',
       taxAmount: order.taxAmount,
       totalAmount: order.totalAmount,
+      carbonScore: order.carbonScore, // NEW
       orderType: order.orderType,
       tableNumber: order.tableNumber,
       deliveryAddress: order.deliveryAddress,

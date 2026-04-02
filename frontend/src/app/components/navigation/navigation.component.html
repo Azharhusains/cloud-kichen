@@ -6,7 +6,19 @@
     </div>
 
     <!-- Spacer -->
-    <span class="spacer"></span>
+<span class="spacer"></span>
+
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle-section" *ngIf="user">
+      <mat-slide-toggle
+        class="dark-mode-toggle"
+        [checked]="isDarkMode"
+        (change)="toggleDarkMode()"
+        matTooltip="Toggle Dark Mode">
+        <mat-icon matSlideToggleIcon>dark_mode</mat-icon>
+        <mat-icon matSlideToggleIcon *ngIf="isDarkMode">light_mode</mat-icon>
+      </mat-slide-toggle>
+    </div>
 
     <!-- Desktop Navigation -->
     <div class="nav-links desktop-nav" *ngIf="user">

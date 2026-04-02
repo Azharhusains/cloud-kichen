@@ -11,10 +11,12 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 // Services
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-navigation',
@@ -28,7 +30,8 @@ import { CartService } from '../../services/cart.service';
     MatMenuModule,
     MatBadgeModule,
     MatListModule,
-    MatDividerModule
+    MatDividerModule,
+    MatSlideToggleModule
   ],
   templateUrl: './navigation.component.html',
   styleUrls: ['./navigation.component.scss']
@@ -39,12 +42,15 @@ export class NavigationComponent implements OnInit, OnDestroy {
   cartItemCount: number = 0;
   currentUrl: string = '';
   isMobileMenuOpen: boolean = false;
+  isDarkMode = false;
   private cartSubscription!: Subscription;
+  private themeSubscription!: Subscription;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private cartService: CartService
+    private cartService: CartService,
+    public themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
@@ -58,16 +64,23 @@ export class NavigationComponent implements OnInit, OnDestroy {
       this.currentUrl = this.router.url;
     });
 
-    // Subscribe to cart count from CartService for real-time updates
+    // Subscribe to cart count
     this.cartSubscription = this.cartService.cartItemCount$.subscribe((count: number) => {
       this.cartItemCount = count;
-      console.log(this.cartItemCount)
+    });
+
+    // Subscribe to theme changes
+    this.themeSubscription = this.themeService.theme$.subscribe(theme => {
+      this.isDarkMode = theme.name === 'dark';
     });
   }
 
   ngOnDestroy(): void {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
+    }
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
     }
   }
 
@@ -86,5 +99,9 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   closeMobileMenu(): void {
     this.isMobileMenuOpen = false;
+  }
+
+  toggleDarkMode(): void {
+    this.themeService.toggleTheme();
   }
 }

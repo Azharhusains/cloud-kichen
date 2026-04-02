@@ -116,15 +116,43 @@ mat-card {
 }
 
 /* Order Info Card */
-.order-info-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  color: white !important;
+  .order-info-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
 
-  .order-info-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+    .order-info-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+
+      .carbon-score-badge {
+        flex-shrink: 0;
+        order: 3;
+        background: rgba(255, 255, 255, 0.2) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white !important;
+        padding: 12px;
+        border-radius: 12px;
+
+        mat-icon {
+          color: rgba(76, 175, 80, 0.9);
+        }
+
+        span {
+          font-size: 0.85rem;
+          color: white;
+          font-weight: 600;
+        }
+
+        .score-indicator {
+          font-size: 0.75rem;
+          padding: 2px 8px;
+        }
+      }
+    }
 
   .order-id-section {
     display: flex;

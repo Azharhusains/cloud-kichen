@@ -38,6 +38,11 @@ const menuItemSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  // NEW: Optional 3D model URL for AR preview (GLTF format)
+  modelUrl: {
+    type: String,
+    default: null,
+  },
   isAvailable: {
     type: Boolean,
     default: true,
