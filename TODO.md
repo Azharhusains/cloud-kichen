@@ -1,10 +1,39 @@
-# Fix MenuItem halfPrice Validation Error
+# Cloud Kitchen TODO
 
-## Steps:
-- [x] Step 1: Update backend/controllers/menuController.js ✓ (sanitizeFormData added)
-- [x] Step 2: Improve frontend/src/app/services/menu.service.ts ✓ (omit halfPrice when null) 
-- [x] Step 3: Code ready for testing without half portions
-- [x] Step 4: Code ready for testing with half portions  
-- [x] Step 5: Backend changes implemented - restart server to apply
-- [x] Complete: Changes deployed successfully
+## Critical
+- [ ] Add PWA support (service worker, offline, install prompts)
 
+## UI/UX Improvements
+- [ ] Voice order - train on restaurant menu/slang  
+- [ ] AR table visualization
+- [ ] Loyalty program points
+- [ ] Menu item customization (add-ons, notes)
+- [ ] Real-time order status WebSocket
+- [ ] Multi-language support
+- [ ] Dark mode toggle
+
+## Backend
+- [ ] Rate limiting
+- [ ] Input sanitization everywhere
+- [ ] Database indexes for common queries
+- [ ] Backup/restore scripts
+- [ ] Audit logs for admin actions
+
+## Performance
+- [ ] Image optimization/CDN
+- [ ] Lazy load non-critical components
+- [ ] Server-side rendering for SEO
+- [ ] Bundle analyzer
+
+## Testing
+- [ ] E2E Cypress tests
+- [ ] Unit tests 80% coverage
+- [ ] Performance tests
+
+## Deployment
+- [ ] Docker compose
+- [ ] CI/CD pipeline
+- [ ] Monitoring/alerting
+- [ ] Staging environment
+
+**Next:** PWA support

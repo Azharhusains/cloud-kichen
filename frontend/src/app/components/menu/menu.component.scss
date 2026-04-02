@@ -170,7 +170,7 @@
   margin: 0 auto;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
 
@@ -295,7 +295,7 @@
       .add-to-cart-container {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: space-around;
         width: 100%;
         gap: 12px;
         flex-wrap: wrap;
@@ -304,6 +304,7 @@
       .portion-selector {
         display: flex;
         gap: 4px;
+        width: 100%;
         background: white;
         border-radius: 25px;
         padding: 4px;
@@ -555,6 +556,16 @@
 }
 
 /* Responsive */
+@media (min-width: 769px) and (max-width: 1279px) {
+  .menu-items-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+// .menu-item-card {
+//   min-height: 420px;
+// }
+
 @media (max-width: 768px) {
   .menu-header {
     padding: 32px 16px;
