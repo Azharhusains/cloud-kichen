@@ -56,7 +56,11 @@ export class MenuService {
       formData.append('category', item.category || '');
       formData.append('description', item.description || '');
       formData.append('fullPrice', String(item.fullPrice || 0));
-      if (item.halfPrice !== undefined) formData.append('halfPrice', String(item.halfPrice));
+      
+      // Only append halfPrice if supportsHalf=true AND halfPrice has valid value
+      if (item.supportsHalf && item.halfPrice != null && item.halfPrice !== undefined && item.halfPrice > 0) {
+        formData.append('halfPrice', String(item.halfPrice));
+      }
       formData.append('supportsHalf', String(item.supportsHalf || false));
       formData.append('costPrice', String(item.costPrice || 0));
       formData.append('isAvailable', String(item.isAvailable !== false));
@@ -64,7 +68,11 @@ export class MenuService {
     }
     
     // Fallback to regular JSON if no file
-    return this.http.post<MenuItem>(`${environment.apiUrl}/menu`, item);
+    const cleanItem = { ...item };
+    if (!item.supportsHalf || item.halfPrice == null) {
+      delete cleanItem.halfPrice; // Remove halfPrice if not needed
+    }
+    return this.http.post<MenuItem>(`${environment.apiUrl}/menu`, cleanItem);
   }
 
   updateMenuItem(id: string, item: Partial<MenuItem> & { imageFile?: File }): Observable<MenuItem> {
@@ -75,15 +83,23 @@ export class MenuService {
       if (item.category) formData.append('category', item.category);
       if (item.description) formData.append('description', item.description);
       if (item.fullPrice !== undefined) formData.append('fullPrice', String(item.fullPrice));
-      if (item.halfPrice !== undefined) formData.append('halfPrice', String(item.halfPrice));
+      
+      // Only append halfPrice if supportsHalf=true AND halfPrice has valid value
+      if (item.supportsHalf && item.halfPrice != null && item.halfPrice !== undefined && item.halfPrice > 0) {
+        formData.append('halfPrice', String(item.halfPrice));
+      }
       if (item.supportsHalf !== undefined) formData.append('supportsHalf', String(item.supportsHalf));
       if (item.costPrice !== undefined) formData.append('costPrice', String(item.costPrice));
       formData.append('isAvailable', String(item.isAvailable !== false));
       return this.http.put<MenuItem>(`${environment.apiUrl}/menu/${id}`, formData);
     }
     
-    // Fallback to regular JSON
-    return this.http.put<MenuItem>(`${environment.apiUrl}/menu/${id}`, item);
+    // Fallback to regular JSON - clean up halfPrice if not needed
+    const cleanItem = { ...item };
+    if (!item.supportsHalf || item.halfPrice == null) {
+      delete cleanItem.halfPrice;
+    }
+    return this.http.put<MenuItem>(`${environment.apiUrl}/menu/${id}`, cleanItem);
   }
 
   deleteMenuItem(id: string): Observable<{ message: string }> {

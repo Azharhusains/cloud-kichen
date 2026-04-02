@@ -74,6 +74,29 @@ const getMenuItem = async (req, res) => {
   }
 };
 
+const sanitizeFormData = (body) => {
+  const sanitized = { ...body };
+  
+  // Convert string booleans
+  if (sanitized.supportsHalf === 'true') sanitized.supportsHalf = true;
+  if (sanitized.supportsHalf === 'false') sanitized.supportsHalf = false;
+  if (sanitized.isAvailable === 'true') sanitized.isAvailable = true;
+  if (sanitized.isAvailable === 'false') sanitized.isAvailable = false;
+  
+  // Convert numbers, handle "null" strings → null
+  const numberFields = ['fullPrice', 'halfPrice', 'costPrice'];
+  numberFields.forEach(field => {
+    if (sanitized[field] === 'null' || sanitized[field] === null || sanitized[field] === undefined || sanitized[field] === '') {
+      sanitized[field] = null;
+    } else {
+      const num = parseFloat(sanitized[field]);
+      sanitized[field] = isNaN(num) ? null : num;
+    }
+  });
+  
+  return sanitized;
+};
+
 const createMenuItem = async (req, res) => {
   try {
     // If file was uploaded, add image path to body
@@ -81,23 +104,26 @@ const createMenuItem = async (req, res) => {
       req.body.image = `/uploads/menu-images/${req.file.filename}`;
     }
 
-    // Validation for half portions
-    if (req.body.supportsHalf === 'true') {
-      if (!req.body.halfPrice || parseFloat(req.body.halfPrice) <= 0) {
+    // Sanitize form data first
+    const sanitizedBody = sanitizeFormData(req.body);
+
+    // Validation for half portions (after sanitization)
+    if (sanitizedBody.supportsHalf === true) {
+      if (!sanitizedBody.halfPrice || sanitizedBody.halfPrice <= 0) {
         return res.status(400).json({ message: 'Half price is required when supportsHalf is true' });
       }
-      if (parseFloat(req.body.halfPrice) >= parseFloat(req.body.fullPrice)) {
+      if (sanitizedBody.halfPrice >= sanitizedBody.fullPrice) {
         return res.status(400).json({ message: 'Half price must be less than full price' });
       }
     }
 
     // Backward compatibility: if no fullPrice provided but price exists, use price
-    if (!req.body.fullPrice && req.body.price) {
-      req.body.fullPrice = parseFloat(req.body.price);
+    if (!sanitizedBody.fullPrice && req.body.price) {
+      sanitizedBody.fullPrice = parseFloat(req.body.price);
     }
     
     const menuItemData = {
-      ...req.body,
+      ...sanitizedBody,
       createdBy: req.user._id,
       updatedBy: req.user._id
     };
@@ -109,6 +135,7 @@ const createMenuItem = async (req, res) => {
   }
 };
 
+
 const updateMenuItem = async (req, res) => {
   try {
     const menuItem = await MenuItem.findById(req.params.id);
@@ -116,7 +143,7 @@ const updateMenuItem = async (req, res) => {
       return res.status(404).json({ message: 'Menu item not found' });
     }
     
-    // If new file was uploaded, update image path
+// If new file was uploaded, update image path
     if (req.file) {
       // Delete old image if exists
       if (menuItem.image) {
@@ -139,23 +166,26 @@ const updateMenuItem = async (req, res) => {
       req.body.image = null;
     }
 
-    // Validation for half portions
-    const supportsHalf = req.body.supportsHalf === 'true' || req.body.supportsHalf === true;
+    // Sanitize form data
+    const sanitizedBody = sanitizeFormData(req.body);
+
+    // Validation for half portions (after sanitization)
+    const supportsHalf = sanitizedBody.supportsHalf === true;
     if (supportsHalf) {
-      if (!req.body.halfPrice || parseFloat(req.body.halfPrice) <= 0) {
+      if (!sanitizedBody.halfPrice || sanitizedBody.halfPrice <= 0) {
         return res.status(400).json({ message: 'Half price is required when supportsHalf is true' });
       }
-      if (parseFloat(req.body.halfPrice) >= parseFloat(req.body.fullPrice || menuItem.fullPrice)) {
+      if (sanitizedBody.halfPrice >= (sanitizedBody.fullPrice || menuItem.fullPrice)) {
         return res.status(400).json({ message: 'Half price must be less than full price' });
       }
     }
 
     // Backward compatibility: if fullPrice not provided but price changed, update fullPrice
-    if (req.body.price && !req.body.fullPrice) {
-      req.body.fullPrice = parseFloat(req.body.price);
+    if (req.body.price && !sanitizedBody.fullPrice) {
+      sanitizedBody.fullPrice = parseFloat(req.body.price);
     }
     
-    Object.assign(menuItem, req.body);
+    Object.assign(menuItem, sanitizedBody);
     menuItem.updatedBy = req.user._id;
     const updatedItem = await menuItem.save();
     res.json(updatedItem);
@@ -163,6 +193,7 @@ const updateMenuItem = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 const deleteMenuItem = async (req, res) => {
   try {
@@ -193,5 +224,7 @@ module.exports = {
   createMenuItem, 
   updateMenuItem, 
   deleteMenuItem,
+  sanitizeFormData,
   upload 
 };
+
