@@ -4,9 +4,14 @@ const MenuItem = require('../models/MenuItem');
 // Get all categories (for admin)
 const getCategories = async (req, res) => {
   try {
-const categories = await Category.find({ kitchenId: req.kitchen._id }).populate('createdBy updatedBy', 'name').sort({ sortOrder: 1, createdAt: -1 });
+    console.log('getCategories - req.kitchen:', req.kitchen ? req.kitchen._id : 'MISSING');
+    if (!req.kitchen) {
+      return res.status(400).json({ message: 'Kitchen context required' });
+    }
+    const categories = await Category.find({ kitchenId: req.kitchen._id }).populate('createdBy updatedBy', 'name').sort({ sortOrder: 1, createdAt: -1 });
     res.json(categories);
   } catch (error) {
+    console.error('getCategories error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -37,12 +42,15 @@ const getCategoryById = async (req, res) => {
 // Create new category (admin only)
 const createCategory = async (req, res) => {
   try {
+    if (!req.kitchen) {
+      return res.status(400).json({ message: 'Kitchen context required' });
+    }
     const { name, displayName, description, isActive, sortOrder } = req.body;
     
-    // Check if category already exists
-    const existingCategory = await Category.findOne({ name: name.toLowerCase() });
+    // Check if category already exists in this kitchen
+    const existingCategory = await Category.findOne({ name: name.toLowerCase(), kitchenId: req.kitchen._id });
     if (existingCategory) {
-      return res.status(400).json({ message: 'Category with this name already exists' });
+      return res.status(400).json({ message: 'Category with this name already exists in this kitchen' });
     }
 
     const category = new Category({
@@ -51,6 +59,7 @@ const createCategory = async (req, res) => {
       description,
       isActive: isActive !== undefined ? isActive : true,
       sortOrder: sortOrder || 0,
+      kitchenId: req.kitchen._id,
       createdBy: req.user._id,
       updatedBy: req.user._id
     });

@@ -49,6 +49,10 @@ const createKitchen = async (req, res) => {
 // @access  Private
 const getMyKitchens = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
     const kitchens = await Kitchen.find({
       $or: [
         { ownerId: req.user._id },

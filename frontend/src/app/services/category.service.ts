@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
 export interface Category {
   _id?: string;
@@ -28,11 +29,22 @@ export interface Category {
 export class CategoryService {
   private apiUrl = `${environment.apiUrl}/categories`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
-  // Get all categories (admin only - requires auth)
+  private getKitchenId(): string | null {
+    return this.authService.getCurrentKitchenId();
+  }
+
+  // Get all categories (admin only - requires auth + kitchenId)
   getCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(this.apiUrl);
+    const kitchenId = this.getKitchenId();
+    if (!kitchenId) {
+      throw new Error('No kitchen selected. Please select a kitchen in profile.');
+    }
+    return this.http.post<Category[]>(this.apiUrl, { kitchenId });
   }
 
   // Get active categories (public - no auth required)
@@ -45,14 +57,24 @@ export class CategoryService {
     return this.http.get<Category>(`${this.apiUrl}/${id}`);
   }
 
-  // Create new category (admin only)
+  // Create new category (admin only - auto adds kitchenId)
   createCategory(category: Partial<Category>): Observable<Category> {
-    return this.http.post<Category>(this.apiUrl, category);
+    const kitchenId = this.getKitchenId();
+    if (!kitchenId) {
+      throw new Error('No kitchen selected. Please select a kitchen first.');
+    }
+    const payload = { ...category, kitchenId };
+    return this.http.post<Category>(this.apiUrl, payload);
   }
 
-  // Update category (admin only)
+  // Update category (admin only - auto adds kitchenId)
   updateCategory(id: string, category: Partial<Category>): Observable<Category> {
-    return this.http.put<Category>(`${this.apiUrl}/${id}`, category);
+    const kitchenId = this.getKitchenId();
+    if (!kitchenId) {
+      throw new Error('No kitchen selected. Please select a kitchen first.');
+    }
+    const payload = { ...category, kitchenId };
+    return this.http.put<Category>(`${this.apiUrl}/${id}`, payload);
   }
 
   // Delete category (admin only)

@@ -4,34 +4,89 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 
+
+export interface Kitchen {
+  _id: string;
+  name: string;
+  ownerId: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  locations: any[];
+  status: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private tokenKey = 'token';
+  private kitchenKey = 'currentKitchenId';
   private userSubject = new BehaviorSubject<any>(null);
   public user$ = this.userSubject.asObservable();
 
-  constructor(private http: HttpClient, private router: Router) {
+constructor(private http: HttpClient, private router: Router) {
+    this.loadUserAndKitchen();
+  }
+
+  private loadUserAndKitchen(): void {
     const token = localStorage.getItem(this.tokenKey);
     if (token) {
       this.userSubject.next(this.decodeToken(token));
       const user = this.userSubject.value;
       if (!user.role) {
-        this.http.get(`${environment.apiUrl}/auth/profile`).subscribe({
+        this.http.get(`${environment.apiUrl}/auth/profile?populateLoyalty=true`).subscribe({
           next: (profile: any) => {
-            user.role = profile.role;
-            user.name = profile.name;
-            user.email = profile.email;
-            this.userSubject.next(user);
+            const updatedUser = { ...user, ...profile };
+            this.userSubject.next(updatedUser);
+            // Load owned kitchens and set default if needed
+            this.loadOwnedKitchens();
           },
           error: () => {
             // ignore
           }
         });
+      } else {
+        this.loadOwnedKitchens();
       }
     }
   }
+
+  getOwnedKitchens(): Observable<Kitchen[]> {
+    return this.http.get<Kitchen[]>(`${environment.apiUrl}/kitchens`); }
+
+  loadOwnedKitchens(): void {
+    this.getOwnedKitchens().subscribe({
+      next: (kitchens: Kitchen[]) => {
+        const user = this.userSubject.value;
+        if (kitchens.length > 0) {
+          user.ownedKitchens = kitchens.map(k => k._id);
+          // Set first kitchen as default if no current kitchen
+          if (!user.currentKitchen && kitchens.length > 0) {
+            this.setCurrentKitchenId(kitchens[0]._id);
+            user.currentKitchen = kitchens[0]._id;
+          }
+          this.userSubject.next(user);
+        }
+      },
+      error: (err) => console.error('Failed to load kitchens:', err)
+    });
+  }
+
+  getCurrentKitchenId(): string | null {
+    return localStorage.getItem(this.kitchenKey) || this.userSubject.value?.currentKitchen || null;
+  }
+
+  setCurrentKitchenId(kitchenId: string): void {
+    localStorage.setItem(this.kitchenKey, kitchenId);
+    const user = this.userSubject.value;
+    if (user) {
+      user.currentKitchen = kitchenId;
+      this.userSubject.next(user);
+    }
+    // Call backend switch endpoint
+    this.http.patch(`${environment.apiUrl}/kitchens/${kitchenId}/switch`, {}).subscribe({      error: (err) => console.error('Failed to switch kitchen:', err) });  }
 
   checkSuperAdminExists(): Observable<{exists: boolean}> {
     return this.http.get<{exists: boolean}>(`${environment.apiUrl}/auth/check-super-admin`);
@@ -46,6 +101,7 @@ export class AuthService {
   }
 
   logout(): void {
+    localStorage.removeItem(this.kitchenKey);
     localStorage.removeItem(this.tokenKey);
     this.userSubject.next(null);
     this.router.navigate(['/home']);

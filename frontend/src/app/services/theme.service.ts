@@ -32,10 +32,10 @@ export class ThemeService {
     const saved = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
-    const theme: Theme = (saved || (prefersDark ? 'dark' : 'light')) as Theme['name'] extends infer T ? T : never;
+    const themeName = saved || (prefersDark ? 'dark' : 'light') as 'light' | 'dark';
     const themeObj: Theme = {
-      name: theme,
-      class: theme === 'dark' ? 'dark-theme' : 'light-theme'
+      name: themeName,
+      class: themeName === 'dark' ? 'dark-theme' : 'light-theme'
     };
 
     this._theme$.next(themeObj);

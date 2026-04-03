@@ -18,7 +18,15 @@ const KITCHEN_COORDS = {
 };
 
 const getOrders = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
-let query = { kitchenId: req.kitchen._id };
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  let query = {};
+  if (req.kitchen) {
+    query.kitchenId = req.kitchen._id;
+  }
+
   if (req.user.role === 'CUSTOMER') {
     query.user = req.user._id;
   }
@@ -50,14 +58,19 @@ const getOrder = async (req, res) => {
 
 const createOrder = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   try {
-const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMethod, kitchenId } = req.body;
+const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMethod, kitchenId } = req.body || {};
     if (!req.kitchen && !kitchenId) {
+
       return res.status(400).json({ message: 'Kitchen ID required' });
     }
-    const finalKitchenId = req.kitchen?._id || kitchenId;
+    const finalKitchenId = req.kitchen?._id || kitchenId || req.user?.currentKitchen;
+    if (!finalKitchenId) {
+      return res.status(400).json({ message: 'Kitchen ID required. Set in profile or request body.' });
+    }
     if (paymentMethod === 'online') {
       return res.status(400).json({ message: 'Online payments must use /api/payment/create-session. Use COD for direct order creation.' });
     }
+
     console.log('=== CREATE ORDER DEBUG ===');
     console.log('orderType:', orderType);
     console.log('tableNumber:', tableNumber);

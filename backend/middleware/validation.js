@@ -103,9 +103,10 @@ const orderCreateSchema = Joi.object({
     then: Joi.required().messages({ 'any.required': 'Table number required for dine-in' }),
     otherwise: Joi.optional().allow(null)
   }),
-  paymentMethod: Joi.string().valid('cash').required().messages({
+  paymentMethod: Joi.string().valid('cash', 'cod', 'online').required().messages({
     'any.required': 'Payment method required'
   })
+
 });
 
 const orderUpdateStatusSchema = Joi.object({
@@ -171,6 +172,7 @@ const validateRequest = (schema) => {
 };
 
 module.exports = {
+  validateRequest,
   // Auth
   authRegister: validateRequest(authRegisterSchema),
   authLogin: validateRequest(authLoginSchema),
@@ -187,4 +189,5 @@ module.exports = {
   // Users
   profileUpdate: validateRequest(profileUpdateSchema)
 };
+
 

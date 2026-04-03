@@ -1,4 +1,4 @@
-const { getLoyalty, addPoints, redeemPoints } = require('../services/loyalty.service');
+const { getLoyalty, addPoints, redeemPoints, getTier } = require('../services/loyalty.service');
 const Loyalty = require('../models/Loyalty');
 const asyncHandler = require('../middleware/errorHandler').asyncHandler;
 
@@ -46,9 +46,58 @@ const redeemLoyaltyPoints = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+const getLoyaltyOverview = asyncHandler(async (req, res) => {
+  const stats = await Loyalty.aggregate([
+    {
+      $group: {
+        _id: '$tier',
+        count: { $sum: 1 },
+        totalPoints: { $sum: '$points' }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        tiers: { $push: { tier: '$_id', users: '$count', totalPoints: '$totalPoints' } },
+        totalUsers: { $sum: '$count' },
+        totalPoints: { $sum: '$totalPoints' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        totalUsers: 1,
+        totalPoints: { $round: ['$totalPoints', 0] },
+        tiers: 1
+      }
+    }
+  ]);
+
+  const overview = stats[0] || { totalUsers: 0, totalPoints: 0, tiers: [] };
+
+  res.json({
+    success: true,
+    program: {
+      earnRule: '1 point per ₹10 spent',
+      redeemRule: '10 points = ₹1 discount',
+      tiers: [
+        { name: 'Bronze', minPoints: 0, maxPoints: 999 },
+        { name: 'Silver', minPoints: 1000, maxPoints: 4999 },
+        { name: 'Gold', minPoints: 5000 }
+      ]
+    },
+    stats: overview
+  });
+});
+
+/**
+ * GET /api/loyalty/ - Public loyalty program overview and stats
+ */
+
 module.exports = {
   getLoyaltyInfo,
   addLoyaltyPoints,
-  redeemLoyaltyPoints
+  redeemLoyaltyPoints,
+  getLoyaltyOverview
 };
 

@@ -1,0 +1,68 @@
+<div class="modal-container" mat-dialog-content>
+  <div class="header">
+    <mat-icon color="primary">storefront</mat-icon>
+    <h2 mat-dialog-title>Create New Kitchen</h2>
+  </div>
+
+  <form [formGroup]="kitchenForm" (ngSubmit)="createKitchen()">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Kitchen Name</mat-label>
+      <input matInput formControlName="name" placeholder="e.g., Cloud Kitchen Central">
+      <mat-icon matPrefix>restaurant</mat-icon>
+      <mat-error *ngIf="kitchenForm.get('name')?.hasError('required')">Kitchen name is required</mat-error>
+      <mat-error *ngIf="kitchenForm.get('name')?.hasError('minlength')">Name must be at least 3 characters</mat-error>
+    </mat-form-field>
+
+    <div class="form-section">
+      <h4><mat-icon>location_on</mat-icon> Primary Location</h4>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Street Address</mat-label>
+        <input matInput formControlName="street" placeholder="123 Main St">
+        <mat-error *ngIf="kitchenForm.get('street')?.hasError('required')">Street address is required</mat-error>
+      </mat-form-field>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>City</mat-label>
+          <input matInput formControlName="city">
+          <mat-error *ngIf="kitchenForm.get('city')?.hasError('required')">City is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>State</mat-label>
+          <input matInput formControlName="state">
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>ZIP Code</mat-label>
+          <input matInput formControlName="zipCode">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Country</mat-label>
+          <input matInput formControlName="country">
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-actions" mat-dialog-actions align="end">
+      <button mat-button type="button" (click)="cancel()" [disabled]="loading">
+        <mat-icon>close</mat-icon>
+        Cancel
+      </button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="kitchenForm.invalid || loading"
+        class="submit-btn">
+        <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+        <mat-icon *ngIf="!loading">add_business</mat-icon>
+        {{ loading ? 'Creating...' : 'Create Kitchen' }}
+      </button>
+    </div>
+  </form>
+</div>
+

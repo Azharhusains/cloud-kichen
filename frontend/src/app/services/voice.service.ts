@@ -18,6 +18,7 @@ export interface VoiceState {
 export interface AIResponse {
   success: boolean;
   message: string;
+  sessionId?: string;
   intents: string[];
   commands: any[];
   cartItems: any[];

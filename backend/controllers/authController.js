@@ -99,13 +99,26 @@ const login = require('../middleware/errorHandler').asyncHandler(async (req, res
 });
 
 const getProfile = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+  let userQuery = User.findById(req.user._id);
+  
+  // Handle populateLoyalty query param
+  if (req.query.populateLoyalty === 'true') {
+    userQuery = userQuery.populate('loyalty');
+  }
+  
+  const user = await userQuery;
+  
+  if (!user) {
+    return res.status(404).json({ error: 'User profile not found' });
+  }
+  
   res.json({
     _id: user._id,
     name: user.name,
     email: user.email,
     role: user.role,
     addresses: user.addresses,
+    loyalty: user.loyalty, // Include populated loyalty if requested
   });
 });
 

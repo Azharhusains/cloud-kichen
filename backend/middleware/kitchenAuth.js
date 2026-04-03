@@ -11,6 +11,8 @@ const User = require('../models/User');
  */
 const requireKitchenContext = async (req, res, next) => {
   try {
+    console.log('KitchenAuth - req.user:', req.user ? { _id: req.user._id, role: req.user.role, currentKitchen: req.user.currentKitchen, ownedKitchens: req.user.ownedKitchens?.length } : 'NO USER');
+    
     let kitchenId;
     
     // Priority 1: Explicit param/body
@@ -23,7 +25,8 @@ const requireKitchenContext = async (req, res, next) => {
       kitchenId = req.user.currentKitchen;
     } else {
       return res.status(400).json({ 
-        message: 'Kitchen context required. Specify kitchenId or set currentKitchen in profile.'
+        message: 'Kitchen context required. Specify kitchenId or set currentKitchen in profile.',
+        debug: { userId: req.user?._id, currentKitchen: req.user?.currentKitchen }
       });
     }
 

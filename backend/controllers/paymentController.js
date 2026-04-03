@@ -139,6 +139,7 @@ const verifyPayment = async (req, res) => {
 
     const dbOrder = new Order({
       user: userId,
+      kitchenId: req.user.currentKitchen,
       orderNumber: counter.sequence,
       orderType: 'delivery',
       items,
@@ -156,6 +157,7 @@ const verifyPayment = async (req, res) => {
       couponCode,
       couponDiscount
     });
+
 
     const savedOrder = await dbOrder.save();
 

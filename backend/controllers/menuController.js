@@ -43,11 +43,15 @@ const upload = multer({
 const getMenuItems = async (req, res) => {
   try {
 const { category } = req.query;
-  let query = { kitchenId: req.kitchen._id };
+  let query = {};
+  if (req.kitchen) {
+    query.kitchenId = req.kitchen._id;
+  }
   if (category) {
     query.category = category;
   }
     const menuItems = await MenuItem.find(query).populate('createdBy updatedBy', 'name').sort({ createdAt: -1 });
+
     
     // Get all unique categories from the database (from Category collection)
     const categories = await Category.find({ isActive: true }).sort({ sortOrder: 1 });

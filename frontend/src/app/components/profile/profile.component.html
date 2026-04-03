@@ -21,7 +21,44 @@
     </div>
   </div>
 
-<div class="profile-content">
+  <div class="profile-content">
+    <!-- Kitchen Selection Section - For Admin/Super Admin -->
+    <div class="section" *ngIf="user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')">
+      <mat-card class="section-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>storefront</mat-icon>
+            Kitchen Selection
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="kitchen-selector">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Current Kitchen</mat-label>
+              <mat-select 
+                [(ngModel)]="user.currentKitchen" 
+                (selectionChange)="onKitchenChange($event.value)"
+                [disabled]="loadingKitchens">
+                <mat-option *ngIf="loadingKitchens" disabled>
+                  <mat-spinner diameter="20"></mat-spinner>
+                  Loading kitchens...
+                </mat-option>
+                <mat-option *ngFor="let kitchen of kitchens" [value]="kitchen._id">
+                  {{ kitchen.name }} 
+                  <small>({{ kitchen.status }})</small>
+                </mat-option>
+                <mat-option *ngIf="!loadingKitchens && kitchens.length === 0" disabled>
+                  No kitchens found. <a >Create one</a>
+                </mat-option>
+              </mat-select>
+              <mat-hint>Selected kitchen: {{ getCurrentKitchenName() }}</mat-hint>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
     <!-- Loyalty Section -->
     <div class="section" *ngIf="loyalty">
       <mat-card class="section-card">
@@ -255,4 +292,3 @@
     </div>
   </div>
 </div>
-

@@ -1,0 +1,87 @@
+:host {
+  ::ng-deep .kitchen-modal {
+    .mat-mdc-dialog-surface {
+      border-radius: 16px !important;
+      max-width: 500px;
+      width: 90vw;
+      max-height: 90vh;
+    }
+  }
+}
+
+.modal-container {
+  padding: 24px;
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+
+  .full-width {
+    width: 100%;
+  }
+
+  .form-section {
+    background: #f9fafb;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 16px;
+      color: #333;
+      font-size: 1.1rem;
+      font-weight: 500;
+
+      mat-icon {
+        color: #667eea;
+        font-size: 20px;
+      }
+    }
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+
+    @media (max-width: 500px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .form-actions {
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+    margin-top: 24px;
+  }
+
+  .submit-btn {
+    min-width: 140px;
+
+    ::ng-deep mat-spinner {
+      margin-right: 8px;
+    }
+  }
+}
+

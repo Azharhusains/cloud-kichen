@@ -11,9 +11,12 @@ import { ThemeService } from './services/theme.service';
 })
 export class AppComponent implements OnInit {
   title = 'cloud-kitchen';
-  isDarkMode = this.themeService.isDarkMode.bind(this.themeService);
 
   constructor(private themeService: ThemeService) {}
+
+  get isDarkMode(): boolean {
+    return this.themeService.currentTheme.name === 'dark';
+  }
 
   ngOnInit(): void {
     this.themeService.initTheme();

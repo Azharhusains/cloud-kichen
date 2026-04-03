@@ -11,12 +11,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 // Angular Animations
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 
 // Services
-import { AuthService } from '../../services/auth.service';
+import { AuthService, Kitchen } from '../../services/auth.service';
 import { OrderService } from '../../services/order.service';
 import { MatDialog } from '@angular/material/dialog';
 import { InvoiceComponent } from '../invoice/invoice.component';
@@ -36,7 +38,9 @@ import { LoyaltyService } from '../../services/loyalty.service';
     MatFormFieldModule,
     MatInputModule,
     MatDividerModule,
-    MatChipsModule
+    MatChipsModule,
+    MatSelectModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
@@ -61,6 +65,7 @@ import { LoyaltyService } from '../../services/loyalty.service';
 })
 export class ProfileComponent implements OnInit {
   user: any = null;
+  kitchens: Kitchen[] = [];
   addresses: any[] = [];
   orders: any[] = [];
   filteredOrders: any[] = [];
@@ -68,7 +73,7 @@ export class ProfileComponent implements OnInit {
   addressForm: FormGroup;
   searchTerm: string = '';
   loyalty: any = null;
-
+  loadingKitchens = false;
 
   constructor(
     private fb: FormBuilder,
@@ -79,7 +84,6 @@ export class ProfileComponent implements OnInit {
     public dialog: MatDialog
   ) {
     this.addressForm = this.fb.group({
-
       street: ['', Validators.required],
       city: ['', Validators.required],
       state: ['', Validators.required],
@@ -92,14 +96,46 @@ export class ProfileComponent implements OnInit {
     this.loadUserProfile();
     this.loadLoyalty();
     this.loadOrders();
+    this.loadKitchens();
+    // Subscribe to user changes (includes kitchen updates)
+    this.authService.user$.subscribe(user => {
+      this.user = user;
+    });
+  }
+
+  loadKitchens(): void {
+    this.loadingKitchens = true;
+    this.authService.getOwnedKitchens().subscribe({
+      next: (kitchens: Kitchen[]) => {
+        this.kitchens = kitchens;
+        this.loadingKitchens = false;
+      },
+      error: (err: any) => {
+        console.error('Error loading kitchens:', err);
+        this.loadingKitchens = false;
+      }
+    });
+  }
+
+  onKitchenChange(kitchenId: string): void {
+    if (kitchenId) {
+      this.authService.setCurrentKitchenId(kitchenId);
+    }
+  }
+
+  getCurrentKitchenName(): string {
+    const kitchenId = this.authService.getCurrentKitchenId();
+    if (!kitchenId) return 'No kitchen selected';
+    const kitchen = this.kitchens.find(k => k._id === kitchenId);
+    return kitchen ? kitchen.name : 'Unknown kitchen';
   }
 
   loadLoyalty(): void {
     this.loyaltyService.getLoyalty().subscribe({
-      next: (data) => {
+      next: (data: any) => {
         this.loyalty = data;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Failed to load loyalty:', err);
       }
     });
@@ -107,23 +143,23 @@ export class ProfileComponent implements OnInit {
 
   loadUserProfile(): void {
     this.authService.getProfile().subscribe({
-      next: (profile) => {
+      next: (profile: any) => {
         this.user = profile;
         this.addresses = profile.addresses || [];
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading profile:', error);
       }
     });
   }
 
-loadOrders(): void {
+  loadOrders(): void {
     this.orderService.getOrders().subscribe({
-      next: (orders) => {
+      next: (orders: any[]) => {
         this.orders = orders;
         this.filteredOrders = [...orders];
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading orders:', error);
       }
     });
@@ -146,10 +182,8 @@ loadOrders(): void {
 
     const searchLower = this.searchTerm.toLowerCase().trim();
     
-    this.filteredOrders = this.orders.filter(order =>
-      // Search by MongoDB _id
+    this.filteredOrders = this.orders.filter((order: any) =>
       order._id.toLowerCase().includes(searchLower) ||
-      // Search by order status
       order.orderStatus.toLowerCase().includes(searchLower)
     );
   }
@@ -173,7 +207,7 @@ loadOrders(): void {
           this.showAddressForm = false;
           this.addressForm.reset();
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error adding address:', error);
         }
       });
@@ -198,7 +232,7 @@ loadOrders(): void {
           next: () => {
             this.loadUserProfile();
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error removing address:', error);
           }
         });
@@ -235,20 +269,13 @@ loadOrders(): void {
       'failed': `Refund failed: ${order.refundNotes || 'Unknown error'}`,
       'processing': 'Refund processing... (30min)'
     };
-    console.log('labels', labels)
     return labels[order.refundStatus] || order.refundStatus;
   }
 
-  /**
-   * Check if invoice is available for order
-   */
   canShowInvoice(order: any): boolean {
     return ['delivered', 'completed'].includes(order.orderStatus);
   }
 
-  /**
-   * Open invoice dialog from profile
-   */
   openInvoice(orderId: string): void {
     const dialogRef = this.dialog.open(InvoiceComponent, {
       width: '60vw',
@@ -263,4 +290,3 @@ loadOrders(): void {
     });
   }
 }
-

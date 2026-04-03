@@ -40,9 +40,10 @@ const sanitizeBody = (req, res, next) => {
   req.params = sanitizeValue(req.params);
   
   // Log suspicious input (optional)
-  const suspiciousPatterns = [/<script/i, /javascript:/i, /on\w+=/i];
+  const suspiciousPatterns = [/<script/i, /javascript:/i, /on\\w+=/i];
+  const bodyString = JSON.stringify(req.body || {});
   const hasSuspicious = suspiciousPatterns.some(pattern => 
-    JSON.stringify(req.body).match(pattern)
+    (bodyString || '').match(pattern)
   );
   
   if (hasSuspicious) {
@@ -53,8 +54,16 @@ const sanitizeBody = (req, res, next) => {
     });
   }
   
+  if (!req.body || typeof req.body !== 'object') {
+    console.warn('⚠️ Empty/malformed req.body detected:', {
+      ip: req.ip,
+      url: req.url,
+      contentType: req.get('Content-Type'),
+      bodyType: typeof req.body
+    });
+  }
+  
   next();
 };
 
 module.exports = sanitizeBody;
-
