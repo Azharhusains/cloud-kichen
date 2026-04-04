@@ -200,7 +200,7 @@ class MenuFetcher {
       _id: menuItem._id,
       name: menuItem.name,
       description: menuItem.description,
-      price: menuItem.price,
+      price: menuItem.fullPrice || menuItem.price,
       costPrice: menuItem.costPrice || 0,
       category: menuItem.category,
       image: menuItem.image,
@@ -217,6 +217,10 @@ class MenuFetcher {
         baseItem.price = sizePrice.price;
         baseItem.size = size;
       }
+    } else if (menuItem.fullPrice !== undefined) {
+      baseItem.price = menuItem.fullPrice;
+    } else if (menuItem.price !== undefined) {
+      baseItem.price = menuItem.price;
     }
 
     return baseItem;

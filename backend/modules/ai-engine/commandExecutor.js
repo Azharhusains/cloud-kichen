@@ -119,10 +119,11 @@ class CommandExecutor {
     }
 
     const itemsNeedingHydration = cart.filter(item => {
+      const menuItemPrice = item.menuItem?.fullPrice || item.menuItem?.price;
       return typeof item.menuItem === 'string' || 
              !item.menuItem || 
              !item.menuItem.name || 
-             !item.menuItem.price;
+             !menuItemPrice;
     });
 
     if (itemsNeedingHydration.length === 0) {
@@ -137,10 +138,11 @@ class CommandExecutor {
     const menuItemMap = new Map(menuItems.map(item => [item._id.toString(), item]));
 
     return cart.map(item => {
+      const menuItemPrice = item.menuItem?.fullPrice || item.menuItem?.price;
       const needsHydration = typeof item.menuItem === 'string' || 
                            !item.menuItem || 
                            !item.menuItem.name || 
-                           !item.menuItem.price;
+                           !menuItemPrice;
       
       if (needsHydration) {
         const menuItemId = typeof item.menuItem === 'string' ? item.menuItem : item.menuItem?._id;
@@ -203,7 +205,7 @@ class CommandExecutor {
         items,
         itemName: menuItem.name,
         quantity: context.cart[existingItemIndex].quantity,
-        totalPrice: menuItem.price * context.cart[existingItemIndex].quantity,
+        totalPrice: (menuItem.fullPrice || menuItem.price) * context.cart[existingItemIndex].quantity,
         message: `Updated ${menuItem.name} quantity to ${context.cart[existingItemIndex].quantity} in cart`
       };
     } else {
@@ -220,7 +222,7 @@ class CommandExecutor {
         items,
         itemName: menuItem.name,
         quantity,
-        totalPrice: menuItem.price * quantity,
+        totalPrice: (menuItem.fullPrice || menuItem.price) * quantity,
         message: `Added ${quantity} x ${menuItem.name} to cart`
       };
     }
@@ -357,7 +359,7 @@ class CommandExecutor {
     let totalAmount = 0;
     
     const orderItems = context.cart.map(item => {
-      const itemPrice = item.menuItem?.price || item.price || 0;
+      const itemPrice = item.menuItem?.fullPrice || item.menuItem?.price || item.price || 0;
       const itemTotal = itemPrice * item.quantity;
       totalAmount += itemTotal;
       

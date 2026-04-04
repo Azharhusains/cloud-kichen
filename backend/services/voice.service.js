@@ -154,7 +154,7 @@ class VoiceService {
         const menuItem = await MenuItem.findById(item.menuItem);
         if (!menuItem) continue;
 
-        let price = menuItem.price;
+        let price = menuItem.fullPrice || menuItem.price;
         if (item.customization.portion === 'half' && menuItem.halfPrice) {
           price = menuItem.halfPrice;
         }

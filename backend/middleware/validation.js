@@ -110,7 +110,7 @@ const orderCreateSchema = Joi.object({
 });
 
 const orderUpdateStatusSchema = Joi.object({
-  status: Joi.string().valid('received', 'preparing', 'out-for-delivery', 'delivered', 'completed', 'cancelled').required()
+  status: Joi.string().valid('received', 'preparing', 'ready', 'out-for-delivery', 'delivered', 'completed', 'cancelled').required()
 });
 
 // Menu schemas
@@ -145,6 +145,27 @@ const profileUpdateSchema = Joi.object({
   email: Joi.string().email({ tlds: { allow: false } }).lowercase().optional(),
   password: Joi.string().min(6).max(128).optional(),
   addresses: Joi.array().items(deliveryAddressSchema).optional()
+});
+
+// Kitchen creation schema
+const kitchenCreateSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(100).required().messages({
+    'string.min': 'Name must be at least 2 characters',
+    'any.required': 'Name is required'
+  }),
+  locations: Joi.array().items(Joi.object({
+    street: Joi.string().max(200).required(),
+    city: Joi.string().max(100).required(),
+    state: Joi.string().max(100).optional(),
+    zipCode: Joi.string().pattern(/^[0-9]{5,10}$/).required(),
+    country: Joi.string().default('India').optional()
+  })).optional()
+});
+
+// Team member schema
+const addTeamMemberSchema = Joi.object({
+  email: Joi.string().email({ tlds: { allow: false } }).lowercase().required(),
+  role: Joi.string().valid('CHEF', 'STAFF', 'DELIVERY').required()
 });
 
 // Validation middleware
@@ -187,7 +208,11 @@ module.exports = {
   menuCreateUpdate: validateRequest(menuCreateUpdateSchema),
   
   // Users
-  profileUpdate: validateRequest(profileUpdateSchema)
+  profileUpdate: validateRequest(profileUpdateSchema),
+
+  // Kitchen
+  kitchenCreate: validateRequest(kitchenCreateSchema),
+  addTeamMember: validateRequest(addTeamMemberSchema)
 };
 
 

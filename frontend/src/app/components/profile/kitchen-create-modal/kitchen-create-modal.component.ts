@@ -7,9 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { KitchenService } from '../../../services/kitchen.service';
 
 export interface Kitchen {
   _id: string;
@@ -54,7 +52,7 @@ export class KitchenCreateModalComponent {
 
   constructor(
     private fb: FormBuilder,
-    private http: HttpClient,
+    private kitchenService: KitchenService,
     public dialogRef: MatDialogRef<KitchenCreateModalComponent>,
     @Inject(MAT_DIALOG_DATA) public data?: { kitchen?: Kitchen }
   ) {
@@ -83,7 +81,7 @@ export class KitchenCreateModalComponent {
         }]
       };
 
-      this.http.post<Kitchen>(`${environment.apiUrl}/kitchens`, kitchenData).subscribe({
+      this.kitchenService.createKitchen(kitchenData).subscribe({
         next: (newKitchen: Kitchen) => {
           this.loading = false;
           this.dialogRef.close(newKitchen);

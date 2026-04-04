@@ -33,34 +33,38 @@
         </mat-card-header>
         
         <mat-card-content>
-          <div class="kitchen-selector">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Current Kitchen</mat-label>
-              <mat-select 
-                [(ngModel)]="user.currentKitchen" 
-                (selectionChange)="onKitchenChange($event.value)"
-                [disabled]="loadingKitchens">
-                <mat-option *ngIf="loadingKitchens" disabled>
-                  <mat-spinner diameter="20"></mat-spinner>
-                  Loading kitchens...
-                </mat-option>
-                <mat-option *ngFor="let kitchen of kitchens" [value]="kitchen._id">
-                  {{ kitchen.name }} 
-                  <small>({{ kitchen.status }})</small>
-                </mat-option>
-                <mat-option *ngIf="!loadingKitchens && kitchens.length === 0" disabled>
-                  No kitchens found. <a >Create one</a>
-                </mat-option>
-              </mat-select>
-              <mat-hint>Selected kitchen: {{ getCurrentKitchenName() }}</mat-hint>
-            </mat-form-field>
-          </div>
+<div class="kitchen-selector">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Current Kitchen</mat-label>
+                <mat-select 
+                  [(ngModel)]="user.currentKitchen" 
+                  (selectionChange)="onKitchenChange($event.value)"
+                  [disabled]="loadingKitchens">
+                  <mat-option *ngIf="loadingKitchens" disabled>
+                    <mat-spinner diameter="20"></mat-spinner>
+                    Loading kitchens...
+                  </mat-option>
+                  <mat-option *ngFor="let kitchen of kitchens" [value]="kitchen._id">
+                    {{ kitchen.name }} 
+                    <small>({{ kitchen.status }})</small>
+                  </mat-option>
+                  <mat-option *ngIf="!loadingKitchens && kitchens.length === 0" disabled>
+                    No kitchens found. <a (click)="openCreateKitchenModal()">Create one</a>
+                  </mat-option>
+                </mat-select>
+                <mat-hint>Selected kitchen: {{ getCurrentKitchenName() }}</mat-hint>
+              </mat-form-field>
+              <button mat-stroked-button color="primary" (click)="openCreateKitchenModal()" class="create-kitchen-btn">
+                <mat-icon>add_business</mat-icon>
+                Create Kitchen
+              </button>
+            </div>
         </mat-card-content>
       </mat-card>
     </div>
 
     <!-- Loyalty Section -->
-    <div class="section" *ngIf="loyalty">
+    <div class="section" *ngIf="loyalty && loyalty.program">
       <mat-card class="section-card">
         <mat-card-header>
           <mat-card-title>
@@ -70,27 +74,78 @@
         </mat-card-header>
         
         <mat-card-content>
-          <div class="loyalty-stats">
-            <div class="loyalty-card bronze" *ngIf="loyalty.tier === 'Bronze'">
+          <!-- Program Rules -->
+          <div class="loyalty-rules" style="margin-bottom: 20px; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+            <div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">
+              <div style="text-align: center;">
+                <mat-icon color="primary">trending_up</mat-icon>
+                <p><strong>Earn</strong><br>{{ loyalty.program.earnRule }}</p>
+              </div>
+              <div style="text-align: center;">
+                <mat-icon color="accent">local_offer</mat-icon>
+                <p><strong>Redeem</strong><br>{{ loyalty.program.redeemRule }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Current Tier & Points -->
+          <div class="loyalty-stats" style="margin-bottom: 20px;">
+            <div class="loyalty-card bronze" *ngIf="getCurrentTier() === 'Bronze'">
               <mat-icon>star_border</mat-icon>
               <div>
-                <h3>{{ loyalty.tier }}</h3>
-                <p>{{ loyalty.points }} points</p>
+                <h3>{{ getCurrentTier() }}</h3>
+                <p>{{ loyalty.stats.totalPoints }} points</p>
               </div>
             </div>
-            <div class="loyalty-card silver" *ngIf="loyalty.tier === 'Silver'">
+            <div class="loyalty-card silver" *ngIf="getCurrentTier() === 'Silver'">
               <mat-icon>star_half</mat-icon>
               <div>
-                <h3>{{ loyalty.tier }}</h3>
-                <p>{{ loyalty.points }} points</p>
+                <h3>{{ getCurrentTier() }}</h3>
+                <p>{{ loyalty.stats.totalPoints }} points</p>
               </div>
             </div>
-            <div class="loyalty-card gold" *ngIf="loyalty.tier === 'Gold'">
+            <div class="loyalty-card gold" *ngIf="getCurrentTier() === 'Gold'">
               <mat-icon>star</mat-icon>
               <div>
-                <h3>{{ loyalty.tier }}</h3>
-                <p>{{ loyalty.points }} points</p>
+                <h3>{{ getCurrentTier() }}</h3>
+                <p>{{ loyalty.stats.totalPoints }} points</p>
               </div>
+            </div>
+          </div>
+
+          <!-- Tier Progress -->
+          <div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span>{{ getCurrentTier() }}</span>
+              <span>{{ getNextTier() ? getNextTier().name : 'MAX TIER' }}</span>
+            </div>
+            <mat-progress-bar 
+              mode="determinate" 
+              [value]="getTierProgress()"
+              color="primary"
+              style="height: 8px; border-radius: 4px;">
+            </mat-progress-bar>
+            <p style="text-align: center; margin-top: 8px; color: #666;">
+              {{ getTierProgressText() }}
+            </p>
+          </div>
+
+          <!-- All Tiers -->
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
+            <div *ngFor="let tier of loyalty.program.tiers" 
+                 class="tier-badge"
+                 [class.active]="tier.name === getCurrentTier()"
+                 style="padding: 8px 16px; border-radius: 20px; background: #f0f0f0; opacity: 0.7;"
+                 [style.opacity]="tier.name === getCurrentTier() ? '1' : '0.7'"
+                 [style.background]="tier.name === getCurrentTier() ? '#e3f2fd' : '#f0f0f0'"
+                 [style.border]="tier.name === getCurrentTier() ? '2px solid #2196f3' : 'none'">
+              <mat-icon style="vertical-align: middle; margin-right: 4px;">
+                {{ tier.name === 'Bronze' ? 'star_border' : tier.name === 'Silver' ? 'star_half' : 'star' }}
+              </mat-icon>
+              {{ tier.name }}
+              <span style="font-size: 12px; color: #666; margin-left: 4px;">
+                ({{ tier.minPoints }}+ pts)
+              </span>
             </div>
           </div>
 

@@ -6,6 +6,11 @@ const getRevenue = async (req, res) => {
     const timeFilter = req.query.timeRange || 'today';
     let match = {};
     const now = new Date();
+    
+    // Add kitchen filter
+    if (req.kitchen) {
+      match.kitchenId = req.kitchen._id;
+    }
 
     switch (timeFilter) {
       case 'week':

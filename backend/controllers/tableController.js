@@ -2,7 +2,8 @@ const Table = require('../models/Table');
 
 const getTables = async (req, res) => {
   try {
-    const tables = await Table.find({}).populate('createdBy updatedBy', 'name').sort({ tableNumber: 1 });
+    const kitchenId = req.kitchen?._id || req.user?.currentKitchen;
+    const tables = await Table.find({ kitchenId, isActive: true }).populate('createdBy updatedBy', 'name').sort({ tableNumber: 1 });
     res.json(tables);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -11,7 +12,8 @@ const getTables = async (req, res) => {
 
 const getTable = async (req, res) => {
   try {
-    const table = await Table.findOne({ tableNumber: req.params.tableNumber, isActive: true });
+    const kitchenId = req.kitchen?._id || req.user?.currentKitchen;
+    const table = await Table.findOne({ tableNumber: req.params.tableNumber, kitchenId, isActive: true });
     if (!table) {
       return res.status(404).json({ message: 'Table not found' });
     }
@@ -23,18 +25,24 @@ const getTable = async (req, res) => {
 
 const createTable = async (req, res) => {
   try {
-    const { tableNumber, capacity, location } = req.body;
+    const { tableNumber, capacity, location, kitchenId: bodyKitchenId } = req.body;
+    const kitchenId = bodyKitchenId || req.kitchen?._id || req.user?.currentKitchen;
     
-    // Check if table number already exists
-    const existingTable = await Table.findOne({ tableNumber });
+    if (!kitchenId) {
+      return res.status(400).json({ message: 'Kitchen ID is required' });
+    }
+    
+    // Check if table number already exists for this kitchen
+    const existingTable = await Table.findOne({ tableNumber, kitchenId });
     if (existingTable) {
-      return res.status(400).json({ message: 'Table number already exists' });
+      return res.status(400).json({ message: 'Table number already exists for this kitchen' });
     }
 
     const table = new Table({
       tableNumber,
       capacity: capacity || 4,
       location,
+      kitchenId,
       createdBy: req.user._id,
       updatedBy: req.user._id
     });
@@ -48,7 +56,8 @@ const createTable = async (req, res) => {
 
 const updateTable = async (req, res) => {
   try {
-    const table = await Table.findById(req.params.id);
+    const kitchenId = req.kitchen?._id || req.user?.currentKitchen;
+    const table = await Table.findOne({ _id: req.params.id, kitchenId });
     if (!table) {
       return res.status(404).json({ message: 'Table not found' });
     }
@@ -57,9 +66,9 @@ const updateTable = async (req, res) => {
     const oldStatus = table.status;
     
     if (tableNumber && tableNumber !== table.tableNumber) {
-      const existingTable = await Table.findOne({ tableNumber, _id: { $ne: table._id } });
+      const existingTable = await Table.findOne({ tableNumber, kitchenId, _id: { $ne: table._id } });
       if (existingTable) {
-        return res.status(400).json({ message: 'Table number already exists' });
+        return res.status(400).json({ message: 'Table number already exists for this kitchen' });
       }
       table.tableNumber = tableNumber;
     }
@@ -87,7 +96,8 @@ const updateTable = async (req, res) => {
 
 const deleteTable = async (req, res) => {
   try {
-    const table = await Table.findById(req.params.id);
+    const kitchenId = req.kitchen?._id || req.user?.currentKitchen;
+    const table = await Table.findOne({ _id: req.params.id, kitchenId });
     if (!table) {
       return res.status(404).json({ message: 'Table not found' });
     }
@@ -104,7 +114,8 @@ const deleteTable = async (req, res) => {
 
 const updateTableStatus = async (req, res) => {
   try {
-    const table = await Table.findOne({ tableNumber: req.params.tableNumber });
+    const kitchenId = req.kitchen?._id || req.user?.currentKitchen;
+    const table = await Table.findOne({ tableNumber: req.params.tableNumber, kitchenId });
     if (!table) {
       return res.status(404).json({ message: 'Table not found' });
     }

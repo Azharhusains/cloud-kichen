@@ -31,4 +31,8 @@ export class KitchenService {
   switchCurrentKitchen(kitchenId: string): Observable<any> {
     return this.http.patch(`${environment.apiUrl}/kitchens/${kitchenId}/switch`, {});
   }
+
+  createKitchen(kitchenData: any): Observable<Kitchen> {
+    return this.http.post<Kitchen>(`${environment.apiUrl}/kitchens`, kitchenData);
+  }
 }

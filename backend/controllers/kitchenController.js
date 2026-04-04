@@ -12,7 +12,7 @@ const createKitchen = async (req, res) => {
     
     // Kitchen owners can create one kitchen initially
     const userKitchens = await Kitchen.countDocuments({ ownerId: req.user._id });
-    if (userKitchens >= 3 && req.user.role !== 'ADMIN') { // Limit for non-admins
+    if (userKitchens >= 3 && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Kitchen limit reached. Upgrade plan.' });
     }
 
@@ -77,8 +77,9 @@ const switchCurrentKitchen = async (req, res) => {
     }
 
     // Verify access
+    const teamMemberIds = kitchen.teamMembers?.map(m => m._id.toString()) || [];
     const hasAccess = req.user.ownedKitchens?.includes(req.params.id) || 
-                      kitchen.teamMembers.map(m => m._id.toString()).includes(req.user._id);
+                      teamMemberIds.includes(req.user._id?.toString());
 
     if (!hasAccess) {
       return res.status(403).json({ message: 'Access denied' });
@@ -152,11 +153,48 @@ const addTeamMember = async (req, res) => {
   }
 };
 
+// @desc    Get all active kitchens (public)
+// @route   GET /api/kitchens/public
+// @access  Public
+const getAllActiveKitchens = async (req, res) => {
+  try {
+    const kitchens = await Kitchen.find({ status: 'active' })
+      .populate('ownerId', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.json(kitchens);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get single kitchen by ID (public)
+// @route   GET /api/kitchens/:id
+// @access  Public
+const getKitchenById = async (req, res) => {
+  try {
+    const kitchen = await Kitchen.findOne({ 
+      _id: req.params.id, 
+      status: 'active' 
+    }).populate('ownerId', 'name email');
+
+    if (!kitchen) {
+      return res.status(404).json({ message: 'Kitchen not found' });
+    }
+
+    res.json(kitchen);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createKitchen,
   getMyKitchens,
   switchCurrentKitchen,
   getKitchenDashboard,
-  addTeamMember
+  addTeamMember,
+  getAllActiveKitchens,
+  getKitchenById
 };
 

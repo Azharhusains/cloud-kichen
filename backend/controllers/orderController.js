@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
 const User = require('../models/User');
+const Kitchen = require('../models/Kitchen');
 const Counter = require('../models/Counter');
 const Table = require('../models/Table');
 const { deductStock, checkStockAvailability, restoreStock } = require('./inventoryController');
@@ -23,12 +24,14 @@ const getOrders = require('../middleware/errorHandler').asyncHandler(async (req,
   }
 
   let query = {};
-  if (req.kitchen) {
-    query.kitchenId = req.kitchen._id;
-  }
-
+  
+  // For customers: always show only their own orders
   if (req.user.role === 'CUSTOMER') {
     query.user = req.user._id;
+  } 
+  // For admin/staff: filter by kitchen context
+  else if (req.kitchen) {
+    query.kitchenId = req.kitchen._id;
   }
   if (req.query.status) {
     query.orderStatus = req.query.status;
@@ -50,6 +53,10 @@ const getOrder = async (req, res) => {
     if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
     }
+    // Verify order belongs to current kitchen only if kitchen context is present (admin/staff)
+    if (req.user.role !== 'CUSTOMER' && req.kitchen && order.kitchenId.toString() !== req.kitchen._id.toString()) {
+      return res.status(403).json({ message: 'Order does not belong to this kitchen' });
+    }
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -59,13 +66,26 @@ const getOrder = async (req, res) => {
 const createOrder = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   try {
 const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMethod, kitchenId } = req.body || {};
-    if (!req.kitchen && !kitchenId) {
-
-      return res.status(400).json({ message: 'Kitchen ID required' });
+    
+    // Auto-detect kitchenId from menu items if not provided
+    let finalKitchenId = kitchenId || req.user?.currentKitchen;
+    
+    if (!finalKitchenId && items && items.length > 0) {
+      // Get kitchenId from first menu item
+      const firstMenuItem = await MenuItem.findById(items[0].menuItem);
+      if (firstMenuItem && firstMenuItem.kitchenId) {
+        finalKitchenId = firstMenuItem.kitchenId;
+      }
     }
-    const finalKitchenId = req.kitchen?._id || kitchenId || req.user?.currentKitchen;
+    
     if (!finalKitchenId) {
       return res.status(400).json({ message: 'Kitchen ID required. Set in profile or request body.' });
+    }
+
+    // Verify kitchen exists and is active
+    const kitchen = await Kitchen.findById(finalKitchenId);
+    if (!kitchen || kitchen.status !== 'active') {
+      return res.status(400).json({ message: 'Invalid or inactive kitchen' });
     }
     if (paymentMethod === 'online') {
       return res.status(400).json({ message: 'Online payments must use /api/payment/create-session. Use COD for direct order creation.' });
@@ -94,7 +114,7 @@ const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMeth
     }
 
     // Check stock availability
-    const stockAvailable = await checkStockAvailability(items);
+    const stockAvailable = await checkStockAvailability(items, finalKitchenId);
     if (!stockAvailable) {
       return res.status(400).json({ message: 'Insufficient stock for some items' });
     }
@@ -107,8 +127,9 @@ const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMeth
       if (!menuItem || !menuItem.isAvailable) {
         return res.status(400).json({ message: `Item ${menuItem ? menuItem.name : 'unknown'} is not available` });
       }
-      // Use halfPrice if quantityType is HALF, else full price
-      item.price = item.quantityType === 'HALF' && menuItem.halfPrice ? menuItem.halfPrice : menuItem.price;
+      // Use halfPrice if quantityType is HALF, else full price (fallback to menuItem.fullPrice)
+      const itemBasePrice = menuItem.fullPrice || menuItem.price;
+      item.price = item.quantityType === 'HALF' && menuItem.halfPrice ? menuItem.halfPrice : itemBasePrice;
       item.costPrice = menuItem.costPrice; // Cost price unchanged
       subtotal += item.price * item.quantity;
       totalCost += item.costPrice * item.quantity;
@@ -130,14 +151,16 @@ const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMeth
 
     // NEW: Calculate carbonScore (sustainability metric 0-100)
     let carbonScore = 0;
+    let distanceKm = 0;
+    let totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+    
     if (orderType === 'delivery' && deliveryAddress && deliveryAddress.lat && deliveryAddress.lng) {
-      const distanceKm = getDistance(
+      distanceKm = getDistance(
         { latitude: KITCHEN_COORDS.lat, longitude: KITCHEN_COORDS.lng },
         { latitude: deliveryAddress.lat, longitude: deliveryAddress.lng }
       ) / 1000; // meters to km
 
       // Packaging factor: assume 0.2kg per item
-      const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
       const packagingKg = totalItems * 0.2;
 
       // Formula: distance * 0.2 + packaging * 1.5, clamped 0-100
@@ -271,7 +294,7 @@ const order = new Order({
     // ===== END EMAIL/PDF =====
 
     // Deduct stock
-    await deductStock(items);
+    await deductStock(items, finalKitchenId);
 
     // For dine-in orders, automatically set table to occupied
     if (orderType === 'dine-in' && tableNumber) {
@@ -318,6 +341,10 @@ const updateOrderStatus = require('../middleware/errorHandler').asyncHandler(asy
     const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
+    }
+    // Verify order belongs to current kitchen
+    if (order.kitchenId.toString() !== req.kitchen._id.toString()) {
+      return res.status(403).json({ message: 'Order does not belong to this kitchen' });
     }
     
     console.log('=== UPDATE ORDER STATUS DEBUG ===');
@@ -400,6 +427,10 @@ const getInvoice = async (req, res) => {
     // Authorization check
     if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to view this invoice' });
+    }
+    // Verify order belongs to current kitchen if kitchen context is present
+    if (req.kitchen && order.kitchenId.toString() !== req.kitchen._id.toString()) {
+      return res.status(403).json({ message: 'Order does not belong to this kitchen' });
     }
     
     // Format invoice data
@@ -498,6 +529,10 @@ const cancelOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
+    // Verify order belongs to current kitchen for admin users
+    if ((req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN') && order.kitchenId.toString() !== req.kitchen._id.toString()) {
+      return res.status(403).json({ message: 'Order does not belong to this kitchen' });
+    }
 
     // Check if user is admin or super admin
     const isAdmin = req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN';
@@ -563,7 +598,7 @@ const cancelOrder = async (req, res) => {
 
     // Restore inventory stock (only for non-delivered orders)
     if (order.orderStatus !== 'delivered') {
-      await restoreStock(order.items);
+      await restoreStock(order.items, order.kitchenId);
     }
 
     // For dine-in orders, if cancelled, set table back to available

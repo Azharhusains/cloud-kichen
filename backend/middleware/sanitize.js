@@ -22,7 +22,9 @@ const sanitizeValue = (value) => {
   if (value && typeof value === 'object') {
     const sanitized = {};
     for (const [key, val] of Object.entries(value)) {
-      sanitized[key] = sanitizeValue(val);
+      if (val !== undefined && val !== null) {
+        sanitized[key] = sanitizeValue(val);
+      }
     }
     return sanitized;
   }
@@ -31,6 +33,7 @@ const sanitizeValue = (value) => {
 
 const sanitizeBody = (req, res, next) => {
   // Sanitize req.body
+  const originalBody = req.body;
   req.body = sanitizeValue(req.body);
   
   // Sanitize query params
@@ -38,6 +41,11 @@ const sanitizeBody = (req, res, next) => {
   
   // Sanitize params (less common)
   req.params = sanitizeValue(req.params);
+  
+  // Debug logging
+  console.log('=== sanitizeBody ===');
+  console.log('Original body:', originalBody);
+  console.log('Sanitized body:', req.body);
   
   // Log suspicious input (optional)
   const suspiciousPatterns = [/<script/i, /javascript:/i, /on\\w+=/i];

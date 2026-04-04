@@ -187,7 +187,7 @@ class AIEngine {
           _id: item._id,
           name: item.name,
           description: item.description,
-          price: item.price,
+          price: item.fullPrice || item.price,
           category: item.category?.name,
           isAvailable: item.isAvailable
         })),

@@ -38,7 +38,6 @@ const menuItemSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
-  // NEW: Optional 3D model URL for AR preview (GLTF format)
   modelUrl: {
     type: String,
     default: null,
@@ -64,25 +63,18 @@ const menuItemSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
-// Indexes for audit trail
-menuItemSchema.index({ createdBy: 1 });
-menuItemSchema.index({ updatedBy: 1, updatedAt: -1 });
-
-// Production indexes:
-// kitchenId + category + name: per kitchen menu search
-menuItemSchema.index({ kitchenId: 1, category: 1, name: 1 });
-// kitchenId + isAvailable: availability check
-menuItemSchema.index({ kitchenId: 1, isAvailable: 1 });
-// isAvailable: quick availability filtering
-menuItemSchema.index({ isAvailable: 1 });
-
-// Virtual for backward compatibility - return fullPrice as 'price'
 menuItemSchema.virtual('price').get(function() {
   return this.fullPrice;
 });
-menuItemSchema.set('toJSON', { virtuals: true });
-menuItemSchema.set('toObject', { virtuals: true });
+
+menuItemSchema.index({ createdBy: 1 });
+menuItemSchema.index({ updatedBy: 1, updatedAt: -1 });
+menuItemSchema.index({ kitchenId: 1, category: 1, name: 1 });
+menuItemSchema.index({ kitchenId: 1, isAvailable: 1 });
+menuItemSchema.index({ isAvailable: 1 });
 
 module.exports = mongoose.model('MenuItem', menuItemSchema);

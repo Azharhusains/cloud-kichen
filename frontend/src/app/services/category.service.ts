@@ -44,7 +44,7 @@ export class CategoryService {
     if (!kitchenId) {
       throw new Error('No kitchen selected. Please select a kitchen in profile.');
     }
-    return this.http.post<Category[]>(this.apiUrl, { kitchenId });
+    return this.http.get<Category[]>(`${this.apiUrl}?kitchenId=${kitchenId}`);
   }
 
   // Get active categories (public - no auth required)
