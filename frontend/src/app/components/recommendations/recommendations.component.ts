@@ -150,7 +150,8 @@ ngOnDestroy(): void {
       return;
     }
     this.cartService.addToCart(rec.item, this.getCurrentPortionType(rec.item));
-    this.toastService.show(`Added ${rec.item.name} to cart!`, 'success');
+     this.router.navigate(['/menu']);
+    // this.toastService.show(`Added ${rec.item.name} to cart!`, 'success');
   }
 
   increaseQuantity(item: any): void {

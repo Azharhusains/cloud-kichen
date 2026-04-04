@@ -1,2 +1,7 @@
 <app-navigation></app-navigation>
+<div class="network-status" *ngIf="showNetworkStatus$ | async" [class.offline]="!(isOnline$ | async)" [class.online]="isOnline$ | async">
+  <mat-icon>{{ (isOnline$ | async) ? 'wifi' : 'wifi_off' }}</mat-icon>
+  <span>{{ (isOnline$ | async) ? 'Online' : 'Offline' }}</span>
+  <!-- <mat-badge *ngIf="queueLength() > 0" [content]="queueLength()" color="warn"></mat-badge> -->
+</div>
 <router-outlet />

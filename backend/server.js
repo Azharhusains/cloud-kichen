@@ -49,7 +49,6 @@ io.on('connection', (socket) => {
 });
 
 // Production middleware stack (optimized order)
-// Security first
 app.use(helmet());
 // Rate limiting (global)
 app.use(require('./middleware/rateLimit').limiter);
@@ -62,6 +61,14 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 // Input sanitization (XSS prevention)
 app.use(require('./middleware/sanitize'));
+
+// Public health check endpoints for frontend network service (root and /api)
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+app.get('/api/health', (req, res) => {
+  res.status(200).send('OK');
+});
 
 // Serve uploaded files statically at root /uploads path
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -99,3 +106,4 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
