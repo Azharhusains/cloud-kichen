@@ -5,6 +5,7 @@ const { getRecommendations } = require('../controllers/recommendationController'
 
 const router = express.Router();
 
+router.get('/global-popular-trick', asyncHandler(getRecommendations));
 router.get('/:userId', protect, asyncHandler(getRecommendations));
 
 module.exports = router;

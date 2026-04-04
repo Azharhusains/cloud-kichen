@@ -71,7 +71,12 @@ export class HomeComponent implements OnInit {
   ];
 
   popularItems: any[] = [];
+  userItems: any[] = [];
+  combos: any[] = [];
+  userRecs: any = null;
   loadingPopular = true;
+  loadingUserRecs = false;
+  isLoggedIn = false;
   userId = '';
 
   constructor(
@@ -81,13 +86,13 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadPopularItems();
-    if (this.authService.isAuthenticated()) {
-      const user = this.authService.getCurrentUser();
-      if (user?._id) {
-        this.userId = user._id;
-      }
+    this.isLoggedIn = this.authService.isAuthenticated();
+    const user = this.authService.getCurrentUser();
+    if (user?._id) {
+      this.userId = user._id;
+      this.loadUserRecommendations();
     }
+    this.loadPopularItems();
   }
 
   loadPopularItems(): void {
@@ -97,11 +102,29 @@ export class HomeComponent implements OnInit {
       take(1)
     ).subscribe({
       next: (data) => {
-        this.popularItems = data.data.popular || [];
+        this.popularItems = (data.data.popular || []).slice(0, 4);
         this.loadingPopular = false;
       },
       error: () => {
         this.loadingPopular = false;
+      }
+    });
+  }
+
+  loadUserRecommendations(): void {
+    this.loadingUserRecs = true;
+    this.orderService.getRecommendations(this.userId).pipe(
+      take(1)
+    ).subscribe({
+      next: (data) => {
+        this.userRecs = data.data;
+        this.userItems = (this.userRecs.userBased?.items || []).slice(0, 4);
+        this.combos = (this.userRecs.combos || []).slice(0, 4);
+        this.loadingUserRecs = false;
+      },
+      error: (err) => {
+        console.error('User recs error:', err);
+        this.loadingUserRecs = false;
       }
     });
   }

@@ -75,7 +75,7 @@ export interface ComboRecommendation {
 })
 export class RecommendationsComponent implements OnInit, OnDestroy {
 @Input() recommendations: any[] = [];
-  @Input() section: 'user' | 'popular' | 'combos' = 'user';
+  @Input() section: 'CUSTOMER' | 'popular' | 'combos' = 'CUSTOMER';
   @Input() title = 'Recommendations';
   
   loading = false;
@@ -96,10 +96,18 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar
   ) {}
 
+  private authSub!: Subscription;
+
   ngOnInit(): void {
     this.isLoggedIn = this.authService.isAuthenticated();
     const user = this.authService.getCurrentUser();
     if (user?._id) this.currentUserId = user._id;
+    
+    // Reactive auth state
+    this.authSub = this.authService.user$.subscribe(user => {
+      this.isLoggedIn = !!user;
+      if (user?._id) this.currentUserId = user._id;
+    });
     
     this.loadCart();
     this.cartSubscription = this.cartService.cart$.subscribe((cart: any[]) => {
@@ -107,8 +115,9 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
+ngOnDestroy(): void {
     if (this.cartSubscription) this.cartSubscription.unsubscribe();
+    if (this.authSub) this.authSub.unsubscribe();
   }
 
   loadCart(): void {
@@ -136,16 +145,28 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
   }
 
   addCurrentPortion(rec: RecommendationItem): void {
+    if (!this.isLoggedIn) {
+      this.handleUnauthorized();
+      return;
+    }
     this.cartService.addToCart(rec.item, this.getCurrentPortionType(rec.item));
     this.toastService.show(`Added ${rec.item.name} to cart!`, 'success');
   }
 
   increaseQuantity(item: any): void {
+    if (!this.isLoggedIn) {
+      this.handleUnauthorized();
+      return;
+    }
     const type = this.getCurrentPortionType(item);
     this.cartService.increaseQuantity(item._id, type);
   }
 
   decreaseQuantity(item: any): void {
+    if (!this.isLoggedIn) {
+      this.handleUnauthorized();
+      return;
+    }
     const type = this.getCurrentPortionType(item);
     this.cartService.decreaseQuantity(item._id, type);
   }
@@ -158,6 +179,10 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
   }
 
   addCombo(items: any[]): void {
+    if (!this.isLoggedIn) {
+      this.handleUnauthorized();
+      return;
+    }
     items.forEach(item => this.cartService.addToCart(item, 'FULL'));
     this.toastService.show('Combo added to cart!', 'success');
   }
@@ -167,6 +192,10 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
       width: '500px',
       data: { viewingItem: item }
     });
+  }
+
+  handleUnauthorized(): void {
+    this.router.navigate(['/login']);
   }
 
   getImageUrl(image: string | undefined | null): string {
@@ -190,7 +219,7 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
 
   getSectionTitle(): string {
     switch (this.section) {
-      case 'user': return this.title || 'Recommended for You';
+      case 'CUSTOMER': return this.title || 'Recommended for You';
       case 'popular': return 'Popular Right Now';
       case 'combos': return 'Great Combos';
       default: return 'Recommendations';

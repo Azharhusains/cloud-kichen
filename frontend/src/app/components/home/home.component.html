@@ -26,6 +26,24 @@
         title="Popular Right Now">
       </app-recommendations>
       <mat-spinner *ngIf="loadingPopular" class="page-spinner"></mat-spinner>
+
+      <!-- User Recommendations (logged in only) -->
+      <app-recommendations 
+        *ngIf="isLoggedIn && !loadingUserRecs && userItems.length > 0" 
+        [recommendations]="userItems" 
+        section="CUSTOMER" 
+        title="Recommended for You">
+      </app-recommendations>
+
+      <!-- User Combos (logged in only) -->
+      <app-recommendations 
+        *ngIf="isLoggedIn && !loadingUserRecs && combos.length > 0" 
+        [recommendations]="combos" 
+        section="combos" 
+        title="Great Combos">
+      </app-recommendations>
+
+      <mat-spinner *ngIf="loadingUserRecs" class="page-spinner" style="margin-top: 20px;"></mat-spinner>
     </div>
   </section>
 

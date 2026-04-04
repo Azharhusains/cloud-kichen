@@ -175,9 +175,11 @@ class RecommendationService {
     return combos.slice(0,5);
   }
 
-  async getRecommendations(userId) {
+async getRecommendations(userId) {
+    console.log('[REC-SVC] getRecommendations called for userId:', userId);
     if (userId === 'global-popular-trick') {
-      const popular = await this.getPopularItems();
+const popular = await this.getPopularItems();
+    console.log('[REC-SVC] Global popular items count:', popular.length);
       return { 
         userBased: { categories: [], items: [] }, 
         popular, 

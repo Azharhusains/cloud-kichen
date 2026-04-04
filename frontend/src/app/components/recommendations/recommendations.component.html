@@ -2,7 +2,7 @@
   <!-- Header Section -->
   <div class="menu-header">
     <h2>{{ getSectionTitle() }}</h2>
-    <mat-chip *ngIf="section === 'user' && !isLoggedIn" class="login-chip">
+    <mat-chip *ngIf="section === 'CUSTOMER' && !isLoggedIn" class="login-chip">
       <mat-icon>login</mat-icon>
       Login to see personalized recs
     </mat-chip>
@@ -106,9 +106,9 @@
       </mat-card-content>
       
       <!-- Details Button (matching menu) -->
-      <button mat-icon-button class="details-btn" (click)="openItemDetails(rec.item)">
+      <!-- <button mat-icon-button class="details-btn" (click)="openItemDetails(rec.item)">
         <mat-icon>visibility</mat-icon>
-      </button>
+      </button> -->
     </mat-card>
   </div>
 
