@@ -47,7 +47,20 @@ class RecommendationService {
           localField: '_id',
           foreignField: '_id',
           as: 'item',
-          pipeline: [{ $match: { isAvailable: true } }, { $project: { name: 1, category: 1, fullPrice: 1, image: 1 } }]
+          pipeline: [
+            { $match: { isAvailable: true } },
+            {
+              $lookup: {
+                from: 'categories',
+                localField: 'category',
+                foreignField: '_id',
+                as: 'categoryObj',
+                pipeline: [{ $project: { name: 1 } }]
+              }
+            },
+            { $addFields: { category: { $arrayElemAt: ['$categoryObj.name', 0] } } },
+            { $project: { name: 1, category: 1, fullPrice: 1, halfPrice: 1, image: 1, supportsHalf: 1, description: 1 } }
+          ]
         } },
         { $unwind: { path: '$item', preserveNullAndEmptyArrays: false } },
         { $project: { item: 1, totalQty: 1 } }
@@ -76,7 +89,20 @@ class RecommendationService {
         localField: '_id',
         foreignField: '_id',
         as: 'item',
-        pipeline: [{ $match: { isAvailable: true } }, { $project: { name:1, category:1, fullPrice:1, image:1, supportsHalf:1 } }]
+        pipeline: [
+          { $match: { isAvailable: true } },
+          {
+            $lookup: {
+              from: 'categories',
+              localField: 'category',
+              foreignField: '_id',
+              as: 'categoryObj',
+              pipeline: [{ $project: { name: 1 } }]
+            }
+          },
+          { $addFields: { category: { $arrayElemAt: ['$categoryObj.name', 0] } } },
+          { $project: { name:1, category:1, fullPrice:1, halfPrice:1, image:1, supportsHalf:1, description:1, isAvailable:1 } }
+        ]
       } },
       { $unwind: { path: '$item', preserveNullAndEmptyArrays: true } },
       { $match: { 'item.isAvailable': { $ne: false } } },
@@ -150,6 +176,16 @@ class RecommendationService {
   }
 
   async getRecommendations(userId) {
+    if (userId === 'global-popular-trick') {
+      const popular = await this.getPopularItems();
+      return { 
+        userBased: { categories: [], items: [] }, 
+        popular, 
+        combos: [],
+        timestamp: new Date()
+      };
+    }
+
     const [userRecs, popular, combos] = await Promise.all([
       this.getUserRecommendations(userId),
       this.getPopularItems(),

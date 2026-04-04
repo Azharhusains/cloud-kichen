@@ -1,5 +1,6 @@
-<div class="recommendations-container" [@staggerFadeIn] *ngIf="recommendations">
-  <div class="section-header">
+<div class="menu-container" @fadeInUp *ngIf="recommendations">
+  <!-- Header Section -->
+  <div class="menu-header">
     <h2>{{ getSectionTitle() }}</h2>
     <mat-chip *ngIf="section === 'user' && !isLoggedIn" class="login-chip">
       <mat-icon>login</mat-icon>
@@ -7,42 +8,116 @@
     </mat-chip>
   </div>
 
-  <!-- User-based or Popular Items -->
-  <div class="items-grid" *ngIf="section !== 'combos'">
+  <!-- Recommendations Grid -->
+  <div class="menu-items-grid" @staggerList *ngIf="section !== 'combos'">
     <mat-card 
-      class="rec-card" 
-      *ngFor="let rec of recommendations; trackBy: trackByFn"
-      [class.popular-card]="section === 'popular'">
-    >
-      <div class="rec-image" [style.background-image]="'url(' + getImageUrl(rec.item.image) + ')'">
+      *ngFor="let rec of recommendations; trackBy: trackByFn" 
+      class="rec-item-card menu-item-card"
+      [class.popular-card]="section === 'popular'"
+      [class.unavailable]="!rec.item.isAvailable">
+      
+      <!-- Image Section (matching menu) -->
+      <div class="item-image-section" [class.has-image]="rec.item.image">
+        <img *ngIf="rec.item.image" 
+             [src]="getImageUrl(rec.item.image)" 
+             crossorigin="anonymous" 
+             alt="{{ rec.item.name }}">
+        <mat-icon *ngIf="!rec.item.image" class="food-icon">recommendation</mat-icon>
+        
+        <!-- Popular Badge (replaces rec-badge) -->
         <div class="rec-badge" *ngIf="rec.totalQty && section === 'popular'">
           {{ rec.totalQty | number:'1.0-0' }}+ ordered
         </div>
+        
+        <!-- Unavailable Badge -->
+        <span class="unavailable-badge" *ngIf="!rec.item.isAvailable">Unavailable</span>
       </div>
+      
       <mat-card-content>
-        <div class="item-name">{{ rec.item.name }}</div>
-        <div class="item-category" *ngIf="rec.item.category !== 'Uncategorized'">
-          {{ rec.item.category }}
+        <!-- Item Header -->
+        <div class="item-header">
+          <h3>{{ rec.item.name }}</h3>
+          <span class="category-label" *ngIf="rec.item.category !== 'Uncategorized'">
+            {{ rec.item.category }}
+          </span>
         </div>
-        <div class="item-price">₹{{ rec.item.fullPrice | number:'1.0-0' }}</div>
+        
+        <!-- Description (if available) -->
+        <p class="item-description" *ngIf="rec.item.description">{{ rec.item.description }}</p>
+        
+        <!-- Add to Cart Container (matching menu exactly) -->
+        <div class="item-footer">
+          <div class="add-to-cart-container">
+            <!-- Portion Selector -->
+            <div class="portion-selector" *ngIf="rec.item.supportsHalf">
+              <button 
+                class="portion-btn half-btn"
+                [class.active]="getCurrentPortionType(rec.item) === 'HALF'"
+                (click)="selectPortion(rec.item, 'HALF'); $event.stopPropagation()"
+                mat-stroked-button
+                size="small"
+                [disabled]="!rec.item.isAvailable">
+                Half<br><small>₹{{ rec.item.halfPrice | number:'1.0-0' }}</small>
+              </button>
+              <button 
+                class="portion-btn full-btn"
+                [class.active]="getCurrentPortionType(rec.item) === 'FULL'"
+                (click)="selectPortion(rec.item, 'FULL'); $event.stopPropagation()"
+                mat-stroked-button
+                size="small"
+                [disabled]="!rec.item.isAvailable">
+                Full<br><small>₹{{ rec.item.fullPrice | number:'1.0-0' }}</small>
+              </button>
+            </div>
+            
+            <!-- Qty/Add Wrapper -->
+            <div class="qty-add-wrapper">
+              <!-- Quantity Controls -->
+              <div class="quantity-controls" *ngIf="getCurrentQuantity(rec.item) > 0">
+                <button mat-mini-fab 
+                        class="qty-btn qty-decrease" 
+                        (click)="decreaseQuantity(rec.item); $event.stopPropagation()" 
+                        [disabled]="!rec.item.isAvailable">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <span class="qty-badge">{{ getCurrentQuantity(rec.item) }}</span>
+                <button mat-mini-fab 
+                        class="qty-btn qty-increase" 
+                        (click)="increaseQuantity(rec.item); $event.stopPropagation()"
+                        [disabled]="!rec.item.isAvailable">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+              
+              <!-- Add Button -->
+              <button 
+                mat-raised-button 
+                class="add-btn" 
+                *ngIf="getCurrentQuantity(rec.item) === 0"
+                (click)="addCurrentPortion(rec); $event.stopPropagation()"
+                [disabled]="!rec.item.isAvailable">
+                <mat-icon class="cart-icon">add_shopping_cart</mat-icon>
+                Add
+                <span class="btn-price">₹{{ getItemPrice(rec.item, getCurrentPortionType(rec.item)) | number:'1.0-0' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </mat-card-content>
-      <mat-card-actions>
-        <button mat-button color="primary" (click)="addToCart(rec)">
-          <mat-icon>add_shopping_cart</mat-icon>
-          Add
-        </button>
-        <button mat-icon-button *ngIf="rec.item.supportsHalf" matTooltip="Add Half Portion" (click)="addToCart(rec, 'HALF')">
-          <mat-icon>restaurant_menu</mat-icon>
-        </button>
-      </mat-card-actions>
+      
+      <!-- Details Button (matching menu) -->
+      <button mat-icon-button class="details-btn" (click)="openItemDetails(rec.item)">
+        <mat-icon>visibility</mat-icon>
+      </button>
     </mat-card>
   </div>
 
-  <!-- Combos -->
+  <!-- Combos Section (enhanced but simpler) -->
   <div class="combos-grid" *ngIf="section === 'combos'">
-    <mat-card class="rec-card combo-card" *ngFor="let combo of recommendations; let i = index; trackBy: trackByFn">
+    <mat-card class="rec-item-card combo-card" *ngFor="let combo of recommendations; let i = index; trackBy: trackByFn">
       <div class="combo-items">
-        <div class="combo-item" *ngFor="let item of combo.items" [style.background-image]="'url(' + getImageUrl(item.image) + ')'">
+        <div class="combo-item" *ngFor="let item of combo.item; let j = index" 
+             [style.background-image]="'url(' + getImageUrl(item.image) + ')'" crossorigin="anonymous">
           <div class="combo-overlay">
             <span class="combo-name">{{ item.name }}</span>
           </div>
@@ -50,15 +125,13 @@
       </div>
       <mat-card-content>
         <div class="combo-title">
-          Combo #{{ i + 1 }} 
+          Combo #{{ i + 1 }}
           <mat-chip class="popularity-chip">{{ combo.count }}+ customers love this</mat-chip>
         </div>
-        <div class="combo-price">
-          Save by ordering together!
-        </div>
+        <div class="combo-price">Save by ordering together!</div>
       </mat-card-content>
       <mat-card-actions>
-        <button mat-raised-button color="primary" (click)="addCombo(combo.items)">
+        <button mat-raised-button color="primary" class="add-combo-btn" (click)="addCombo(combo.item)">
           <mat-icon>shopping_bag</mat-icon>
           Add Combo
         </button>
@@ -66,9 +139,11 @@
     </mat-card>
   </div>
 
+  <!-- Empty State (matching menu style) -->
   <div class="empty-state" *ngIf="!recommendations || recommendations.length === 0">
     <mat-icon>recommendation</mat-icon>
-    <p>No recommendations yet. Order something to get personalized suggestions!</p>
+    <h3>No recommendations yet</h3>
+    <p>Order something to get personalized suggestions!</p>
   </div>
 </div>
 

@@ -4,10 +4,13 @@ const recommendationService = require('../services/recommendation.service');
 const getRecommendations = asyncHandler(async (req, res) => {
   const userId = req.params.userId;
   
-  // Security: userId must match authenticated user or admin/superadmin
-  if (req.user._id.toString() !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
-    res.status(403);
-    throw new Error('Access denied: Invalid user ID');
+  // Allow special global popular endpoint
+  if (userId !== 'global-popular-trick') {
+    // Security: userId must match authenticated user or admin/superadmin
+    if (req.user._id.toString() !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
+      res.status(403);
+      throw new Error('Access denied: Invalid user ID');
+    }
   }
 
   const recommendations = await recommendationService.getRecommendations(userId);
