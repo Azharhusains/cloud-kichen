@@ -4,6 +4,35 @@ const path = require('path');
 const fs = require('fs');
 const { uploadMenuImage } = require('../middleware/multer');
 
+const getCustomerKitchens = async (req) => {
+  const Kitchen = require('../models/Kitchen');
+  const kitchens = [];
+  
+  // Prioritize currentKitchen if active
+  if (req.user.currentKitchen) {
+    const currentKitchen = await Kitchen.findOne({
+      _id: req.user.currentKitchen,
+      status: 'active'
+    });
+    if (currentKitchen) {
+      kitchens.push(currentKitchen._id);
+    }
+  }
+  
+  // Add all other active kitchens
+  const allActiveKitchens = await Kitchen.find(
+    { status: 'active' },
+    { _id: 1 }
+  );
+  allActiveKitchens.forEach(kitchen => {
+    if (!kitchens.includes(kitchen._id)) {
+      kitchens.push(kitchen._id);
+    }
+  });
+  
+  return kitchens;
+};
+
 const upload = uploadMenuImage;
 
 const getMenuItems = async (req, res) => {
@@ -13,33 +42,12 @@ const getMenuItems = async (req, res) => {
 
     // Handle CUSTOMER kitchen filtering
     if (req.user.role === 'CUSTOMER') {
-      const Kitchen = require('../models/Kitchen');
-      let customerKitchenId;
-      
-      if (req.user.currentKitchen) {
-        customerKitchenId = req.user.currentKitchen;
-        // Verify it's active
-        const kitchen = await Kitchen.findOne({
-          _id: customerKitchenId,
-          status: 'active'
-        });
-        if (!kitchen) {
-          // Fallback to first active kitchen
-          const activeKitchen = await Kitchen.findOne({ status: 'active' });
-          customerKitchenId = activeKitchen?._id;
-        }
-      } else {
-        // No current kitchen - use first active
-        const activeKitchen = await Kitchen.findOne({ status: 'active' });
-        customerKitchenId = activeKitchen?._id;
-      }
-      
-      if (!customerKitchenId) {
+      const customerKitchenIds = await getCustomerKitchens(req);
+      if (customerKitchenIds.length === 0) {
         return res.status(400).json({ message: 'No active kitchens available' });
       }
-      
-      query.kitchenId = customerKitchenId;
-      console.log(`Customer ${req.user._id} viewing kitchen ${customerKitchenId}`);
+      query.kitchenId = { $in: customerKitchenIds };
+      console.log(`Customer ${req.user._id} viewing ${customerKitchenIds.length} kitchen(s): ${customerKitchenIds.join(', ')}`);
     } 
     // For admin/staff: filter by kitchen context, show all items including unavailable
     else if (req.user.role !== 'CUSTOMER' && req.kitchen) {
@@ -68,33 +76,16 @@ const getMenuItems = async (req, res) => {
       return itemObj;
     });
 
-    
     // Get categories - sync with menu items kitchen filter
     const categoryQuery = { isActive: true };
     
     if (req.user.role === 'CUSTOMER') {
-      // Reuse the same kitchenId logic as above
-      const Kitchen = require('../models/Kitchen');
-      let customerKitchenId;
-      
-      if (req.user.currentKitchen) {
-        customerKitchenId = req.user.currentKitchen;
-        const kitchen = await Kitchen.findOne({
-          _id: customerKitchenId,
-          status: 'active'
-        });
-        if (!kitchen) {
-          const activeKitchen = await Kitchen.findOne({ status: 'active' });
-          customerKitchenId = activeKitchen?._id;
-        }
-      } else {
-        const activeKitchen = await Kitchen.findOne({ status: 'active' });
-        customerKitchenId = activeKitchen?._id;
+      const customerKitchenIds = await getCustomerKitchens(req);
+      if (customerKitchenIds.length === 0) {
+        return res.status(400).json({ message: 'No active kitchens available' });
       }
-      
-      if (customerKitchenId) {
-        categoryQuery.kitchenId = customerKitchenId;
-      }
+      categoryQuery.kitchenId = { $in: customerKitchenIds };
+      console.log(`Customer ${req.user._id} viewing ${customerKitchenIds.length} kitchen(s): ${customerKitchenIds.join(', ')}`);
     } else if (req.kitchen) {
       categoryQuery.kitchenId = req.kitchen._id;
     }
@@ -222,7 +213,6 @@ const createMenuItem = async (req, res) => {
   }
 };
 
-
 const updateMenuItem = async (req, res) => {
   try {
     const menuItem = await MenuItem.findById(req.params.id);
@@ -234,7 +224,7 @@ const updateMenuItem = async (req, res) => {
       return res.status(403).json({ message: 'Menu item does not belong to this kitchen' });
     }
     
-// If new file was uploaded, update image path
+    // If new file was uploaded, update image path
     if (req.file) {
       // Delete old image if exists
       if (menuItem.image) {
@@ -295,7 +285,6 @@ const updateMenuItem = async (req, res) => {
   }
 };
 
-
 const deleteMenuItem = async (req, res) => {
   try {
     const menuItem = await MenuItem.findById(req.params.id);
@@ -332,4 +321,3 @@ module.exports = {
   sanitizeFormData,
   upload 
 };
-
