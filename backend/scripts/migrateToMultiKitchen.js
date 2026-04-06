@@ -8,7 +8,6 @@ const MenuItem = require('../models/MenuItem');
 const Category = require('../models/Category');
 const Inventory = require('../models/Inventory');
 const Table = require('../models/Table');
-const Coupon = require('../models/Coupon');
 
 connectDB();
 
@@ -40,8 +39,7 @@ const migrate = async () => {
       MenuItem.updateMany({ kitchenId: { $exists: false } }, { kitchenId: defaultKitchen._id }),
       Category.updateMany({ kitchenId: { $exists: false } }, { kitchenId: defaultKitchen._id }),
       Inventory.updateMany({ kitchenId: { $exists: false } }, { kitchenId: defaultKitchen._id }),
-      Table.updateMany({ kitchenId: { $exists: false } }, { kitchenId: defaultKitchen._id }),
-      Coupon.updateMany({ kitchenId: { $exists: false } }, { kitchenId: defaultKitchen._id })
+      Table.updateMany({ kitchenId: { $exists: false } }, { kitchenId: defaultKitchen._id })
     ]);
 
     console.log('✅ Updated documents:', updates.map(u => ({ model: u.model, modified: u.modifiedCount })));
@@ -67,4 +65,3 @@ const migrate = async () => {
 };
 
 migrate();
-

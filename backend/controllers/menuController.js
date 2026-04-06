@@ -10,9 +10,39 @@ const getMenuItems = async (req, res) => {
   try {
     const { category } = req.query;
     let query = { isAvailable: true }; // Only show available items publicly
-    
+
+    // Handle CUSTOMER kitchen filtering
+    if (req.user.role === 'CUSTOMER') {
+      const Kitchen = require('../models/Kitchen');
+      let customerKitchenId;
+      
+      if (req.user.currentKitchen) {
+        customerKitchenId = req.user.currentKitchen;
+        // Verify it's active
+        const kitchen = await Kitchen.findOne({
+          _id: customerKitchenId,
+          status: 'active'
+        });
+        if (!kitchen) {
+          // Fallback to first active kitchen
+          const activeKitchen = await Kitchen.findOne({ status: 'active' });
+          customerKitchenId = activeKitchen?._id;
+        }
+      } else {
+        // No current kitchen - use first active
+        const activeKitchen = await Kitchen.findOne({ status: 'active' });
+        customerKitchenId = activeKitchen?._id;
+      }
+      
+      if (!customerKitchenId) {
+        return res.status(400).json({ message: 'No active kitchens available' });
+      }
+      
+      query.kitchenId = customerKitchenId;
+      console.log(`Customer ${req.user._id} viewing kitchen ${customerKitchenId}`);
+    } 
     // For admin/staff: filter by kitchen context, show all items including unavailable
-    if (req.user.role !== 'CUSTOMER' && req.kitchen) {
+    else if (req.user.role !== 'CUSTOMER' && req.kitchen) {
       query.kitchenId = req.kitchen._id;
       delete query.isAvailable; // Admins see all items regardless of availability
     }
@@ -39,11 +69,36 @@ const getMenuItems = async (req, res) => {
     });
 
     
-    // Get categories
+    // Get categories - sync with menu items kitchen filter
     const categoryQuery = { isActive: true };
-    if (req.user.role !== 'CUSTOMER' && req.kitchen) {
+    
+    if (req.user.role === 'CUSTOMER') {
+      // Reuse the same kitchenId logic as above
+      const Kitchen = require('../models/Kitchen');
+      let customerKitchenId;
+      
+      if (req.user.currentKitchen) {
+        customerKitchenId = req.user.currentKitchen;
+        const kitchen = await Kitchen.findOne({
+          _id: customerKitchenId,
+          status: 'active'
+        });
+        if (!kitchen) {
+          const activeKitchen = await Kitchen.findOne({ status: 'active' });
+          customerKitchenId = activeKitchen?._id;
+        }
+      } else {
+        const activeKitchen = await Kitchen.findOne({ status: 'active' });
+        customerKitchenId = activeKitchen?._id;
+      }
+      
+      if (customerKitchenId) {
+        categoryQuery.kitchenId = customerKitchenId;
+      }
+    } else if (req.kitchen) {
       categoryQuery.kitchenId = req.kitchen._id;
     }
+    
     const categories = await Category.find(categoryQuery).sort({ sortOrder: 1 });
     
     // Return both menu items and categories
@@ -52,6 +107,7 @@ const getMenuItems = async (req, res) => {
       categories
     });
   } catch (error) {
+    console.error('getMenuItems error:', error);
     res.status(500).json({ message: error.message });
   }
 };

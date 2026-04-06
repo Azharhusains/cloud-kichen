@@ -27,7 +27,6 @@ import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
 import { MatChipsModule } from '@angular/material/chips';
 import { ToastService } from '../../services/toast.service';
-import { LoyaltyService } from '../../services/loyalty.service';
 
 
 
@@ -121,7 +120,6 @@ export class CheckoutComponent implements OnInit {
     private router: Router,
     public cartService: CartService,
   private toastService: ToastService,
-    private loyaltyService: LoyaltyService
   ) {
     this.checkoutForm = this.fb.group({
       street: ['', Validators.required],
@@ -137,23 +135,6 @@ export class CheckoutComponent implements OnInit {
     this.loadCart();
     this.loadAddresses();
     this.loadTableInfo();
-    this.loadLoyalty();
-  }
-
-  loadLoyalty(): void {
-    this.loyaltyLoading = true;
-    this.loyaltyService.getLoyalty().subscribe({
-      next: (data) => {
-        this.loyalty = data;
-        this.maxRedeemPoints = Math.floor(this.loyalty.points / 10) * 10;
-        this.loyaltyLoading = false;
-        this.updateTotals();
-      },
-      error: (err) => {
-        console.error('Failed to load loyalty:', err);
-        this.loyaltyLoading = false;
-      }
-    });
   }
 
   applyCoupon(): void {

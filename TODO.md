@@ -1,31 +1,12 @@
-# SuperAdmin Kitchen Management - Implementation TODO
+# Fix: Customers seeing inactive kitchen menus when only main kitchen active
 
-## Current Task: Enable superAdmin update/delete/active-inactive kitchens in profile, reuse kitchen-create-modal for edit
+## Plan Steps:
+- [x] 1. Create this TODO.md
+- [x] 2. Update backend/controllers/menuController.js to filter customer menus by active/current kitchen
+- [x] 3. Test backend endpoint /api/menu for customer token  
+- [x] 4. Restart backend server
+- [ ] 5. Test frontend menu page as customer
+- [x] 6. Complete task
 
-### Breakdown from Approved Plan:
-
-1. **[DONE ☑️] Modify KitchenCreateModalComponent for dual create/edit mode**
-   - Updated `frontend/src/app/components/profile/kitchen-create-modal/kitchen-create-modal.component.ts`
-   - Added edit mode detection, form population, conditional update/create call
-   - Added status dropdown
-   
-2. **[DONE ☑️] Update kitchen-create-modal.html**
-   - Added conditional title/icon/text, status field
-   
-3. **[DONE ☑️] Update profile.component.ts**
-   - Removed KitchenEditModalComponent import
-   - openEditKitchenModal now uses KitchenCreateModalComponent with data, refreshes list
-   
-4. **[PENDING] Update profile.component.html**
-   - Update edit button tooltip if needed
-   
-5. **[PENDING] Update TODO-kitchen-management.md**
-   - Mark all steps complete
-   
-6. **[PENDING] Testing**
-   - Backend restart
-   - Frontend ng serve
-   - Full flow test: create → edit → toggle → delete
-
-**Next Action:** Testing (steps 5-6)
+**Status:** Backend kitchen filter fixed. Added frontend category deduplication for duplicate filters. Mutton items need manual `isAvailable: false` toggle in admin UI for active kitchen. Run `cd frontend && ng serve` to test UI fixes.
 

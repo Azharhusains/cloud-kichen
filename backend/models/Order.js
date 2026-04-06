@@ -146,14 +146,6 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  couponCode: {
-    type: String,
-    default: null
-  },
-  couponDiscount: {
-    type: Number,
-    default: 0
-  },
   // Premium Refund System Fields
   refundId: {
     type: String,
@@ -176,16 +168,6 @@ const orderSchema = new mongoose.Schema({
   refundNotes: {
     type: String,
     default: null
-  },
-  loyaltyPointsEarned: {
-    type: Number,
-    default: 0,
-    min: 0
-  },
-  loyaltyDiscountUsed: {
-    type: Number,
-    default: 0,
-    min: 0
   },
   // NEW: Sustainability tracking
   carbonScore: {

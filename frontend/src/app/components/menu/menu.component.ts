@@ -96,8 +96,7 @@ export class MenuComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadCategories();
-    this.loadMenuItems();
+    this.loadMenu();
     this.loadCart();
     this.isLoggedIn = this.authService.isAuthenticated();
 
@@ -114,22 +113,19 @@ export class MenuComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadCategories(): void {
-    this.categoryService.getActiveCategories().subscribe({
-      next: (categories: Category[]) => {
-        this.categories = [{ name: 'all', displayName: 'All' }, ...categories];
-      },
-      error: (error: any) => console.error('Error loading categories:', error)
-    });
-  }
-
-  loadMenuItems(): void {
+  loadMenu(): void {
     this.menuService.getMenuItems().subscribe({
       next: (response: any) => {
         this.menuItems = response.menuItems || [];
         this.filteredItems = [...this.menuItems];
+        
+        // Use categories from API (kitchen-filtered, no extra endpoint)
+        const uniqueCategories = response.categories?.filter((cat: any, index: number, self: any[]) =>
+          index === self.findIndex((c: any) => c.name.toLowerCase() === cat.name.toLowerCase())
+        ) || [];
+        this.categories = [{ name: 'all', displayName: 'All' }, ...uniqueCategories];
       },
-      error: (error: any) => console.error('Error loading menu items:', error)
+      error: (error: any) => console.error('Error loading menu:', error)
     });
   }
 

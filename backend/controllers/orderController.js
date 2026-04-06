@@ -65,7 +65,7 @@ const getOrder = async (req, res) => {
 
 const createOrder = require('../middleware/errorHandler').asyncHandler(async (req, res) => {
   try {
-const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMethod, kitchenId } = req.body || {};
+    const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMethod, kitchenId } = req.body || {};
     
     // Auto-detect kitchenId from menu items if not provided
     let finalKitchenId = kitchenId || req.user?.currentKitchen;
@@ -209,7 +209,7 @@ const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMeth
     }
 
     // Create order with orderNumber and charge breakdown
-const order = new Order({
+    const order = new Order({
       user: req.user._id,
       kitchenId: finalKitchenId,
       orderNumber,
@@ -225,7 +225,6 @@ const order = new Order({
       deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
       profit,
       carbonScore, // NEW
-      loyaltyDiscountUsed: req.body.loyaltyDiscountUsed || 0
     });
 
     const createdOrder = await order.save();
@@ -270,7 +269,7 @@ const order = new Order({
 
         // Email options
         const mailOptions = {
-          from: process.env.EMAIL_FROM || process.env.SMTP_USER || '"Cloud Kitchen" <no-reply@cloudkitchen.com>',
+          from: process.env.EMAIL_FROM || process.env.SMTP_USER || '\"Cloud Kitchen\" <no-reply@cloudkitchen.com>',
           to: customerEmail,
           subject: `Order Confirmed #${createdOrder.orderNumber} — Cloud Kitchen`,
           html: htmlEmail,
@@ -326,8 +325,8 @@ const order = new Order({
     
     // Emit real-time event to admin
     const io = req.app.get('io');
-io.to('adminRoom').emit('newOrder', populatedOrder);
-io.to('adminRoom').emit('revenueUpdated', populatedOrder);
+    io.to('adminRoom').emit('newOrder', populatedOrder);
+    io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     
     res.status(201).json(createdOrder);
   } catch (error) {
@@ -354,24 +353,6 @@ const updateOrderStatus = require('../middleware/errorHandler').asyncHandler(asy
     
     order.orderStatus = req.body.status;
     
-    // Loyalty points earning - auto add when order completes successfully
-    const successStatuses = ['delivered', 'completed'];
-    if (successStatuses.includes(req.body.status) && 
-        order.loyaltyPointsEarned === undefined || 
-        order.loyaltyPointsEarned === 0) {
-      
-      const { addPoints } = require('../services/loyalty.service');
-      const points = Math.floor(order.totalAmount / 10);
-      
-      if (points > 0) {
-        const reason = `Order #${order.orderNumber}`;
-        const result = await addPoints(order.user, points, reason, order._id);
-        
-        order.loyaltyPointsEarned = points;
-        console.log(`🎁 Loyalty points added: ${points} for order ${order.orderNumber}`);
-      }
-    }
-    
     const updatedOrder = await order.save();
 
     // For dine-in orders, when status is 'completed', set table back to available
@@ -397,9 +378,9 @@ const updateOrderStatus = require('../middleware/errorHandler').asyncHandler(asy
     // Emit real-time events
     const io = req.app.get('io');
     
-// 1. Emit to admin room
-io.to('adminRoom').emit('orderUpdated', populatedOrder);
-io.to('adminRoom').emit('revenueUpdated', populatedOrder);
+    // 1. Emit to admin room
+    io.to('adminRoom').emit('orderUpdated', populatedOrder);
+    io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     
     // 2. Emit to specific order room
     io.to(orderRoom).emit('orderStatusChanged', populatedOrder);

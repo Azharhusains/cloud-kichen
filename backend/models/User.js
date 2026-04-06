@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-enum: ['CUSTOMER', 'KITCHEN_OWNER', 'ADMIN', 'SUPER_ADMIN'],
+    enum: ['CUSTOMER', 'KITCHEN_OWNER', 'ADMIN', 'SUPER_ADMIN'],
     default: 'CUSTOMER'
   },
   resetToken: String,
@@ -36,10 +36,6 @@ enum: ['CUSTOMER', 'KITCHEN_OWNER', 'ADMIN', 'SUPER_ADMIN'],
     type: Number,
     default: 0,
   },
-  loyalty: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Loyalty'
-  },
   currentKitchen: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Kitchen'
@@ -53,9 +49,7 @@ enum: ['CUSTOMER', 'KITCHEN_OWNER', 'ADMIN', 'SUPER_ADMIN'],
 });
 
 // Production indexes:
-// email: unique lookup (already indexed by unique:true, ensure compound)
 userSchema.index({ email: 1 });
-// role: admin queries, role-based filtering
 userSchema.index({ role: 1 });
 userSchema.index({ currentKitchen: 1 });
 userSchema.index({ 'ownedKitchens': 1 });

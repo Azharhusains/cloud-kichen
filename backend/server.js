@@ -83,10 +83,8 @@ app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/categories', require('./routes/category'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/payment', require('./routes/payment'));
-app.use('/api/coupons', require('./routes/coupon'));
 app.use('/api/tables', require('./routes/table'));
 app.use('/api/recommendations', require('./routes/recommendations'));
-app.use('/api/loyalty', require('./routes/loyalty'));
 app.use('/api/kitchens', require('./routes/kitchens'));
 app.use('/api/admin', require('./routes/admin'));
 
@@ -106,4 +104,3 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-

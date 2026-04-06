@@ -19,17 +19,13 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
 
 // Services
 import { AuthService } from '../../services/auth.service';
-
 import { OrderService } from '../../services/order.service';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { InvoiceComponent } from '../invoice/invoice.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../admin/confirm-dialog/confirm-dialog.component';
-import { LoyaltyService } from '../../services/loyalty.service';
 import { KitchenCreateModalComponent } from './kitchen-create-modal/kitchen-create-modal.component';
 import { MatProgressBar } from "@angular/material/progress-bar";
 import { KitchenService, Kitchen } from '../../services/kitchen.service';
-
-
 
 @Component({
   selector: 'app-profile',
@@ -47,8 +43,7 @@ import { KitchenService, Kitchen } from '../../services/kitchen.service';
     MatChipsModule,
     MatSelectModule,
     MatProgressSpinnerModule,
-    MatDialogModule,
-    MatProgressBar
+    MatDialogModule
 ],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
@@ -80,7 +75,6 @@ export class ProfileComponent implements OnInit {
   showAddressForm: boolean = false;
   addressForm: FormGroup;
   searchTerm: string = '';
-  loyalty: any = null;
   loadingKitchens = false;
 
   // SuperAdmin kitchen management
@@ -88,13 +82,11 @@ export class ProfileComponent implements OnInit {
   pagination: any = {};
   loadingAllKitchens = false;
 
-
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private kitchenService: KitchenService,
     private orderService: OrderService,
-    private loyaltyService: LoyaltyService,
     private router: Router,
     public dialog: MatDialog
   ) {
@@ -107,10 +99,8 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-
   ngOnInit(): void {
     this.loadUserProfile();
-    this.loadLoyalty();
     this.loadOrders();
     this.loadKitchens();
     // Subscribe to user changes (includes kitchen updates)
@@ -122,7 +112,6 @@ export class ProfileComponent implements OnInit {
       }
     });
   }
-
 
   loadKitchens(): void {
     this.loadingKitchens = true;
@@ -156,76 +145,6 @@ export class ProfileComponent implements OnInit {
     if (!kitchenId) return 'No kitchen selected';
     const kitchen = this.kitchens.find(k => k._id === kitchenId);
     return kitchen ? kitchen.name : 'Unknown kitchen';
-  }
-
-  getCurrentTier(): string {
-    if (!this.loyalty?.program?.tiers) return 'Bronze';
-    const points = this.loyalty.stats?.totalPoints || 0;
-    const tiers = this.loyalty.program.tiers;
-    
-    for (let i = tiers.length - 1; i >= 0; i--) {
-      if (points >= tiers[i].minPoints) {
-        return tiers[i].name;
-      }
-    }
-    return 'Bronze';
-  }
-
-  getNextTier(): any {
-    if (!this.loyalty?.program?.tiers) return null;
-    const points = this.loyalty.stats?.totalPoints || 0;
-    const tiers = this.loyalty.program.tiers;
-    
-    for (let i = 0; i < tiers.length; i++) {
-      if (points < tiers[i].minPoints) {
-        return tiers[i];
-      }
-    }
-    return null; // Already at max tier
-  }
-
-  getTierProgress(): number {
-    if (!this.loyalty?.program?.tiers) return 0;
-    const points = this.loyalty.stats?.totalPoints || 0;
-    const tiers = this.loyalty.program.tiers;
-    
-    let currentTierIndex = 0;
-    for (let i = tiers.length - 1; i >= 0; i--) {
-      if (points >= tiers[i].minPoints) {
-        currentTierIndex = i;
-        break;
-      }
-    }
-    
-    const currentTier = tiers[currentTierIndex];
-    const nextTier = tiers[currentTierIndex + 1];
-    
-    if (!nextTier) return 100; // Max tier
-    
-    const progress = ((points - currentTier.minPoints) / (nextTier.minPoints - currentTier.minPoints)) * 100;
-    return Math.min(100, Math.max(0, progress));
-  }
-
-  getTierProgressText(): string {
-    if (!this.loyalty?.program?.tiers) return '';
-    const points = this.loyalty.stats?.totalPoints || 0;
-    const nextTier = this.getNextTier();
-    
-    if (!nextTier) return 'You have reached the maximum tier!';
-    const pointsNeeded = nextTier.minPoints - points;
-    return `${pointsNeeded} more points to reach ${nextTier.name} tier`;
-  }
-
-  loadLoyalty(): void {
-    this.loyaltyService.getLoyalty().subscribe({
-      next: (data: any) => {
-        this.loyalty = data;
-        console.log(this.loyalty)
-      },
-      error: (err: any) => {
-        console.error('Failed to load loyalty:', err);
-      }
-    });
   }
 
   loadUserProfile(): void {
@@ -453,7 +372,7 @@ export class ProfileComponent implements OnInit {
       width: '400px',
       data: {
         title: 'Delete Kitchen Confirmation',
-        message: `Are you sure you want to delete "${kitchen.name}"? This will set it to inactive status.`,
+        message: `Are you sure you want to delete \"${kitchen.name}\"? This will set it to inactive status.`,
         itemName: kitchen.name,
         confirmText: 'Delete Kitchen',
         cancelText: 'Cancel'
@@ -481,4 +400,3 @@ export class ProfileComponent implements OnInit {
     }
   }
 }
-

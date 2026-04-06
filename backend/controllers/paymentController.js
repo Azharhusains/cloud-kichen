@@ -1,7 +1,6 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Order = require('../models/Order');
-const Coupon = require('../models/Coupon');
 
 const rzp = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -11,48 +10,13 @@ const rzp = new Razorpay({
 // Create Payment Intent/Session for checkout
 const createPaymentSession = async (req, res) => {
   try {
-    const { orderData, couponCode } = req.body;
+    const { orderData } = req.body;
     if (!orderData) {
       return res.status(400).json({ message: 'orderData is required' });
     }
     const { items, deliveryAddress, subtotal, totalAmount } = orderData;
     
-    let finalTotal = totalAmount;
-    let usedCouponCode = null;
-    let couponDiscount = 0;
-
-    // Validate coupon if provided
-    if (couponCode) {
-      const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
-      if (!coupon) {
-        return res.status(400).json({ message: 'Invalid coupon code' });
-      }
-
-      const now = new Date();
-      if (now < coupon.validFrom || now > coupon.validUntil) {
-        return res.status(400).json({ message: 'Coupon not valid for current date' });
-      }
-
-      if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) {
-        return res.status(400).json({ message: 'Coupon usage limit reached' });
-      }
-
-      if (subtotal < coupon.minOrderAmount) {
-        return res.status(400).json({ message: `Minimum order amount ${coupon.minOrderAmount} required for this coupon` });
-      }
-
-      if (coupon.discountType === 'percentage') {
-        couponDiscount = subtotal * (coupon.discountValue / 100);
-      } else {
-        couponDiscount = coupon.discountValue;
-      }
-
-      couponDiscount = Math.min(couponDiscount, subtotal * 0.5); // Max 50% discount
-      finalTotal = totalAmount - couponDiscount;
-
-      usedCouponCode = coupon.code;
-      await coupon.updateOne({ $inc: { usedCount: 1 } });
-    }
+    const finalTotal = totalAmount;
 
     // Create Razorpay Order
     if (!rzp || !process.env.RAZORPAY_KEY_ID) {
@@ -66,8 +30,6 @@ const createPaymentSession = async (req, res) => {
         userId: req.user._id.toString(),
         orderItems: JSON.stringify(items),
         subtotal,
-        couponCode: usedCouponCode || '',
-        couponDiscount,
         deliveryAddress: deliveryAddress
       }
     });
@@ -76,9 +38,7 @@ const createPaymentSession = async (req, res) => {
       razorpayOrderId: razorpayOrder.id,
       razorpayKeyId: process.env.RAZORPAY_KEY_ID,
       amount: razorpayOrder.amount,
-      finalTotal,
-      couponDiscount,
-      usedCouponCode
+      finalTotal
     });
   } catch (error) {
     console.error('Payment session error:', error);
@@ -111,8 +71,6 @@ const verifyPayment = async (req, res) => {
     const items = JSON.parse(notes.orderItems || '[]');
     const userId = notes.userId;
     const subtotal = parseFloat(notes.subtotal) || 0;
-    const couponCode = notes.couponCode || null;
-    const couponDiscount = parseFloat(notes.couponDiscount) || 0;
 
     const deliveryCharge = 2.99;
     const taxRate = 0.05;
@@ -153,11 +111,8 @@ const verifyPayment = async (req, res) => {
       paymentMethod: 'online',
       razorpayOrderId: razorpay_order_id,
       razorpayPaymentId: razorpay_payment_id,
-      transactionId: razorpay_payment_id,
-      couponCode,
-      couponDiscount
+      transactionId: razorpay_payment_id
     });
-
 
     const savedOrder = await dbOrder.save();
 
@@ -223,5 +178,3 @@ const processRefund = async (order) => {
 };
 
 module.exports = { createPaymentSession, verifyPayment, processRefund };
-
-
