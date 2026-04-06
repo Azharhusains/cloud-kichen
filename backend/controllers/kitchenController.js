@@ -188,6 +188,52 @@ const getKitchenById = async (req, res) => {
   }
 };
 
+// @desc    Update kitchen (SUPER_ADMIN only)
+// @route   PATCH /api/kitchens/:id
+// @access  SUPER_ADMIN
+const updateKitchen = async (req, res) => {
+  try {
+    if (req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'SUPER_ADMIN access only' });
+    }
+
+    const { name, locations, status, ownerId } = req.body;
+
+    const kitchen = await Kitchen.findById(req.params.id);
+    if (!kitchen) {
+      return res.status(404).json({ message: 'Kitchen not found' });
+    }
+
+    // Validate new owner if provided
+    if (ownerId && ownerId !== kitchen.ownerId.toString()) {
+      const newOwner = await User.findById(ownerId);
+      if (!newOwner) {
+        return res.status(400).json({ message: 'Invalid owner ID' });
+      }
+      kitchen.ownerId = ownerId;
+    }
+
+    if (name !== undefined) kitchen.name = name;
+    if (locations !== undefined) kitchen.locations = locations;
+    if (status !== undefined) {
+      kitchen.status = status;
+      // Sync subscription
+      await Subscription.findOneAndUpdate(
+        { kitchenId: kitchen._id },
+        { status: status === 'active' ? 'active' : 'paused' }
+      );
+    }
+
+    await kitchen.save();
+
+    const populated = await Kitchen.findById(kitchen._id).populate('ownerId', 'name email');
+    res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 module.exports = {
   createKitchen,
   getMyKitchens,
@@ -195,6 +241,8 @@ module.exports = {
   getKitchenDashboard,
   addTeamMember,
   getAllActiveKitchens,
-  getKitchenById
+  getKitchenById,
+  updateKitchen
 };
+
 

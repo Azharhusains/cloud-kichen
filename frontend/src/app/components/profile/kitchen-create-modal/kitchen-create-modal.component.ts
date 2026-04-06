@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -7,28 +7,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { KitchenService } from '../../../services/kitchen.service';
-
-export interface Kitchen {
-  _id: string;
-  name: string;
-  ownerId: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  locations: any[];
-  status: string;
-}
-
-interface KitchenFormData {
-  name: string;
-  street?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-}
+import { MatSelectModule } from '@angular/material/select';
+import { KitchenService, Kitchen } from '../../../services/kitchen.service';
 
 @Component({
   selector: 'app-kitchen-create-modal',
@@ -41,14 +21,17 @@ interface KitchenFormData {
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSelectModule
   ],
   templateUrl: './kitchen-create-modal.component.html',
   styleUrls: ['./kitchen-create-modal.component.scss']
 })
-export class KitchenCreateModalComponent {
+export class KitchenCreateModalComponent implements OnInit {
   kitchenForm: FormGroup;
   loading = false;
+  isEditMode = false;
+  statusOptions = ['active', 'inactive', 'maintenance'];
 
   constructor(
     private fb: FormBuilder,
@@ -56,22 +39,41 @@ export class KitchenCreateModalComponent {
     public dialogRef: MatDialogRef<KitchenCreateModalComponent>,
     @Inject(MAT_DIALOG_DATA) public data?: { kitchen?: Kitchen }
   ) {
+    this.isEditMode = !!data?.kitchen;
     this.kitchenForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       street: ['', Validators.required],
       city: ['', Validators.required],
       state: [''],
       zipCode: [''],
-      country: ['India']
+      country: ['India'],
+      status: ['active', Validators.required]
     });
   }
 
-  createKitchen(): void {
+  ngOnInit() {
+    if (this.isEditMode && this.data?.kitchen) {
+      const kitchen = this.data.kitchen;
+      const primaryLocation = kitchen.locations?.[0] || {};
+      this.kitchenForm.patchValue({
+        name: kitchen.name,
+        street: primaryLocation.street || '',
+        city: primaryLocation.city || '',
+        state: primaryLocation.state || '',
+        zipCode: primaryLocation.zipCode || '',
+        country: primaryLocation.country || 'India',
+        status: kitchen.status
+      });
+    }
+  }
+
+  saveKitchen(): void {
     if (this.kitchenForm.valid && !this.loading) {
       this.loading = true;
-      const formValue: KitchenFormData = this.kitchenForm.value;
+      const formValue = this.kitchenForm.value;
       const kitchenData = {
         name: formValue.name,
+        status: formValue.status,
         locations: [{
           street: formValue.street,
           city: formValue.city,
@@ -81,15 +83,18 @@ export class KitchenCreateModalComponent {
         }]
       };
 
-      this.kitchenService.createKitchen(kitchenData).subscribe({
-        next: (newKitchen: Kitchen) => {
+      const request = this.isEditMode 
+        ? this.kitchenService.updateKitchen(this.data!.kitchen!._id, kitchenData)
+        : this.kitchenService.createKitchen(kitchenData);
+
+      request.subscribe({
+        next: (kitchen: Kitchen) => {
           this.loading = false;
-          this.dialogRef.close(newKitchen);
+          this.dialogRef.close(kitchen);
         },
         error: (error: any) => {
-          console.error('Error creating kitchen:', error);
+          console.error(this.isEditMode ? 'Error updating kitchen' : 'Error creating kitchen:', error);
           this.loading = false;
-          // TODO: Show toast error
         }
       });
     }
@@ -99,4 +104,3 @@ export class KitchenCreateModalComponent {
     this.dialogRef.close();
   }
 }
-

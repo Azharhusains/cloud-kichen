@@ -1,16 +1,26 @@
 <div class="modal-container" mat-dialog-content>
   <div class="header">
     <mat-icon color="primary">storefront</mat-icon>
-    <h2 mat-dialog-title>Create New Kitchen</h2>
+    <h2 mat-dialog-title>{{ isEditMode ? 'Edit Kitchen' : 'Create New Kitchen' }}</h2>
   </div>
 
-  <form [formGroup]="kitchenForm" (ngSubmit)="createKitchen()">
+  <form [formGroup]="kitchenForm" (ngSubmit)="saveKitchen()">
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Kitchen Name</mat-label>
       <input matInput formControlName="name" placeholder="e.g., Cloud Kitchen Central">
       <mat-icon matPrefix>restaurant</mat-icon>
       <mat-error *ngIf="kitchenForm.get('name')?.hasError('required')">Kitchen name is required</mat-error>
       <mat-error *ngIf="kitchenForm.get('name')?.hasError('minlength')">Name must be at least 3 characters</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        <mat-option *ngFor="let status of statusOptions" [value]="status">
+          {{ status | titlecase }}
+        </mat-option>
+      </mat-select>
+      <mat-icon matPrefix>toggle_on</mat-icon>
     </mat-form-field>
 
     <div class="form-section">
@@ -59,8 +69,8 @@
         [disabled]="kitchenForm.invalid || loading"
         class="submit-btn">
         <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
-        <mat-icon *ngIf="!loading">add_business</mat-icon>
-        {{ loading ? 'Creating...' : 'Create Kitchen' }}
+        <mat-icon *ngIf="!loading">{{ isEditMode ? 'edit' : 'add_business' }}</mat-icon>
+        {{ loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Kitchen' : 'Create Kitchen') }}
       </button>
     </div>
   </form>

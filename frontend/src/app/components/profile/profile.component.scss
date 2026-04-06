@@ -689,6 +689,116 @@
   }
 }
 
+/* Kitchen Management Table */
+.kitchen-management-table {
+  .kitchen-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .kitchen-name {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      mat-icon {
+        color: #667eea;
+      }
+
+      div {
+        p {
+          margin: 0;
+          color: #666;
+          font-size: 0.9rem;
+        }
+      }
+    }
+
+    .kitchen-status {
+      flex-shrink: 0;
+    }
+
+    .kitchen-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+
+      button {
+        border-radius: 6px !important;
+        transition: all 0.2s ease;
+
+        &:hover {
+          transform: scale(1.05);
+        }
+      }
+    }
+  }
+}
+
+.loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #666;
+
+  p {
+    margin: 12px 0 0 0;
+  }
+}
+
+.no-kitchens {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #ccc;
+    margin-bottom: 12px;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+/* Status Chips for Kitchen */
+.status-chip {
+  font-size: 0.8rem;
+  font-weight: 500;
+  height: 28px;
+
+  &.status-active {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+  }
+
+  &.status-inactive {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+  }
+
+  &.status-maintenance {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+  }
+}
+
+
 /* Responsive */
 @media (max-width: 768px) {
   .profile-header {

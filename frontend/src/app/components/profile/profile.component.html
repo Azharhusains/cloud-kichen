@@ -61,7 +61,60 @@
             </div>
         </mat-card-content>
       </mat-card>
+
+      <!-- SuperAdmin: All Kitchens Management Table -->
+      <div class="section" *ngIf="user && user.role === 'SUPER_ADMIN'">
+        <mat-card class="section-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>list_alt</mat-icon>
+              All Kitchens Management ({{ allKitchens.length }})
+            </mat-card-title>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <div *ngIf="loadingAllKitchens" class="loading-center">
+              <mat-spinner diameter="40"></mat-spinner>
+              <p>Loading kitchens...</p>
+            </div>
+
+            <div class="kitchen-management-table" *ngIf="!loadingAllKitchens && allKitchens.length > 0">
+              <div *ngFor="let kitchen of allKitchens" class="kitchen-row animate-item">
+                <div class="kitchen-name">
+                  <mat-icon>storefront</mat-icon>
+                  <div>
+                    <strong>{{ kitchen.name }}</strong>
+                    <p>{{ kitchen.ownerId?.name || 'No owner' }} ({{ kitchen.ownerId?.email }})</p>
+                  </div>
+                </div>
+                <div class="kitchen-status">
+                  <mat-chip [class]="'status-chip ' + getKitchenStatusClass(kitchen.status)">
+                    {{ kitchen.status | titlecase }}
+                  </mat-chip>
+                </div>
+                <div class="kitchen-actions">
+                  <button mat-icon-button color="primary" (click)="toggleKitchenStatus(kitchen)" matTooltip="Toggle Status">
+                    <mat-icon>{{ kitchen.status === 'active' ? 'pause' : 'play_arrow' }}</mat-icon>
+                  </button>
+                  <button mat-icon-button color="accent" (click)="openEditKitchenModal(kitchen)" matTooltip="Edit">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="deleteKitchen(kitchen)" matTooltip="Delete (Inactive)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="no-kitchens" *ngIf="!loadingAllKitchens && allKitchens.length === 0">
+              <mat-icon>storefront</mat-icon>
+              <p>No kitchens found</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
     </div>
+
 
     <!-- Loyalty Section -->
     <div class="section" *ngIf="loyalty && loyalty.program">

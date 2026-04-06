@@ -6,9 +6,10 @@ const {
   getKitchenDashboard,
   addTeamMember,
   getAllActiveKitchens,
-  getKitchenById
+  getKitchenById,
+  updateKitchen
 } = require('../controllers/kitchenController');
-const { protect, kitchenOwner } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 const { requireKitchenContext, authorizeKitchenAccess, checkSubscription } = require('../middleware/kitchenAuth');
 const { kitchenCreate, addTeamMember: validateAddTeamMember } = require('../middleware/validation');
 
@@ -40,6 +41,10 @@ router.get('/', protect, getMyKitchens);
 
 // @desc Switch current kitchen
 router.patch('/:id/switch', protect, switchCurrentKitchen);
+
+// @desc Update kitchen (SUPER_ADMIN only)
+router.patch('/:id', protect, authorize('SUPER_ADMIN'), updateKitchen);
+
 
 // @desc Kitchen dashboard (with subscription check)
 router.get('/:id/dashboard', protect, requireKitchenContext, checkSubscription(), getKitchenDashboard);

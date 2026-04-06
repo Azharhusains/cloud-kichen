@@ -18,7 +18,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 
 // Services
-import { AuthService, Kitchen } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
+
 import { OrderService } from '../../services/order.service';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { InvoiceComponent } from '../invoice/invoice.component';
@@ -26,6 +27,9 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../admin/confirm-dial
 import { LoyaltyService } from '../../services/loyalty.service';
 import { KitchenCreateModalComponent } from './kitchen-create-modal/kitchen-create-modal.component';
 import { MatProgressBar } from "@angular/material/progress-bar";
+import { KitchenService, Kitchen } from '../../services/kitchen.service';
+
+
 
 @Component({
   selector: 'app-profile',
@@ -79,9 +83,16 @@ export class ProfileComponent implements OnInit {
   loyalty: any = null;
   loadingKitchens = false;
 
+  // SuperAdmin kitchen management
+  allKitchens: Kitchen[] = [];
+  pagination: any = {};
+  loadingAllKitchens = false;
+
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private kitchenService: KitchenService,
     private orderService: OrderService,
     private loyaltyService: LoyaltyService,
     private router: Router,
@@ -96,6 +107,7 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+
   ngOnInit(): void {
     this.loadUserProfile();
     this.loadLoyalty();
@@ -104,8 +116,13 @@ export class ProfileComponent implements OnInit {
     // Subscribe to user changes (includes kitchen updates)
     this.authService.user$.subscribe(user => {
       this.user = user;
+      // Load all kitchens if superadmin
+      if (user.role === 'SUPER_ADMIN') {
+        this.loadAllKitchens();
+      }
     });
   }
+
 
   loadKitchens(): void {
     this.loadingKitchens = true;
@@ -378,4 +395,90 @@ export class ProfileComponent implements OnInit {
       }
     });
   }
+
+  // SuperAdmin: Load all kitchens
+  loadAllKitchens(): void {
+    if (this.user?.role !== 'SUPER_ADMIN') return;
+
+    this.loadingAllKitchens = true;
+    this.kitchenService.getAllKitchens(1, 10).subscribe({
+      next: (response) => {
+        this.allKitchens = response.kitchens;
+        this.pagination = response.pagination;
+        this.loadingAllKitchens = false;
+      },
+      error: (err) => {
+        console.error('Error loading all kitchens:', err);
+        this.loadingAllKitchens = false;
+      }
+    });
+  }
+
+  // Toggle kitchen status
+  toggleKitchenStatus(kitchen: Kitchen): void {
+    const newStatus = kitchen.status === 'active' ? 'inactive' : 'active';
+    this.kitchenService.toggleKitchenStatus(kitchen._id, newStatus).subscribe({
+      next: (updated) => {
+        const index = this.allKitchens.findIndex(k => k._id === kitchen._id);
+        if (index > -1) {
+          this.allKitchens[index] = updated;
+        }
+      },
+      error: (err) => console.error('Toggle failed:', err)
+    });
+  }
+
+  // Open edit modal
+  openEditKitchenModal(kitchen: Kitchen): void {
+    const dialogRef = this.dialog.open(KitchenCreateModalComponent, {
+      width: '500px',
+      maxWidth: '95vw',
+      data: { kitchen }
+    });
+
+    dialogRef.afterClosed().subscribe((updatedKitchen) => {
+      if (updatedKitchen) {
+        const index = this.allKitchens.findIndex(k => k._id === updatedKitchen._id);
+        if (index > -1) {
+          this.allKitchens[index] = updatedKitchen;
+        }
+        this.loadAllKitchens();
+      }
+    });
+  }
+
+  // Delete kitchen confirm & call
+  deleteKitchen(kitchen: Kitchen): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Kitchen Confirmation',
+        message: `Are you sure you want to delete "${kitchen.name}"? This will set it to inactive status.`,
+        itemName: kitchen.name,
+        confirmText: 'Delete Kitchen',
+        cancelText: 'Cancel'
+      } as ConfirmDialogData
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.kitchenService.deleteKitchen(kitchen._id).subscribe({
+          next: () => {
+            this.allKitchens = this.allKitchens.filter(k => k._id !== kitchen._id);
+          },
+          error: (err) => console.error('Delete failed:', err)
+        });
+      }
+    });
+  }
+
+  getKitchenStatusClass(status: string): string {
+    switch (status) {
+      case 'active': return 'status-active';
+      case 'inactive': return 'status-inactive';
+      case 'maintenance': return 'status-maintenance';
+      default: return '';
+    }
+  }
 }
+

@@ -1,52 +1,31 @@
-# Fix 401 Unauthorized on HEAD /api/auth/profile (logged in but no token/verify fail)
+# SuperAdmin Kitchen Management - Implementation TODO
 
-## Diagnosis
-Route `/api/auth/profile` → `protect` middleware → JWT verify → User.findById
-Possible causes:
-1. No token in localStorage 'token'
-2. JWT_SECRET mismatch (token generated before secret change)
-3. Token expired/malformed  
-4. User deleted post-login
+## Current Task: Enable superAdmin update/delete/active-inactive kitchens in profile, reuse kitchen-create-modal for edit
 
-## Plan Steps
-### Step 1: Enhance auth middleware logging [PENDING]
-Add logs for token presence, payload decode, user lookup.
+### Breakdown from Approved Plan:
 
-### Step 2: Verify frontend login saves token [PENDING]
-Check AuthService.login() → setToken()
+1. **[DONE ☑️] Modify KitchenCreateModalComponent for dual create/edit mode**
+   - Updated `frontend/src/app/components/profile/kitchen-create-modal/kitchen-create-modal.component.ts`
+   - Added edit mode detection, form population, conditional update/create call
+   - Added status dropdown
+   
+2. **[DONE ☑️] Update kitchen-create-modal.html**
+   - Added conditional title/icon/text, status field
+   
+3. **[DONE ☑️] Update profile.component.ts**
+   - Removed KitchenEditModalComponent import
+   - openEditKitchenModal now uses KitchenCreateModalComponent with data, refreshes list
+   
+4. **[PENDING] Update profile.component.html**
+   - Update edit button tooltip if needed
+   
+5. **[PENDING] Update TODO-kitchen-management.md**
+   - Mark all steps complete
+   
+6. **[PENDING] Testing**
+   - Backend restart
+   - Frontend ng serve
+   - Full flow test: create → edit → toggle → delete
 
-### Step 3: Manual token test [PENDING]
-curl -H \"Authorization: Bearer \$TOKEN\" -I localhost:5000/api/auth/profile
-
-### Step 4: .env JWT_SECRET check [PENDING]
-
-### Step 5: Clear storage + re-login [PENDING]
-
-### Step 6: Test endpoint [DONE when 200]
-
-**Progress:** 
-- [x] Enhanced logging (already good)
-- [ ] Network service fix (pending edits)
-
-
-**401 FIXED ✅**
-
-**Changes:**
-- ✅ network.service.ts: ping → /health (no more auth 401s)
-- ✅ backend/server.js: Added public /health endpoint
-
-**Restart both:**
-```
-cd backend && npm start
-ng serve
-```
-
-**Verify:** Network tab → periodic HEAD /health (200) no /auth/profile
-
-**All Fixed!**
-- 401 pings → /api/health (200)
-- Network status → Auto-hide 5s on change only
-
-**Restart:** `ng serve`
-
+**Next Action:** Testing (steps 5-6)
 
