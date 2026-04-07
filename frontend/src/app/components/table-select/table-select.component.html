@@ -29,32 +29,27 @@
 
       <!-- Table Number Input (only for dine-in) -->
       <div class="table-input-section" *ngIf="orderType === 'dine-in'">
-        <h3>Enter Your Table Number</h3>
-        <p class="hint">Find the table number on your table or scan the QR code</p>
+        <h3>Select Your Table</h3>
+        <p class="hint">Choose from available tables</p>
         
-        <form [formGroup]="tableForm" (ngSubmit)="verifyTable()">
+        <form [formGroup]="tableForm">
           <mat-form-field appearance="outline" class="table-input">
-            <mat-label>Table Number</mat-label>
-            <input matInput formControlName="tableNumber" 
-                   placeholder="e.g., T1, A1, 5" 
-                   maxlength="10"
-                   autocomplete="off">
+            <mat-label>Select Table</mat-label>
+            <mat-select formControlName="tableNumber" 
+                        (selectionChange)="onTableSelect($event.value)"
+                        placeholder="Choose your table">
+              <mat-option *ngFor="let table of availableTables" [value]="table.tableNumber">
+                Table {{ table.tableNumber }} ({{ table.capacity }} seats{{ table.location ? ', ' + table.location : '' }})
+              </mat-option>
+            </mat-select>
             <mat-icon matPrefix>table_bar</mat-icon>
           </mat-form-field>
-          
-          <div class="error-message" *ngIf="error">
-            <mat-icon>error</mat-icon>
-            {{ error }}
-          </div>
-
-          <button mat-raised-button color="primary" 
-                  type="submit" 
-                  [disabled]="!tableForm.valid || loading"
-                  class="verify-btn">
-            <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
-            <span *ngIf="!loading">Verify Table</span>
-          </button>
         </form>
+        
+        <div class="error-message" *ngIf="error">
+          <mat-icon>error</mat-icon>
+          {{ error }}
+        </div>
 
         <!-- Selected Table Info -->
         <div class="selected-table" *ngIf="selectedTable">

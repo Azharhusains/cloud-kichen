@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/:tableNumber', getTable);
 
 // Protected routes - only admin can manage tables
-router.get('/', protect, authorize('ADMIN', 'SUPER_ADMIN'), getTables);
+router.get('/', getTables);
 router.post('/', protect, authorize('ADMIN', 'SUPER_ADMIN'), createTable);
 router.put('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN'), updateTable);
 router.delete('/:id', protect, authorize('ADMIN', 'SUPER_ADMIN'), deleteTable);

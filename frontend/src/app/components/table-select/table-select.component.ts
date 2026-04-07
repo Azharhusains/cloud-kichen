@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
 
 // Services
 import { TableService } from '../../services/table.service';
@@ -29,6 +30,7 @@ import { CartService } from '../../services/cart.service';
     MatFormFieldModule,
     MatInputModule,
     MatRadioModule,
+    MatSelectModule,
     MatProgressSpinnerModule,
     MatSnackBarModule
   ],
@@ -41,6 +43,9 @@ export class TableSelectComponent implements OnInit {
   error: string = '';
   selectedTable: any = null;
   orderType: 'delivery' | 'dine-in' = 'delivery';
+
+  tables: any[] = [];
+  availableTables: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -62,6 +67,7 @@ export class TableSelectComponent implements OnInit {
       });
       this.router.navigate(['/menu']);
     }
+    this.loadTables();
   }
 
   onOrderTypeChange(type: 'delivery' | 'dine-in'): void {
@@ -75,41 +81,25 @@ export class TableSelectComponent implements OnInit {
     }
   }
 
-  verifyTable(): void {
-    if (!this.tableForm.valid) return;
-    
+  verifyTable(table?: any): void {
     this.loading = true;
     this.error = '';
-    
-    const tableNumber = this.tableForm.get('tableNumber')?.value.trim().toUpperCase();
-    
-    this.tableService.getTableByNumber(tableNumber).subscribe({
-      next: (table) => {
-        this.selectedTable = table;
-        this.loading = false;
-        
-        // Check table status
-        if (table.status === 'occupied') {
-          this.error = `Table ${tableNumber} is currently occupied. Please choose a different table or try delivery.`;
-          this.selectedTable = null;
-          return;
-        }
-        
-        if (table.status === 'reserved') {
-          this.error = `Table ${tableNumber} is reserved. Please choose a different table or try delivery.`;
-          this.selectedTable = null;
-          return;
-        }
-        
-        // Table is available - store table info in cart service for checkout
-        this.cartService.setTableInfo(table);
-      },
-      error: (err) => {
-        this.loading = false;
-        this.error = 'Table not found. Please check the table number.';
-        this.selectedTable = null;
-      }
-    });
+
+    let selectedTableData = table;
+    if (!table) {
+      const tableNumber = this.tableForm.get('tableNumber')?.value;
+      selectedTableData = this.availableTables.find(t => t.tableNumber === tableNumber);
+    }
+
+    if (!selectedTableData) {
+      this.loading = false;
+      this.error = 'Please select a valid table.';
+      return;
+    }
+
+    this.selectedTable = selectedTableData;
+    this.loading = false;
+    this.cartService.setTableInfo(this.selectedTable);
   }
 
   proceedToCheckout(): void {
@@ -126,6 +116,28 @@ export class TableSelectComponent implements OnInit {
     this.selectedTable = null;
     this.tableForm.reset();
     this.cartService.clearTableInfo();
+  }
+
+  loadTables(): void {
+    this.tableService.getTables().subscribe({
+      next: (tables) => {
+        this.tables = tables;
+        this.availableTables = tables
+          .filter(table => table.status === 'available')
+          .sort((a, b) => a.tableNumber.localeCompare(b.tableNumber));
+      },
+      error: () => {
+        this.snackBar.open('Failed to load tables', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  onTableSelect(tableNumber: string): void {
+    this.tableForm.patchValue({ tableNumber });
+    const table = this.availableTables.find(t => t.tableNumber === tableNumber);
+    if (table) {
+      this.verifyTable(table);
+    }
   }
 }
 
