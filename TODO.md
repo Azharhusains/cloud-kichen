@@ -1,12 +1,12 @@
-# Fix: Customers seeing inactive kitchen menus when only main kitchen active
+# Dine-In Multi-Kitchen Order Fix ✅
 
-## Plan Steps:
-- [x] 1. Create this TODO.md
-- [x] 2. Update backend/controllers/menuController.js to filter customer menus by active/current kitchen
-- [x] 3. Test backend endpoint /api/menu for customer token  
-- [x] 4. Restart backend server
-- [ ] 5. Test frontend menu page as customer
-- [x] 6. Complete task
+## Progress
+- [x] Table visibility fixed (tableController.js - public lookup across kitchens)
+- [ ] 1. Update orderController.js (kitchenId from table for dine-in)
+- [ ] 2. Test dine-in order kitchen assignment
+- [ ] 3. Verify kitchen-specific order dashboards
+- [ ] 4. Restart & complete
 
-**Status:** Backend kitchen filter fixed. Added frontend category deduplication for duplicate filters. Mutton items need manual `isAvailable: false` toggle in admin UI for active kitchen. Run `cd frontend && ng serve` to test UI fixes.
+**Current Step:** Update backend/controllers/orderController.js
+
 

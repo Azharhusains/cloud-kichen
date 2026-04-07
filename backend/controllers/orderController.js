@@ -70,8 +70,16 @@ const createOrder = require('../middleware/errorHandler').asyncHandler(async (re
     // Auto-detect kitchenId from menu items if not provided
     let finalKitchenId = kitchenId || req.user?.currentKitchen;
     
-    if (!finalKitchenId && items && items.length > 0) {
-      // Get kitchenId from first menu item
+    // DINE-IN PRIORITY: Use table's kitchenId if dine-in order
+    if (orderType === 'dine-in' && tableNumber) {
+      const table = await Table.findOne({ tableNumber, isActive: true });
+      if (!table) {
+        return res.status(400).json({ message: 'Invalid or inactive table number' });
+      }
+      finalKitchenId = table.kitchenId;
+      console.log(`✅ Dine-in order using kitchen from table ${tableNumber}: ${table.kitchenId}`);
+    } else if (!finalKitchenId && items && items.length > 0) {
+      // Fallback: Get kitchenId from first menu item
       const firstMenuItem = await MenuItem.findById(items[0].menuItem);
       if (firstMenuItem && firstMenuItem.kitchenId) {
         finalKitchenId = firstMenuItem.kitchenId;
@@ -79,7 +87,7 @@ const createOrder = require('../middleware/errorHandler').asyncHandler(async (re
     }
     
     if (!finalKitchenId) {
-      return res.status(400).json({ message: 'Kitchen ID required. Set in profile or request body.' });
+      return res.status(400).json({ message: 'Kitchen ID required. Set in profile, table, or menu items.' });
     }
 
     // Verify kitchen exists and is active

@@ -1,9 +1,58 @@
 const Table = require('../models/Table');
+const Kitchen = require('../models/Kitchen');
+
+const getCustomerKitchens = async (req) => {
+  const kitchens = [];
+  
+  // Prioritize currentKitchen if active
+  if (req.user?.currentKitchen) {
+    const currentKitchen = await Kitchen.findOne({
+      _id: req.user.currentKitchen,
+      status: 'active'
+    });
+    if (currentKitchen) {
+      kitchens.push(currentKitchen._id);
+    }
+  }
+  
+  // Add all other active kitchens
+  const allActiveKitchens = await Kitchen.find(
+    { status: 'active' },
+    { _id: 1 }
+  );
+  allActiveKitchens.forEach(kitchen => {
+    if (!kitchens.includes(kitchen._id)) {
+      kitchens.push(kitchen._id);
+    }
+  });
+  
+  return kitchens;
+};
 
 const getTables = async (req, res) => {
   try {
-    const kitchenId = req.kitchen?._id || req.user?.currentKitchen;
-    const tables = await Table.find({ kitchenId, isActive: true }).populate('createdBy updatedBy', 'name').sort({ tableNumber: 1 });
+    let kitchenIds;
+    
+    // Handle CUSTOMER/public kitchen filtering
+    if (req.user?.role === 'CUSTOMER' || !req.user) {
+      kitchenIds = await getCustomerKitchens(req);
+      if (kitchenIds.length === 0) {
+        return res.status(400).json({ message: 'No active kitchens available' });
+      }
+      console.log(`Public/Customer viewing tables from ${kitchenIds.length} kitchen(s)`);
+    } else {
+      const kitchenId = req.kitchen?._id || req.user?.currentKitchen;
+      if (!kitchenId) {
+        return res.status(400).json({ message: 'Kitchen context required' });
+      }
+      kitchenIds = [kitchenId];
+    }
+    
+    const tables = await Table.find({ 
+      kitchenId: { $in: kitchenIds }, 
+      isActive: true 
+    }).populate('createdBy updatedBy', 'name').sort({ tableNumber: 1 });
+    
     res.json(tables);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -12,13 +61,37 @@ const getTables = async (req, res) => {
 
 const getTable = async (req, res) => {
   try {
-    const kitchenId = req.kitchen?._id || req.user?.currentKitchen;
-    const table = await Table.findOne({ tableNumber: req.params.tableNumber, kitchenId, isActive: true });
+    let kitchenIds;
+    
+    // Handle public/CUSTOMER kitchen filtering (QR code scans have no auth)
+    if (req.user?.role === 'CUSTOMER' || !req.user) {
+      kitchenIds = await getCustomerKitchens(req);
+      if (kitchenIds.length === 0) {
+        return res.status(404).json({ message: 'No active kitchens with tables' });
+      }
+      console.log(`Public lookup for table ${req.params.tableNumber} in ${kitchenIds.length} kitchen(s)`);
+    } else {
+      // Admin/staff: use kitchen context
+      const kitchenId = req.kitchen?._id || req.user?.currentKitchen;
+      if (!kitchenId) {
+        return res.status(400).json({ message: 'Kitchen context required' });
+      }
+      kitchenIds = [kitchenId];
+    }
+    
+    const table = await Table.findOne({ 
+      tableNumber: req.params.tableNumber, 
+      kitchenId: { $in: kitchenIds }, 
+      isActive: true 
+    }).populate('createdBy updatedBy', 'name');
+    
     if (!table) {
+      console.log(`Table ${req.params.tableNumber} not found in kitchens:`, kitchenIds.map(id => id.toString()));
       return res.status(404).json({ message: 'Table not found' });
     }
     res.json(table);
   } catch (error) {
+    console.error('getTable error:', error);
     res.status(500).json({ message: error.message });
   }
 };
