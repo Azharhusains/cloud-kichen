@@ -33,7 +33,7 @@
         <p class="hint">Choose from available tables</p>
         
         <form [formGroup]="tableForm">
-          <mat-form-field appearance="outline" class="table-input">
+          <mat-form-field appearance="outline" class="table-input" floatLabel="always">
             <mat-label>Select Table</mat-label>
             <mat-select formControlName="tableNumber" 
                         (selectionChange)="onTableSelect($event.value)"

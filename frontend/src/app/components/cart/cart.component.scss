@@ -97,13 +97,23 @@
   border-radius: 16px !important;
 
   mat-card-header {
-    background: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 20px 24px !important;
     border-bottom: 1px solid #eee;
+    margin: -16px -16px 0 -16px !important;
+    border-radius: 16px 16px 0 0 !important;
 
     mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       margin: 0 !important;
       font-size: 1.25rem !important;
+      color: white !important;
+
+      mat-icon {
+        color: white !important;
+      }
     }
   }
 
@@ -190,9 +200,12 @@
   }
 
   .quantity-section {
+    display: flex;
+    align-items: center;
     .quantity-controls {
       display: flex;
       align-items: center;
+      height: 35px;
       gap: 4px;
       background: white;
       border-radius: 25px;
@@ -201,8 +214,6 @@
 
       button {
         width: 32px;
-        height: 32px;
-        line-height: 32px;
       }
 
       .quantity {

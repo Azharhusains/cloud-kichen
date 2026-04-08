@@ -32,12 +32,6 @@
       </mat-chip-option>
     </mat-chip-listbox>
   </div>
-
-  <!-- Search Results Info -->
-  <div class="search-results-info" *ngIf="searchTerm">
-    <span>Found <span class="search-results-count">{{ filteredItems.length }}</span> items</span>
-  </div>
-
   <!-- Menu Items Grid -->
   <div class="menu-items-grid" @staggerList>
     <mat-card *ngFor="let item of filteredItems" class="menu-item-card" [class.unavailable]="!item.isAvailable">
