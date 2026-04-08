@@ -119,12 +119,12 @@
             <div class="form-row">
               <mat-form-field appearance="outline" class="half-width" floatLabel="always">
                 <mat-label>City</mat-label>
-                <input matInput formControlName="city">
+                <input matInput formControlName="city"  placeholder="Enter your city">
                 <mat-error *ngIf="checkoutForm.get('city')?.invalid">City is required</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline" class="half-width" floatLabel="always">
                 <mat-label>State</mat-label>
-                <input matInput formControlName="state">
+                <input matInput formControlName="state"  placeholder="Enter your state">
                 <mat-error *ngIf="checkoutForm.get('state')?.invalid">State is required</mat-error>
               </mat-form-field>
             </div>
@@ -132,12 +132,12 @@
             <div class="form-row">
               <mat-form-field appearance="outline" class="half-width" floatLabel="always">
                 <mat-label>ZIP Code</mat-label>
-                <input matInput formControlName="zipCode">
+                <input matInput formControlName="zipCode" placeholder="Enter your zipcode">
                 <mat-error *ngIf="checkoutForm.get('zipCode')?.invalid">ZIP code is required</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline" class="half-width" floatLabel="always">
                 <mat-label>Country</mat-label>
-                <input matInput formControlName="country">
+                <input matInput formControlName="country"  placeholder="Enter your country">
                 <mat-error *ngIf="checkoutForm.get('country')?.invalid">Country is required</mat-error>
               </mat-form-field>
             </div>
@@ -150,7 +150,6 @@
           <!-- Payment for Delivery -->
           <div class="payment-section" *ngIf="isAddressSelected()">
             <h4><mat-icon>payment</mat-icon> Payment Method</h4>
-            <mat-divider></mat-divider>
             <mat-radio-group [(ngModel)]="paymentMethod" class="payment-options">
               <mat-radio-button value="online">
                 <mat-icon>credit_card</mat-icon> Pay Online (UPI/Card/Net Banking)
@@ -159,16 +158,6 @@
                 <mat-icon>payments</mat-icon> Cash on Delivery
               </mat-radio-button>
             </mat-radio-group>
-
-            <div class="coupon-section" *ngIf="paymentMethod === 'cod'">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Promo Code (Optional)</mat-label>
-                <input matInput [(ngModel)]="couponCode" (keyup.enter)="applyCoupon()" placeholder="Enter coupon code">
-                <button mat-icon-button matSuffix (click)="applyCoupon()" matTooltip="Apply coupon">
-                  <mat-icon>local_offer</mat-icon>
-                </button>
-              </mat-form-field>
-            </div>
 
             <div class="form-actions">
               <button mat-stroked-button (click)="goBack()">
@@ -225,7 +214,6 @@
                 <mat-icon>arrow_back</mat-icon> Back to Menu
               </button>
               <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="loading">
-                <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
                 {{ loading ? 'Placing Order...' : 'Place Order' }}
               </button>
             </div>
