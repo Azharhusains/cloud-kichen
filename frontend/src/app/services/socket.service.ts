@@ -217,5 +217,26 @@ export class SocketService {
       });
     });
   }
+
+  // NEW: Table lock events
+  onTableLocked(): Observable<any> {
+    console.log('SocketService: Listening for table_locked events');
+    return new Observable(observer => {
+      this.socket.on('table_locked', (data) => {
+        console.log('SocketService: Received table_locked:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  onTableUnlocked(): Observable<any> {
+    console.log('SocketService: Listening for table_unlocked events');
+    return new Observable(observer => {
+      this.socket.on('table_unlocked', (data) => {
+        console.log('SocketService: Received table_unlocked:', data);
+        observer.next(data);
+      });
+    });
+  }
 }
 

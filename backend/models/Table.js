@@ -14,8 +14,17 @@ const tableSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['available', 'occupied', 'reserved'],
+    enum: ['available', 'locked', 'occupied', 'reserved'],
     default: 'available',
+  },
+  lockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  lockExpiresAt: {
+    type: Date,
+    default: null
   },
   qrCode: {
     type: String,

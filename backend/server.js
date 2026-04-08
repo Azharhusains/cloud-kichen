@@ -18,12 +18,14 @@ const app = express();
 const server = http.createServer(app);
 
 // Socket.IO setup
+const Table = require('./models/Table');
 const io = new Server(server, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
   }
 });
+
 
 // Make io accessible to routes
 app.set('io', io);
@@ -47,6 +49,39 @@ io.on('connection', (socket) => {
     console.log('Client disconnected:', socket.id);
   });
 });
+
+// NEW: Auto-unlock expired table locks (every 10 seconds)
+setInterval(async () => {
+  try {
+    const io = app.get('io');
+    const now = new Date();
+    
+    const expiredLocks = await Table.find({
+      status: 'locked',
+      lockExpiresAt: { $lt: now }
+    });
+
+    for (const table of expiredLocks) {
+      await Table.findByIdAndUpdate(table._id, {
+        status: 'available',
+        lockedBy: null,
+        lockExpiresAt: null
+      });
+
+      // Emit unlock event
+      io.emit('table_unlocked', {
+        tableId: table._id,
+        tableNumber: table.tableNumber
+      });
+      io.to('adminRoom').emit('tableStatusChanged', table);
+
+      console.log(`Auto-unlocked expired table ${table.tableNumber}`);
+    }
+  } catch (error) {
+    console.error('Auto-unlock cron error:', error);
+  }
+}, 10000); // 10 seconds
+
 
 // Middleware
 app.use(helmet());

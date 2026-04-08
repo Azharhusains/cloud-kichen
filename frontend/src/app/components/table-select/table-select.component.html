@@ -38,26 +38,41 @@
             <mat-select formControlName="tableNumber" 
                         (selectionChange)="onTableSelect($event.value)"
                         placeholder="Choose your table">
-              <mat-option *ngFor="let table of availableTables" [value]="table.tableNumber">
-                Table {{ table.tableNumber }} ({{ table.capacity }} seats{{ table.location ? ', ' + table.location : '' }})
+              <mat-option *ngFor="let table of tables" 
+                          [value]="table.tableNumber" 
+                          [disabled]="table.status !== 'available'">
+                <span [class]="getTableClass(table) + '-option'">
+                  Table {{ table.tableNumber }} ({{ table.capacity }} seats{{ table.location ? ', ' + table.location : '' }})
+                </span>
+                <small *ngIf="table.status === 'locked'" class="lock-info">
+                  🔒 Locked
+                </small>
+                <small *ngIf="table.status === 'occupied'" class="occupied-info">
+                  Occupied
+                </small>
               </mat-option>
             </mat-select>
             <mat-icon matPrefix>table_bar</mat-icon>
           </mat-form-field>
         </form>
+
         
         <div class="error-message" *ngIf="error">
           <mat-icon>error</mat-icon>
           {{ error }}
         </div>
 
-        <!-- Selected Table Info -->
-        <div class="selected-table" *ngIf="selectedTable">
-          <mat-icon class="success-icon">check_circle</mat-icon>
+        <!-- Selected Table Info - Always shows post-select -->
+        <div class="selected-table" [class.locked]="selectedTable?.status === 'locked'" *ngIf="selectedTable">
+          <mat-icon [class]="selectedTable.status === 'locked' ? 'warn lock-icon' : 'success-icon'">{{ selectedTable.status === 'locked' ? 'lock' : 'check_circle' }}</mat-icon>
           <div class="table-details">
             <h4>Table {{ selectedTable.tableNumber }}</h4>
             <p>Capacity: {{ selectedTable.capacity }} seats</p>
             <p *ngIf="selectedTable.location">Location: {{ selectedTable.location }}</p>
+            <p *ngIf="selectedTable.status === 'locked'" class="lock-warning">
+              <mat-icon color="warn">timer</mat-icon>
+              Expires in {{ selectedTable.timeLeft || 'loading...' }}
+            </p>
           </div>
           <button mat-button color="warn" (click)="clearTable()">
             <mat-icon>close</mat-icon>

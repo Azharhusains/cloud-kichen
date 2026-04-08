@@ -68,6 +68,36 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ message: 'Table number is required for dine-in orders' });
     }
 
+    // NEW: Validate table lock for dine-in orders
+    if (orderType === 'dine-in' && tableNumber) {
+      const table = await Table.findOne({ tableNumber });
+      if (!table || !table.isActive) {
+        return res.status(400).json({ message: 'Invalid table number' });
+      }
+
+      const now = new Date();
+      if (table.status === 'locked') {
+        // Check if lock expired or owned by current user
+        if ((!table.lockExpiresAt || table.lockExpiresAt <= now) || table.lockedBy.toString() === req.user._id.toString()) {
+          // Lock expired or owned: clear lock and proceed
+          await Table.findOneAndUpdate(
+            { tableNumber },
+            { 
+              status: 'available',
+              lockedBy: null,
+              lockExpiresAt: null 
+            }
+          );
+          console.log(`Cleared expired/owned lock for table ${tableNumber}`);
+        } else {
+          // Locked by other user and still valid
+          return res.status(400).json({ 
+            message: `Table ${tableNumber} is temporarily locked. Please try again in a moment.` 
+          });
+        }
+      }
+    }
+
     // For delivery orders, delivery address is required
     if (orderType === 'delivery' && !deliveryAddress) {
       return res.status(400).json({ message: 'Delivery address is required for delivery orders' });

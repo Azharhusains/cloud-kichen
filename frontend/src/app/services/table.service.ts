@@ -40,5 +40,10 @@ export class TableService {
   updateTableStatus(tableNumber: string, status: string): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${tableNumber}/status`, { status });
   }
+
+  // NEW: Lock table for 2 minutes (customer)
+  lockTable(tableNumber: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${tableNumber}/lock`, {});
+  }
 }
 

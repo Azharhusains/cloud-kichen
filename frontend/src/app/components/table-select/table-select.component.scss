@@ -145,14 +145,39 @@ mat-card-header {
 }
 
 .selected-table {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: #e8f5e9;
   border-radius: 12px;
   margin-top: 24px;
   border: 2px solid #4caf50;
+
+  &.locked {
+    background: #fff3e0;
+    border-color: #ff9800;
+
+    mat-icon {
+      color: #ff9800 !important;
+    }
+
+    h4 {
+      color: #e65100;
+    }
+
+    .lock-warning {
+      background: #fff8e1;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border-left: 4px solid #ff9800;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      color: #e65100;
+    }
+  }
 
   .success-icon {
     font-size: 40px;

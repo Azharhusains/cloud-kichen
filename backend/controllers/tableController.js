@@ -126,6 +126,67 @@ const updateTableStatus = async (req, res) => {
   }
 };
 
+const lockTable = async (req, res) => {
+  try {
+    const { tableNumber } = req.params;
+    const userId = req.user._id;
+
+    // Atomic update: only lock if available
+    const updatedTable = await Table.findOneAndUpdate(
+      { 
+        tableNumber, 
+        status: 'available',
+        isActive: true 
+      },
+      { 
+        status: 'locked',
+        lockedBy: userId,
+        lockExpiresAt: new Date(Date.now() + 2 * 60 * 1000), // 2 minutes
+        updatedBy: userId
+      },
+      { 
+        new: true,
+        runValidators: true 
+      }
+    );
+
+    if (!updatedTable) {
+      // Table not available or not found
+      const table = await Table.findOne({ tableNumber });
+      if (!table) {
+        return res.status(404).json({ message: 'Table not found' });
+      }
+      if (table.status === 'locked') {
+        return res.status(409).json({ 
+          message: 'Table already locked',
+          expiresAt: table.lockExpiresAt 
+        });
+      }
+      return res.status(409).json({ message: 'Table not available' });
+    }
+
+    // Emit socket event
+    const io = req.app.get('io');
+    io.emit('table_locked', {
+      tableId: updatedTable._id,
+      tableNumber: updatedTable.tableNumber,
+      lockedBy: userId,
+      lockExpiresAt: updatedTable.lockExpiresAt
+    });
+    io.to('adminRoom').emit('tableStatusChanged', updatedTable);
+
+    console.log(`Table ${tableNumber} locked by user ${userId} until ${updatedTable.lockExpiresAt}`);
+
+    res.json({
+      success: true,
+      table: updatedTable
+    });
+  } catch (error) {
+    console.error('Lock table error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTables,
   getTable,
@@ -133,5 +194,7 @@ module.exports = {
   updateTable,
   deleteTable,
   updateTableStatus,
+  lockTable,
 };
+
 
