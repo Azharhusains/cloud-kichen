@@ -27,6 +27,7 @@ import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
 import { MatChipsModule } from '@angular/material/chips';
 import { ToastService } from '../../services/toast.service';
+import { environment } from '../../../environments/environment';
 
 
 @Component({
@@ -421,6 +422,15 @@ export class CheckoutComponent implements OnInit {
   ngOnDestroy(): void {
     this.loading = false;
     this.loadingPayment = false;
+  }
+
+  getImageUrl(imagePath: string | null): string {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('/uploads/')) {
+      const baseUrl = environment.apiUrl.replace('/api', '');
+      return `${baseUrl}${imagePath}`;
+    }
+    return imagePath;
   }
 }
 

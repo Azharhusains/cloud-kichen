@@ -25,10 +25,14 @@
         <mat-card-content>
 <div class="order-items">
           <div *ngFor="let item of cart" class="order-item">
+            <div class="item-thumb">
+              <img *ngIf="item.menuItem.image" [src]="getImageUrl(item.menuItem.image)" [alt]="item.menuItem.name" class="thumb-img" crossorigin="anonymous">
+              <mat-icon *ngIf="!item.menuItem.image" class="thumb-icon">restaurant_menu</mat-icon>
+            </div>
             <div class="item-info">
               <span class="item-name">{{ item.menuItem.name }}</span>
-              <span class="item-qty" *ngIf="item.menuItem?.supportsHalf"> {{ item.quantityType === 'HALF' ? '(Half)' : '(Full)' }}</span>
-              <span class="item-qty">x{{ item.quantity }}</span>
+              <span class="item-qty" *ngIf="item.menuItem?.supportsHalf">{{ item.quantityType === 'HALF' ? '(Half)' : '(Full)' }} &nbsp; x {{ item.quantity }}</span>
+              
             </div>
             <div class="item-price">
               ₹{{ (cartService.getCartItemPrice(item) * item.quantity) | number : '1.2-2' }}
@@ -212,7 +216,7 @@
             <mat-divider></mat-divider>
             <mat-radio-group [(ngModel)]="paymentMethod" class="payment-options">
               <mat-radio-button value="cod" checked>
-                <mat-icon>payments</mat-icon> Pay at Table (Cash/Card)
+                <mat-icon>payments</mat-icon> Pay at Table (Cash/QR)
               </mat-radio-button>
             </mat-radio-group>
 

@@ -95,7 +95,7 @@
             <span class="price-label">Tax ({{ getTaxRate().toFixed(0) }}%)</span>
             <span class="price-value">₹{{ getTaxAmount().toFixed(2) }}</span>
           </div>
-          <div class="price-row">
+          <div class="price-row" if>
             <span class="price-label">Delivery Charge</span>
             <span class="price-value">₹{{ getDeliveryCharge().toFixed(2) }}</span>
           </div>

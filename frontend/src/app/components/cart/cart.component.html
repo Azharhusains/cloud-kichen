@@ -29,7 +29,8 @@
           <div class="cart-items-list">
             <div *ngFor="let item of cart" class="cart-item" @slideIn>
               <div class="item-image">
-                <mat-icon>restaurant</mat-icon>
+                <img *ngIf="item.menuItem.image" [src]="getImageUrl(item.menuItem.image)" [alt]="item.menuItem.name" crossorigin="anonymous" class="item-img">
+                <mat-icon *ngIf="!item.menuItem.image" class="food-icon">restaurant</mat-icon>
               </div>
               
               <div class="item-details">

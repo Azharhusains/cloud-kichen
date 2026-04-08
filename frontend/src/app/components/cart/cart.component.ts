@@ -15,6 +15,7 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
 // Services
 import { CartService, CartItem } from '../../services/cart.service';
 import { MatChipsModule } from '@angular/material/chips';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-cart',
@@ -100,5 +101,15 @@ constructor(private router: Router, public cartService: CartService) {}
   checkout(): void {
     // Navigate to table-select to choose between dine-in or delivery
     this.router.navigate(['/table-select']);
+  }
+
+  getImageUrl(imagePath: string | null): string {
+    if (!imagePath) return '';
+    // Handle relative paths
+    if (imagePath.startsWith('/uploads/')) {
+      const baseUrl = environment.apiUrl.replace('/api', '');
+      return `${baseUrl}${imagePath}`;
+    }
+    return imagePath;
   }
 }
