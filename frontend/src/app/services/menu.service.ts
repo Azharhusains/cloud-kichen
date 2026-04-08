@@ -43,6 +43,10 @@ export class MenuService {
     return this.http.get<MenuResponse>(`${environment.apiUrl}/menu`);
   }
 
+  getRecommendedItems(): Observable<{recommendedItems: (MenuItem & {totalQuantity: number, orderCount: number, popularityScore: number})[]}> {
+    return this.http.get<{recommendedItems: (MenuItem & {totalQuantity: number, orderCount: number, popularityScore: number})[]}>(`${environment.apiUrl}/menu/recommended`);
+  }
+
   getMenuItem(id: string): Observable<MenuItem> {
     return this.http.get<MenuItem>(`${environment.apiUrl}/menu/${id}`);
   }

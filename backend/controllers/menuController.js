@@ -1,5 +1,6 @@
 const MenuItem = require('../models/MenuItem');
 const Category = require('../models/Category');
+const Order = require('../models/Order');
 const path = require('path');
 const fs = require('fs');
 
@@ -27,7 +28,7 @@ const fileFilter = (req, file, cb) => {
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 
-  if (extname && mimetype) {
+  if (mimetypes && mimetype) {
     return cb(null, true);
   } else {
     cb(new Error('Only image files are allowed!'), false);
@@ -59,6 +60,65 @@ const getMenuItems = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// NEW: Get recommended / most popular items
+const getRecommendedItems = async (req, res) => {
+  try {
+    // Aggregate most ordered items from all orders
+    const popularItems = await Order.aggregate([
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.menuItem',
+          totalQuantity: { $sum: '$items.quantity' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      { $sort: { totalQuantity: -1, orderCount: -1 } },
+      { $limit: 12 }, // Top 12 most popular
+      {
+        $lookup: {
+          from: 'menuitems',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'menuItem'
+        }
+      },
+      { $unwind: '$menuItem' },
+      { $match: { 'menuItem.isAvailable': true } },
+      {
+        $project: {
+          _id: '$menuItem._id',
+          name: '$menuItem.name',
+          category: '$menuItem.category',
+          description: '$menuItem.description',
+          supportsHalf: '$menuItem.supportsHalf',
+          fullPrice: '$menuItem.fullPrice',
+          halfPrice: '$menuItem.halfPrice',
+          image: '$menuItem.image',
+          isAvailable: '$menuItem.isAvailable',
+          popularityScore: { $add: ['$totalQuantity', '$orderCount'] },
+          totalQuantity: 1,
+          orderCount: 1
+        }
+      },
+      { $sort: { popularityScore: -1 } },
+      { $limit: 8 }
+    ]);
+
+    res.json({
+      recommendedItems: popularItems,
+      message: 'Most popular items based on order history'
+    });
+  } catch (error) {
+    console.error('Recommendation aggregation error:', error);
+    // Fallback to regular menu items
+    res.json({ 
+      recommendedItems: [],
+      message: 'Using regular menu - enable order history for personalized recommendations'
+    });
   }
 };
 
@@ -135,7 +195,6 @@ const createMenuItem = async (req, res) => {
   }
 };
 
-
 const updateMenuItem = async (req, res) => {
   try {
     const menuItem = await MenuItem.findById(req.params.id);
@@ -143,7 +202,7 @@ const updateMenuItem = async (req, res) => {
       return res.status(404).json({ message: 'Menu item not found' });
     }
     
-// If new file was uploaded, update image path
+    // If new file was uploaded, update image path
     if (req.file) {
       // Delete old image if exists
       if (menuItem.image) {
@@ -194,7 +253,6 @@ const updateMenuItem = async (req, res) => {
   }
 };
 
-
 const deleteMenuItem = async (req, res) => {
   try {
     const menuItem = await MenuItem.findById(req.params.id);
@@ -225,6 +283,7 @@ module.exports = {
   updateMenuItem, 
   deleteMenuItem,
   sanitizeFormData,
-  upload 
-};
+  upload,
+  getRecommendedItems
+ };
 

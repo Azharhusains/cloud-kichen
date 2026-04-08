@@ -1,0 +1,79 @@
+<div class="recommendations-container" @fadeInUp>
+  <!-- Header -->
+  <div class="recommendations-header">
+    <h1>Recommended For You</h1>
+    <p>Premium selections curated just for your taste</p>
+  </div>
+
+  <!-- Recommendations Grid -->
+  <div class="recommendations-grid" @staggerList>
+    <mat-card *ngFor="let item of items" class="menu-item-card" [class.unavailable]="!item.isAvailable">
+      <div class="item-image-section" [class.has-image]="item.image">
+        <img *ngIf="item.image" [src]="getImageUrl(item.image)" crossorigin="anonymous" alt="{{ item.name }}">
+        <mat-icon *ngIf="!item.image" class="food-icon">restaurant</mat-icon>
+        <span class="unavailable-badge" *ngIf="!item.isAvailable">Unavailable</span>
+      </div>
+      
+      <mat-card-content>
+        <div class="item-header">
+          <h3>{{ item.name }}</h3>
+        <span class="category-label">{{ item.category }}</span>
+        <div class="popularity-badge" *ngIf="item.totalQuantity && item.totalQuantity > 0">
+          {{ item.totalQuantity }}+ ordered
+        </div>
+        </div>
+        
+        <p class="item-description">{{ item.description }}</p>
+        
+        <div class="item-footer">          
+          <div class="add-to-cart-container">
+            <div class="portion-selector" *ngIf="item.supportsHalf">
+              <button 
+                class="portion-btn half-btn"
+                [class.active]="getCurrentPortionType(item) === 'HALF'"
+                (click)="selectPortion(item, 'HALF'); $event.stopPropagation()"
+                mat-stroked-button size="small" [disabled]="!item.isAvailable">
+                Half<br><small>₹{{ item.halfPrice | number:'1.0-0' }}</small>
+              </button>
+              <button 
+                class="portion-btn full-btn"
+                [class.active]="getCurrentPortionType(item) === 'FULL'"
+                (click)="selectPortion(item, 'FULL'); $event.stopPropagation()"
+                mat-stroked-button size="small" [disabled]="!item.isAvailable">
+                Full<br><small>₹{{ item.fullPrice | number:'1.0-0' }}</small>
+              </button>
+            </div>
+            
+            <div class="qty-add-wrapper">
+              <div class="quantity-controls" *ngIf="getCurrentQuantity(item) > 0">
+                <button mat-mini-fab class="qty-btn qty-decrease" (click)="decreaseQuantity(item); $event.stopPropagation()" [disabled]="!item.isAvailable">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <span class="qty-badge">{{ getCurrentQuantity(item) }}</span>
+                <button mat-mini-fab class="qty-btn qty-increase" (click)="increaseQuantity(item); $event.stopPropagation()" [disabled]="!item.isAvailable">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+              <button 
+                mat-raised-button 
+                class="add-btn" 
+                *ngIf="getCurrentQuantity(item) === 0"
+                (click)="addCurrentPortion(item); $event.stopPropagation()"
+                [disabled]="!item.isAvailable">
+                <mat-icon class="cart-icon">add_shopping_cart</mat-icon>
+                Add
+                <span class="btn-price">₹{{ getItemPrice(item, getCurrentPortionType(item)) | number:'1.0-0' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="empty-state" *ngIf="items.length === 0">
+    <mat-icon>restaurant_menu</mat-icon>
+    <h3>No recommendations right now</h3>
+    <p>Check back later for our premium selections</p>
+  </div>
+</div>

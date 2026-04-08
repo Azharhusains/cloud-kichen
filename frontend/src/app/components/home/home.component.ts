@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { RecommendationComponent } from '../recommendation/recommendation.component';
 
 // Angular Material Modules
 import { MatButtonModule } from '@angular/material/button';
@@ -10,8 +11,9 @@ import { MatCardModule } from '@angular/material/card';
 // Angular Animations
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 
-// Auth Service
+// Services
 import { AuthService } from '../../services/auth.service';
+import { MenuService, MenuItem } from '../../services/menu.service';
 
 @Component({
   selector: 'app-home',
@@ -20,7 +22,8 @@ import { AuthService } from '../../services/auth.service';
     CommonModule,
     MatButtonModule,
     MatIconModule,
-    MatCardModule
+    MatCardModule,
+    RecommendationComponent
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
@@ -55,14 +58,49 @@ import { AuthService } from '../../services/auth.service';
     ])
   ]
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
   features = [
     { icon: 'local_shipping', title: 'Fast Delivery', description: 'Hot and fresh meals delivered to your doorstep' },
     { icon: 'eco', title: 'Fresh Ingredients', description: 'We use only the finest, freshest ingredients' },
     { icon: 'favorite', title: 'Made with Love', description: 'Traditional recipes crafted with care' }
   ];
 
-  constructor(private router: Router) {}
+  recommendedItems: (MenuItem & {totalQuantity: number, orderCount: number, popularityScore: number})[] = []; 
+  isLoggedIn: boolean = false;
+
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private menuService: MenuService
+  ) {}
+
+  ngOnInit(): void {
+    this.isLoggedIn = this.authService.isAuthenticated();
+    this.loadRecommendations();
+  }
+
+  loadRecommendations(): void {
+    this.menuService.getRecommendedItems().subscribe({
+      next: (response) => {
+        this.recommendedItems = response.recommendedItems || [];
+      },
+      error: (error) => {
+        console.error('Error loading recommendations:', error);
+        // Fallback to regular menu
+        this.menuService.getMenuItems().subscribe({
+          next: (resp) => {
+            this.recommendedItems = resp.menuItems.slice(0, 8).map(item => ({
+              ...item,
+              totalQuantity: 0,
+              orderCount: 0,
+              popularityScore: 0
+            }));
+          },
+          error: () => this.recommendedItems = []
+        });
+      }
+    });
+  }
 
   orderNow(): void {
     this.router.navigate(['/menu']);

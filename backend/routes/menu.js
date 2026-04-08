@@ -1,10 +1,11 @@
 const express = require('express');
-const { getMenuItems, getMenuItem, createMenuItem, updateMenuItem, deleteMenuItem, upload } = require('../controllers/menuController');
+const { getMenuItems, getRecommendedItems, getMenuItem, createMenuItem, updateMenuItem, deleteMenuItem, upload } = require('../controllers/menuController');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.get('/', getMenuItems);
+router.get('/recommended', getRecommendedItems);
 router.get('/:id', getMenuItem);
 
 // Handle multipart/form-data for create and update
