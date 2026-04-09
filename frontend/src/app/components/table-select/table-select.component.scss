@@ -34,6 +34,9 @@ mat-card-header {
     .mat-mdc-form-field-flex {
     padding: 0 16px !important;
   }
+  .mat-mdc-form-field-subscript-wrapper{
+    display: none !important;
+  }
 }
 
 .order-type-selection {
@@ -97,7 +100,7 @@ mat-card-header {
 }
 
 .table-input-section {
-  padding: 24px;
+  padding: 0 24px 0 24px;
   background: #f5f5f5;
   border-radius: 12px;
 
@@ -117,7 +120,7 @@ mat-card-header {
 
 .table-input {
   width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 0px;
 }
 
 .error-message {

@@ -29,9 +29,7 @@
 
       <!-- Table Number Input (only for dine-in) -->
       <div class="table-input-section" *ngIf="orderType === 'dine-in'">
-        <h3>Select Your Table</h3>
-        <p class="hint">Choose from available tables</p>
-        
+        <h3>Select Your Table</h3>        
         <form [formGroup]="tableForm">
           <mat-form-field appearance="outline" class="table-input" floatLabel="always">
             <mat-label>Select Table</mat-label>
