@@ -226,14 +226,206 @@ mat-card-actions {
   }
 }
 
-// Responsive
-@media (max-width: 600px) {
-  .order-type-selection {
-    grid-template-columns: 1fr;
+// Responsive - Tablet, Mobile Large, Mobile Small (Desktop unchanged)
+@media (max-width: 1024px) {
+  .table-card {
+    max-width: 90vw;
+    margin: 0 auto 32px;
   }
+  
+  .table-select-container {
+    padding: 20px;
+  }
+  
+  mat-card-header mat-card-title {
+    font-size: 22px;
+  }
+}
 
+@media (max-width: 768px) {
+  .order-type-selection {
+    // grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .table-card {
+    max-width: 95vw;
+    border-radius: 12px;
+  }
+  
   .table-select-container {
     padding: 16px;
+    min-height: calc(100vh - 56px); // Account for mobile app bar
+  }
+  
+  mat-card-header {
+    margin-bottom: 20px;
+  }
+  
+  mat-card-header mat-card-title {
+    font-size: 20px;
+  }
+  
+  mat-card-header mat-card-subtitle {
+    font-size: 13px;
+  }
+  
+  .order-type-option {
+    padding: 32px 20px; // Larger touch target
+    min-height: 120px;
+    
+    mat-icon {
+      font-size: 44px;
+      width: 44px;
+      height: 44px;
+      margin-bottom: 16px;
+    }
+    
+    span {
+      font-size: 16px;
+    }
+    
+    small {
+      font-size: 13px;
+      padding: 0 8px;
+    }
+  }
+  
+  .table-input-section {
+    padding: 20px 16px;
+    
+    h3 {
+      font-size: 16px;
+    }
+    
+    .hint {
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+  }
+  
+  .table-input {
+    margin-bottom: 12px;
+  }
+  
+  ::ng-deep .mat-mdc-form-field {
+    height: 64px; // Touch friendly
+    
+    .mat-mdc-form-field-flex {
+      padding: 0 12px !important;
+      min-height: 64px;
+    }
+    
+    .mat-mdc-form-field-infix {
+      min-height: 64px;
+      padding: 20px 0 12px;
+    }
+  }
+  
+  mat-card-actions {
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    
+    button {
+      border-radius: 12px !important;
+      height: 56px !important;
+      font-size: 16px !important;
+      font-weight: 600 !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+      
+      ::ng-deep .mdc-button__label {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+      }
+    }
+    
+    // Back button (mat-button)
+    button:not([color="accent"]) {
+      background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%) !important;
+      border: 2px solid rgba(102, 126, 234, 0.2) !important;
+      color: #667eea !important;
+      
+      &:hover {
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+        transform: translateY(-1px);
+      }
+    }
+    
+    // Continue button (mat-raised-button accent)
+    button[color="accent"] {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4) !important;
+      
+      &:hover {
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5) !important;
+        transform: translateY(-2px);
+      }
+      
+      ::ng-deep .mdc-button__ripple {
+        background: rgba(255,255,255,0.3) !important;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  mat-card-header mat-card-title {
+    font-size: 18px;
+  }
+  
+  .order-type-option {
+    padding: 28px 16px;
+    
+    mat-icon {
+      font-size: 30px;
+        width: 30px;
+        height: 28px;
+    }
+    
+    span {
+      font-size: 15px;
+    }
+  }
+  
+  .table-input-section {
+    padding: 16px;
+    
+    h3 {
+      font-size: 15px;
+    }
+  }
+  
+  .selected-table {
+    flex-direction: column;
+    text-align: center;
+    gap: 0;
+    padding: 5px;
+    
+    .table-details {
+      order: 2;
+      
+      h4 {
+        font-size: 16px;
+      }
+      
+      p {
+        font-size: 13px;
+      }
+    }
+    
+    button {
+      order: 3;
+      width: 100%;
+    }
+  }
+  
+  .error-message {
+    padding: 12px 16px;
+    font-size: 13px;
   }
 }
 
