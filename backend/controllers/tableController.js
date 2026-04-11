@@ -187,6 +187,52 @@ const lockTable = async (req, res) => {
   }
 };
 
+const unlockTable = async (req, res) => {
+  try {
+    const { tableNumber } = req.params;
+    const userId = req.user._id;
+
+    const table = await Table.findOne({ tableNumber, isActive: true });
+    if (!table) {
+      return res.status(404).json({ message: 'Table not found' });
+    }
+
+    const now = new Date();
+    const canUnlock = table.lockedBy?.toString() === userId.toString() || 
+                      (table.lockExpiresAt && table.lockExpiresAt <= now);
+
+    if (!canUnlock) {
+      return res.status(409).json({ 
+        message: 'Cannot unlock this table - not your lock or still active' 
+      });
+    }
+
+    table.status = 'available';
+    table.lockedBy = null;
+    table.lockExpiresAt = null;
+    table.updatedBy = userId;
+    const updatedTable = await table.save();
+
+    const io = req.app.get('io');
+    io.emit('table_unlocked', {
+      tableId: updatedTable._id,
+      tableNumber: updatedTable.tableNumber
+    });
+    io.to('adminRoom').emit('tableStatusChanged', updatedTable);
+    io.emit('tableStatusBroadcast', updatedTable);
+
+    console.log(`Table ${tableNumber} unlocked by user ${userId}`);
+
+    res.json({
+      success: true,
+      table: updatedTable
+    });
+  } catch (error) {
+    console.error('Unlock table error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTables,
   getTable,
@@ -195,6 +241,7 @@ module.exports = {
   deleteTable,
   updateTableStatus,
   lockTable,
+  unlockTable
 };
 
 

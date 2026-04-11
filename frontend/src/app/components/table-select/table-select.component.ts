@@ -50,6 +50,7 @@ export class TableSelectComponent implements OnInit, OnDestroy {
   availableTables: any[] = [];
   private destroy$ = new Subject<void>();
   private lockTimer: any = null;
+  private previousTableNumber: string | null = null;
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -134,13 +135,13 @@ export class TableSelectComponent implements OnInit, OnDestroy {
     });
   }
 
-  onOrderTypeChange(type: 'delivery' | 'dine-in'): void {
+  async onOrderTypeChange(type: 'delivery' | 'dine-in'): Promise<void> {
     this.orderType = type;
-    this.selectedTable = null;
-    this.tableForm.reset();
     
-    if (type === 'delivery') {
-      this.cartService.clearTableInfo();
+    if (type === 'dine-in') {
+      this.tableForm.reset();
+    } else {
+      await this.clearTable();
       this.router.navigate(['/checkout']);
     }
   }
@@ -161,29 +162,45 @@ export class TableSelectComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // NEW: Lock table before proceeding
-    try {
-      const lockResult = await this.tableService.lockTable(selectedTableData.tableNumber).toPromise();
-      console.log('Table locked:', lockResult);
-      
-      this.selectedTable = lockResult.table;
-      this.cartService.setTableInfo(this.selectedTable);
-      
-      // Start lock timer display
-      this.startLockTimer(lockResult.table.lockExpiresAt);
-      
-      this.snackBar.open(`Table ${selectedTableData.tableNumber} locked for 2 minutes!`, 'OK', { duration: 3000 });
-    } catch (error: any) {
-      console.error('Lock failed:', error);
-      if (error.error?.message?.includes('locked')) {
-        this.error = 'Table already locked by another user';
-        if (error.error.expiresAt) {
-          this.error += ` (expires ${new Date(error.error.expiresAt).toLocaleTimeString()})`;
+        // Unlock previous table if different
+        if (this.previousTableNumber && this.previousTableNumber !== selectedTableData.tableNumber) {
+          try {
+            await this.tableService.unlockTable(this.previousTableNumber).toPromise();
+            console.log('Previous table unlocked:', this.previousTableNumber);
+            if (this.lockTimer) {
+              clearInterval(this.lockTimer);
+              this.lockTimer = null;
+            }
+          } catch (unlockError) {
+            console.log('Previous unlock ignored:', unlockError);
+          }
         }
-      } else {
-        this.error = error.error?.message || 'Failed to lock table';
-      }
-    } finally {
+
+        // NEW: Lock table before proceeding
+        try {
+          const lockResult = await this.tableService.lockTable(selectedTableData.tableNumber).toPromise();
+          console.log('Table locked:', lockResult);
+          
+          this.selectedTable = lockResult.table;
+          this.cartService.setTableInfo(this.selectedTable);
+          
+          this.previousTableNumber = selectedTableData.tableNumber;
+          
+          // Start lock timer display
+          this.startLockTimer(lockResult.table.lockExpiresAt);
+          
+          this.snackBar.open(`Table ${selectedTableData.tableNumber} locked for 2 minutes!`, 'OK', { duration: 3000 });
+        } catch (error: any) {
+          console.error('Lock failed:', error);
+          if (error.error?.message?.includes('locked')) {
+            this.error = 'Table already locked by another user';
+            if (error.error.expiresAt) {
+              this.error += ` (expires ${new Date(error.error.expiresAt).toLocaleTimeString()})`;
+            }
+          } else {
+            this.error = error.error?.message || 'Failed to lock table';
+          }
+        } finally {
       this.loading = false;
     }
   }
@@ -222,7 +239,20 @@ export class TableSelectComponent implements OnInit, OnDestroy {
     this.router.navigate(['/menu']);
   }
 
-  clearTable(): void {
+  async clearTable(): Promise<void> {
+    if (this.previousTableNumber) {
+      try {
+        await this.tableService.unlockTable(this.previousTableNumber).toPromise();
+        console.log('Cleared table unlocked:', this.previousTableNumber);
+      } catch (unlockError) {
+        console.log('Clear unlock ignored:', unlockError);
+      }
+      this.previousTableNumber = null;
+    }
+    if (this.lockTimer) {
+      clearInterval(this.lockTimer);
+      this.lockTimer = null;
+    }
     this.selectedTable = null;
     this.tableForm.reset();
     this.cartService.clearTableInfo();

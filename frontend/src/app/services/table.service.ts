@@ -45,5 +45,9 @@ export class TableService {
   lockTable(tableNumber: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/${tableNumber}/lock`, {});
   }
+
+  unlockTable(tableNumber: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${tableNumber}/unlock`, {});
+  }
 }
 
