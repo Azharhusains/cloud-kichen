@@ -9,5 +9,7 @@
 - [x] 6. Create .env.example
 - [x] 7. Create .gitignore (add .env)
 - [x] 8. Create README.md (deploy instructions)
-- [ ] 9. npm install && test locally
+- [x] 9. npm install && test locally
 - [ ] 10. Deploy to Render + verify
+
+**Frontend environments updated for prod URLs (use Netlify env vars)**
