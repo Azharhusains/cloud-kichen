@@ -7,6 +7,7 @@ const rateLimit = require('./middleware/rateLimit');
 const dotenv = require('dotenv');
 const http = require('http');
 const path = require('path');
+const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 const connectDB = require('./config/database');
 
@@ -58,9 +59,10 @@ io.on('connection', (socket) => {
   });
 });
 
-// NEW: Auto-unlock expired table locks (every 10 seconds)
+// NEW: Auto-unlock expired table locks (every 10 seconds) - DB safe
 setInterval(async () => {
   try {
+    if (mongoose.connection.readyState !== 1) return; // Skip if DB not ready
     const io = app.get('io');
     const now = new Date();
     
@@ -90,13 +92,15 @@ setInterval(async () => {
   }
 }, 10000); // 10 seconds
 
-// NEW: Periodic health updates via socket (every 30 seconds)
-setInterval(async () => {
-  try {
-    const io = app.get('io');
-    
-    // Get current kitchen status
-    const kitchenStatus = await KitchenStatus.findOne().sort({ updatedAt: -1 });
+// NEW: Periodic health updates via socket (every 30 seconds) - DB safe
+mongoose.connection.on('connected', () => {
+  setInterval(async () => {
+    try {
+      if (mongoose.connection.readyState !== 1) return;
+      const io = app.get('io');
+      
+      // Get current kitchen status
+      const kitchenStatus = await KitchenStatus.findOne().sort({ updatedAt: -1 });
     
     const healthData = {
       server: 'healthy',
@@ -167,4 +171,5 @@ const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT} (0.0.0.0)`);
-});
+})}
+)

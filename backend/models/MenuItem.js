@@ -56,8 +56,9 @@ const menuItemSchema = new mongoose.Schema({
 });
 
 // Indexes for audit trail
-menuItemSchema.index({ createdBy: 1 });
-menuItemSchema.index({ updatedBy: 1, updatedAt: -1 });
+// Indexes for audit trail (removed duplicate - timestamps creates these)
+ // menuItemSchema.index({ createdBy: 1 });
+ // menuItemSchema.index({ updatedBy: 1, updatedAt: -1 });
 
 // Virtual for backward compatibility - return fullPrice as 'price'
 menuItemSchema.virtual('price').get(function() {
