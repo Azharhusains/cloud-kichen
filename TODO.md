@@ -1,4 +1,0 @@
-- [x] 1. Add TypeScript interfaces to profile.component.ts
-- [x] 2. Type properties (user, orders, addresses, etc.) in profile.component.ts
-- [x] 3. Update methods (getRefundDisplay, getStatusClass, etc.) with types and remove unnecessary optional chaining
-- [ ] 4. Update profile.component.html: replace user?.role, kitchenStatus?.status, item.menuItem?.name, order.totalAmount?.toFixed(2) with direct access
