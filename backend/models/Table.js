@@ -52,9 +52,7 @@ const tableSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Indexes for audit trail
-tableSchema.index({ createdBy: 1 });
-tableSchema.index({ updatedBy: 1, updatedAt: -1 });
+// Indexes removed (duplicates with timestamps: true)
 
 // Generate QR code URL based on table number
 tableSchema.methods.generateQRCodeUrl = function(baseUrl) {

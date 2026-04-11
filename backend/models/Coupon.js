@@ -53,9 +53,7 @@ const couponSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Indexes for audit trail
-couponSchema.index({ createdBy: 1 });
-couponSchema.index({ updatedBy: 1, updatedAt: -1 });
+// Indexes removed (duplicates with timestamps: true)
 
 module.exports = mongoose.model('Coupon', couponSchema);
 

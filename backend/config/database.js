@@ -9,8 +9,9 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 5000,
-    maxRetries: 5,
-    retryDelay: 5000,
+    // Removed invalid options (Redis-specific):
+    // maxRetries, retryDelay
+    // Use mongoose.connection options if needed
     bufferCommands: false,
   });
     console.log(`MongoDB Connected: ${conn.connection.host}`);

@@ -1,15 +1,15 @@
-# Production Deployment Plan - Cloud Kitchen Backend
+# Fix Render Deployment Crash - MongoDB Options & Indexes
 
-## Steps:
-- [x] 1. Update package.json (deps, scripts)
-- [x] 2. Create middleware/rateLimit.js
-- [x] 3. Update server.js (CORS, rate limit, compression, listen '0.0.0.0', prod errors)
-- [x] 4. Update config/database.js (retry logic)
-- [x] 5. Update controllers/authController.js (remove localhost CLIENT_URL)
-- [x] 6. Create .env.example
-- [x] 7. Create .gitignore (add .env)
-- [x] 8. Create README.md (deploy instructions)
-- [x] 9. npm install && test locally
-- [ ] 10. Deploy to Render + verify
+## Step 1: Fix MongoDB connection options in backend/config/database.js [✅ COMPLETED]
+Remove invalid `maxRetries`, `retryDelay` (Redis options)
 
-**Frontend environments updated for prod URLs (use Netlify env vars)**
+## Step 2: Identify models with duplicate indexes [✅ COMPLETED]
+Found explicit indexes in Category.js, Inventory.js, Coupon.js, Table.js causing conflicts with timestamps: true
+
+## Step 3: Fix duplicate indexes in models [✅ COMPLETED]
+Removed explicit createdBy/updatedBy indexes from Category.js, Inventory.js, Coupon.js, Table.js
+
+## Step 4: Local test [PENDING]
+npm start - verify no warnings/crash
+
+## Step 5: Deploy & verify Render [PENDING]

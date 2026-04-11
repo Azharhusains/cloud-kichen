@@ -38,8 +38,6 @@ const inventorySchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Indexes for audit trail
-inventorySchema.index({ createdBy: 1 });
-inventorySchema.index({ updatedBy: 1, updatedAt: -1 });
+// Indexes removed (duplicates with timestamps: true)
 
 module.exports = mongoose.model('Inventory', inventorySchema);
