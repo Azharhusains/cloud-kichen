@@ -2,6 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable, Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { KitchenStatus } from './kitchen.service';
 
 @Injectable({
   providedIn: 'root'
@@ -218,6 +219,17 @@ export class SocketService {
     });
   }
 
+// Kitchen status events (new)
+  onKitchenStatusChanged(): Observable<KitchenStatus> {
+    console.log('SocketService: Listening for kitchenStatusChanged events');
+    return new Observable(observer => {
+      this.socket.on('kitchenStatusChanged', (data) => {
+        console.log('SocketService: Received kitchenStatusChanged:', data);
+        observer.next(data);
+      });
+    });
+  }
+
   // NEW: Table lock events
   onTableLocked(): Observable<any> {
     console.log('SocketService: Listening for table_locked events');
@@ -234,6 +246,17 @@ export class SocketService {
     return new Observable(observer => {
       this.socket.on('table_unlocked', (data) => {
         console.log('SocketService: Received table_unlocked:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // Listen for menu availability changes (NEW for real-time updates)
+  onMenuAvailabilityChanged(): Observable<any> {
+    console.log('SocketService: Listening for menuAvailabilityChanged events');
+    return new Observable(observer => {
+      this.socket.on('menuAvailabilityChanged', (data) => {
+        console.log('SocketService: Received menuAvailabilityChanged:', data);
         observer.next(data);
       });
     });

@@ -1,8 +1,16 @@
 <div class="menu-container" @fadeInUp>
   <!-- Header Section -->
   <div class="menu-header">
-    <h1>Our Menu</h1>
+    <span>
+      <h1>Our Menu</h1>
     <p>Discover our delicious selection of dishes</p>
+    </span>
+    <!-- Small Kitchen Closed Banner -->
+  <div class="small-closed-banner" *ngIf="kitchenStatus && kitchenStatus.status === 'closed'">
+    <mat-icon>schedule</mat-icon>
+    <h3>Kitchen Closed</h3>
+    <p>Opens {{ kitchenOpenHours.open }} | Closes {{ kitchenOpenHours.close }}</p>
+  </div>
   </div>
 
   <!-- Search Bar -->
@@ -32,13 +40,14 @@
       </mat-chip-option>
     </mat-chip-listbox>
   </div>
+
   <!-- Menu Items Grid -->
-  <div class="menu-items-grid" @staggerList>
-    <mat-card *ngFor="let item of filteredItems" class="menu-item-card" [class.unavailable]="!item.isAvailable">
+  <div class="menu-items-grid" @staggerList [class.kitchen-closed]="kitchenStatus?.status === 'closed'">
+    <mat-card *ngFor="let item of filteredItems" class="menu-item-card" [class.unavailable]="!item.isAvailable || kitchenStatus?.status === 'closed'">
       <div class="item-image-section" [class.has-image]="item.image">
         <img *ngIf="item.image" [src]="getImageUrl(item.image)" crossorigin="anonymous" alt="{{ item.name }}">
         <mat-icon *ngIf="!item.image" class="food-icon">restaurant</mat-icon>
-        <span class="unavailable-badge" *ngIf="!item.isAvailable">Unavailable</span>
+<span class="unavailable-badge" *ngIf="!item.isAvailable">Unavailable</span>
       </div>
       
       <mat-card-content>
@@ -60,7 +69,7 @@
                 (click)="selectPortion(item, 'HALF'); $event.stopPropagation()"
                 mat-stroked-button
                 size="small"
-                [disabled]="!item.isAvailable">
+                [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
                 Half<br><small>₹{{ item.halfPrice | number:'1.0-0' }}</small>
               </button>
               <button 
@@ -69,7 +78,7 @@
                 (click)="selectPortion(item, 'FULL'); $event.stopPropagation()"
                 mat-stroked-button
                 size="small"
-                [disabled]="!item.isAvailable">
+                [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
                 Full<br><small>₹{{ item.fullPrice | number:'1.0-0' }}</small>
               </button>
             </div>
@@ -77,11 +86,11 @@
             <div class="qty-add-wrapper">
               <!-- Quantity for current portion -->
               <div class="quantity-controls" *ngIf="getCurrentQuantity(item) > 0">
-                <button mat-mini-fab class="qty-btn qty-decrease" (click)="decreaseQuantity(item); $event.stopPropagation()" [disabled]="!item.isAvailable">
+                <button mat-mini-fab class="qty-btn qty-decrease" (click)="decreaseQuantity(item); $event.stopPropagation()" [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
                   <mat-icon>remove</mat-icon>
                 </button>
                 <span class="qty-badge">{{ getCurrentQuantity(item) }}</span>
-                <button mat-mini-fab class="qty-btn qty-increase" (click)="increaseQuantity(item); $event.stopPropagation()" [disabled]="!item.isAvailable">
+                <button mat-mini-fab class="qty-btn qty-increase" (click)="increaseQuantity(item); $event.stopPropagation()" [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
                   <mat-icon>add</mat-icon>
                 </button>
               </div>
@@ -91,7 +100,7 @@
                 class="add-btn" 
                 *ngIf="getCurrentQuantity(item) === 0"
                 (click)="addCurrentPortion(item); $event.stopPropagation()"
-                [disabled]="!item.isAvailable">
+                [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
                 <mat-icon class="cart-icon">add_shopping_cart</mat-icon>
                 Add
                 <span class="btn-price">₹{{ getItemPrice(item, getCurrentPortionType(item)) | number:'1.0-0' }}</span>
@@ -101,7 +110,7 @@
         </div>
       </mat-card-content>
       
-      <button mat-icon-button class="details-btn" (click)="openItemDetails(item)">
+      <button mat-icon-button class="details-btn" (click)="openItemDetails(item)" [disabled]="kitchenStatus?.status === 'closed'">
         <mat-icon>visibility</mat-icon>
       </button>
     </mat-card>

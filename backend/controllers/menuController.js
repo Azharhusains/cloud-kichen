@@ -189,6 +189,12 @@ const createMenuItem = async (req, res) => {
     };
     const menuItem = new MenuItem(menuItemData);
     const createdItem = await menuItem.save();
+    
+    // Emit socket event for real-time updates
+    const io = req.app.get('io');
+    io.emit('menuAvailabilityChanged', createdItem);
+    io.to('adminRoom').emit('menuItemUpdated', createdItem);
+    
     res.status(201).json(createdItem);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -247,6 +253,12 @@ const updateMenuItem = async (req, res) => {
     Object.assign(menuItem, sanitizedBody);
     menuItem.updatedBy = req.user._id;
     const updatedItem = await menuItem.save();
+    
+    // Emit socket event for real-time updates
+    const io = req.app.get('io');
+    io.emit('menuAvailabilityChanged', updatedItem);
+    io.to('adminRoom').emit('menuItemUpdated', updatedItem);
+    
     res.json(updatedItem);
   } catch (error) {
     res.status(500).json({ message: error.message });

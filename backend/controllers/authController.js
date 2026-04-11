@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
+const KitchenStatus = require('../models/KitchenStatus');
 const LoginAttempt = require('../models/LoginAttempt');
 
 const generateToken = (id, role, name, email) => {
@@ -111,12 +112,22 @@ const login = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    // Get latest kitchen status for profile (for admin UI)
+    const kitchenStatus = await KitchenStatus.findOne().sort({ updatedAt: -1 });
+    
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
       addresses: user.addresses,
+      kitchenStatus: kitchenStatus ? {
+        status: kitchenStatus.status,
+        isManual: kitchenStatus.isManual,
+        manualBy: kitchenStatus.manualBy ? kitchenStatus.manualBy.name : null,
+        note: kitchenStatus.note,
+        updatedAt: kitchenStatus.updatedAt
+      } : { status: 'open', isManual: false }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

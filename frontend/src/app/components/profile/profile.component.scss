@@ -183,6 +183,80 @@
   }
 }
 
+/* Kitchen Status Styles */
+.kitchen-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border-left: 4px solid;
+
+  &.open {
+    border-left-color: #4caf50;
+    background: rgba(76, 175, 80, 0.05);
+  }
+
+  &.closed {
+    border-left-color: #f44336;
+    background: rgba(244, 67, 54, 0.05);
+  }
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .status-indicator.open mat-icon {
+    color: #4caf50;
+  }
+
+  .status-indicator.closed mat-icon {
+    color: #f44336;
+  }
+
+  .status-info {
+    flex: 1;
+  }
+
+  .status-label {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .status-meta {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  .status-note {
+    font-size: 0.85rem;
+    color: #999;
+    font-style: italic;
+  }
+}
+
+.toggle-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.kitchen-status-placeholder {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
 /* Section Cards */
 .section-card {
   border-radius: 16px !important;

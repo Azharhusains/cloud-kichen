@@ -53,6 +53,11 @@ const updateInventory = async (req, res) => {
         }
         updatedItems.push(inventoryItem);
       }
+      // Emit socket events for each updated item
+      const io = req.app.get('io');
+      for (const item of updatedItems) {
+        io.emit('inventoryUpdated', item);
+      }
       res.json(updatedItems);
     } else {
       // Handle single item update
@@ -77,6 +82,9 @@ const updateInventory = async (req, res) => {
         });
         await inventoryItem.save();
       }
+      // Emit socket event for inventory update
+      const io = req.app.get('io');
+      io.emit('inventoryUpdated', inventoryItem);
       res.json(inventoryItem);
     }
   } catch (error) {

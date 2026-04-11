@@ -3,6 +3,7 @@ const MenuItem = require('../models/MenuItem');
 const User = require('../models/User');
 const Counter = require('../models/Counter');
 const Table = require('../models/Table');
+const KitchenStatus = require('../models/KitchenStatus');
 const { deductStock, checkStockAvailability, restoreStock } = require('./inventoryController');
 const nodemailer = require('nodemailer');
 const { generateInvoicePDF, savePDFToFile } = require('../utils/pdfGenerator');
@@ -96,6 +97,14 @@ const createOrder = async (req, res) => {
           });
         }
       }
+    }
+
+    // Kitchen status check - block all orders if kitchen closed
+    const kitchenStatus = await KitchenStatus.findOne().sort({ updatedAt: -1 });
+    if (kitchenStatus && kitchenStatus.status === 'closed') {
+      return res.status(400).json({ 
+        message: 'Kitchen is currently closed. Orders cannot be placed at this time. Please try again later.' 
+      });
     }
 
     // For delivery orders, delivery address is required

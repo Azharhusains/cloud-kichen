@@ -22,6 +22,45 @@
   </div>
 
   <div class="profile-content">
+    <!-- Kitchen Controls (Admin only) -->
+    <div class="section" *ngIf="user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'">
+      <mat-card class="section-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>local_dining</mat-icon>
+            Kitchen Status Control
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="kitchen-status" *ngIf="kitchenStatus">
+            <div class="status-indicator" [class]="kitchenStatus.status">
+              <mat-icon>{{ kitchenStatus.status === 'open' ? 'restaurant' : 'schedule' }}</mat-icon>
+              <div class="status-info">
+                <div class="status-label">
+                  Kitchen is {{ kitchenStatus.status | titlecase }}
+                </div>
+                <div class="status-meta" *ngIf="kitchenStatus.isManual">
+                  Manual override by {{ kitchenStatus.manualBy || 'Admin' }}
+                </div>
+                <div class="status-note" *ngIf="kitchenStatus.note">{{ kitchenStatus.note }}</div>
+              </div>
+            </div>
+            
+            <div class="toggle-controls">
+              <mat-slide-toggle 
+                [checked]="kitchenStatus?.status === 'open'"
+                (change)="toggleKitchen($event.checked ? 'open' : 'closed', 'Manual toggle from profile')"
+                color="primary">
+                Open Kitchen
+              </mat-slide-toggle>
+            </div>
+          </div>
+          
+        </mat-card-content>
+      </mat-card>
+    </div>
+
     <!-- Addresses Section -->
     <div class="section">
       <mat-card class="section-card">

@@ -30,6 +30,8 @@ import { MenuItemDialogComponent } from './menu-item-dialog.component';
 
 // Voice Order Component (for AI Modal)
 import { VoiceOrderComponent } from '../voice-order/voice-order.component';
+import { KitchenService, KitchenStatus } from '../../services/kitchen.service';
+import { SocketService } from '../../services/socket.service';
 
 @Component({
   selector: 'app-menu',
@@ -83,12 +85,18 @@ export class MenuComponent implements OnInit, OnDestroy {
   cartItemCount: number = 0;
   isLoggedIn: boolean = false;
   searchTerm: string = '';
+  kitchenStatus: KitchenStatus | null = null;
+  kitchenOpenHours = { open: '11:00 AM', close: '10:00 PM' };
   private cartSubscription!: Subscription;
+  private kitchenSub!: Subscription;
+  private menuSocketSub!: Subscription;
 
   constructor(
     private menuService: MenuService,
     private categoryService: CategoryService,
     private authService: AuthService,
+    private kitchenService: KitchenService,
+    private socketService: SocketService,
     public router: Router,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
@@ -101,16 +109,48 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.loadCart();
     this.isLoggedIn = this.authService.isAuthenticated();
 
+    // Kitchen status for UI disable
+    this.kitchenService.getStatus().subscribe(status => {
+      this.kitchenStatus = status;
+    });
+    this.kitchenService.status$.subscribe(status => {
+      this.kitchenStatus = status;
+    });
+
     // Subscribe to cart changes for real-time updates
     this.cartSubscription = this.cartService.cart$.subscribe((cart: any[]) => {
       this.cart = cart;
       this.cartItemCount = cart.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    });
+
+    // Subscribe to menu availability changes for real-time updates
+    this.menuSocketSub = this.socketService.onMenuAvailabilityChanged().subscribe((updatedItem: MenuItem) => {
+      console.log('MenuComponent: Menu item updated via socket:', updatedItem.name, 'Available:', updatedItem.isAvailable);
+      const index = this.menuItems.findIndex(item => item._id === updatedItem._id);
+      if (index > -1) {
+        this.menuItems[index] = { ...this.menuItems[index], ...updatedItem };
+        console.log('MenuComponent: Updated menu item at index', index);
+      } else {
+        // Add new item if not found
+        this.menuItems.push(updatedItem);
+        console.log('MenuComponent: Added new menu item');
+      }
+      // Refresh filtered items
+      if (this.selectedCategory === 'all') {
+        this.filteredItems = [...this.menuItems];
+      } else {
+        this.filteredItems = this.menuItems.filter(item => item.category === this.selectedCategory);
+      }
+      this.applySearch(); // Re-apply search filter if active
     });
   }
 
   ngOnDestroy(): void {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
+    }
+    if (this.menuSocketSub) {
+      this.menuSocketSub.unsubscribe();
     }
   }
 

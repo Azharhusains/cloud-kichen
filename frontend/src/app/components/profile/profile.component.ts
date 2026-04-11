@@ -11,6 +11,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { AsyncPipe } from '@angular/common';
 
 // Angular Animations
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
@@ -21,6 +23,8 @@ import { OrderService } from '../../services/order.service';
 import { MatDialog } from '@angular/material/dialog';
 import { InvoiceComponent } from '../invoice/invoice.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../admin/confirm-dialog/confirm-dialog.component';
+import { KitchenService, KitchenStatus } from '../../services/kitchen.service';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-profile',
@@ -29,13 +33,16 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../admin/confirm-dial
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
+    AsyncPipe,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
     MatDividerModule,
-    MatChipsModule
+    MatChipsModule,
+    MatSlideToggleModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
@@ -66,11 +73,13 @@ export class ProfileComponent implements OnInit {
   showAddressForm: boolean = false;
   addressForm: FormGroup;
   searchTerm: string = '';
+  kitchenStatus: KitchenStatus | null = null;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private orderService: OrderService,
+    private kitchenService: KitchenService,
     private router: Router,
     public dialog: MatDialog
   ) {
@@ -86,6 +95,30 @@ export class ProfileComponent implements OnInit {
   ngOnInit(): void {
     this.loadUserProfile();
     this.loadOrders();
+    // Load kitchen status for admin
+    this.kitchenService.getStatus().subscribe({
+      next: status => {
+        console.log('KitchenStatus loaded:', status);
+        this.kitchenStatus = status;
+      }
+    });
+    this.kitchenService.status$.subscribe(status => {
+      console.log('Realtime kitchen update:', status);
+      this.kitchenStatus = status;
+    });
+  }
+
+  toggleKitchen(status: 'open' | 'closed', note: string): void {
+    if (this.user.role !== 'ADMIN' && this.user.role !== 'SUPER_ADMIN') return;
+    
+    this.kitchenService.toggleStatus(status, note).subscribe({
+      next: () => {
+        console.log('Kitchen status toggled');
+      },
+      error: (error) => {
+        console.error('Error toggling kitchen status:', error);
+      }
+    });
   }
 
   loadUserProfile(): void {

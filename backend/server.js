@@ -19,6 +19,7 @@ const server = http.createServer(app);
 
 // Socket.IO setup
 const Table = require('./models/Table');
+const KitchenStatus = require('./models/KitchenStatus');
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -78,9 +79,13 @@ setInterval(async () => {
       console.log(`Auto-unlocked expired table ${table.tableNumber}`);
     }
   } catch (error) {
-    console.error('Auto-unlock cron error:', error);
+  console.error('Auto-unlock cron error:', error);
   }
 }, 10000); // 10 seconds
+
+// Kitchen auto status DISABLED - Manual closes respected permanently
+// Manual close during open hours stays closed until manual reopen
+// (No auto-override)
 
 
 // Middleware
@@ -105,6 +110,7 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/coupons', require('./routes/coupon'));
 app.use('/api/tables', require('./routes/table'));
+app.use('/api/kitchen', require('./routes/kitchen'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
