@@ -14,7 +14,11 @@ const connectDB = require('./config/database');
 dotenv.config();
 
 // Connect to database
-connectDB();
+// Wait for DB before starting server (async)
+connectDB().catch(err => {
+  console.error('DB connection failed:', err.message);
+  process.exit(1);
+});
 
 const app = express();
 const server = http.createServer(app);
