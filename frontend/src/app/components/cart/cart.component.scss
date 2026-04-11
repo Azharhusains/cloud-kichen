@@ -339,14 +339,15 @@
 @media (max-width: 768px) {
   .cart-header {
     padding: 32px 16px;
-
+    
     h1 {
       font-size: 2rem;
     }
   }
-
+  
   .cart-content {
     padding: 24px 16px;
+    margin-bottom: 10px;;
   }
 
   .cart-item {

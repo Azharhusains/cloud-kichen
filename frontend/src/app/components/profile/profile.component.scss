@@ -305,9 +305,12 @@
 
     @media (max-width: 500px) {
       grid-template-columns: 1fr;
+      .section-card mat-card-content {
+    margin-bottom: 10px;
+}
     }
   }
-
+  
   .form-actions {
     display: flex;
     gap: 12px;
@@ -573,3 +576,8 @@
   }
 }
 
+@media (max-width: 480px) {
+.section-card mat-card-content {
+    margin-bottom: 10px;
+}
+}

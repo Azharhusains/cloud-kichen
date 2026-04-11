@@ -389,6 +389,11 @@
   }
 }
 
+@media (max-width: 480px) {
+.dinein-card mat-card-content {
+    margin-bottom: 10px;
+}
+}
 .payment-section {
   margin-top: 24px;
   padding-top: 24px;
@@ -593,6 +598,34 @@
 
   .checkout-content {
     padding: 24px 16px;
+  }
+
+  .table-info-display {
+    flex-direction: column;
+    padding: 20px;
+    gap: 12px;
+    text-align: center;
+
+    .table-icon {
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+      }
+    }
+
+    .table-details {
+      h3 {
+        font-size: 1.25rem;
+      }
+    }
+  }
+
+  .dinein-notice {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+    padding: 12px;
   }
 
   .payment-section .form-actions {

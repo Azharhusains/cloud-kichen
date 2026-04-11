@@ -43,7 +43,7 @@ mat-card-header {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-bottom: 32px;
+  // margin-bottom: 32px;
 }
 
 .order-type-option {
@@ -230,7 +230,7 @@ mat-card-actions {
 @media (max-width: 1024px) {
   .table-card {
     max-width: 90vw;
-    margin: 0 auto 32px;
+    // margin: 0 auto 32px;
   }
   
   .table-select-container {
