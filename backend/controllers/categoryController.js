@@ -74,12 +74,20 @@ const createCategory = async (req, res) => {
       updatedBy: req.user._id
     });
 
-    const createdCategory = await category.save();
+const createdCategory = await category.save();
+
+    // Emit socket event for real-time updates (matching menuController pattern)
+    const io = req.app.get('io');
+    io.emit('categoryUpdated', { action: 'create', data: createdCategory });
+    io.to('adminRoom').emit('categoryUpdated', { action: 'create', data: createdCategory });
+    
     res.status(201).json(createdCategory);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 // Update category (admin only)
 const updateCategory = async (req, res) => {
@@ -107,11 +115,19 @@ const updateCategory = async (req, res) => {
     category.updatedBy = req.user._id;
 
     const updatedCategory = await category.save();
+    
+    // Emit socket event for real-time updates (matching menuController pattern)
+    const io = req.app.get('io');
+    io.emit('categoryUpdated', { action: 'update', data: updatedCategory });
+    io.to('adminRoom').emit('categoryUpdated', { action: 'update', data: updatedCategory });
+    
     res.json(updatedCategory);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 // Delete category (admin only)
 const deleteCategory = async (req, res) => {
@@ -133,6 +149,12 @@ const deleteCategory = async (req, res) => {
     }
 
     await category.remove();
+    
+    // Emit socket event for real-time updates
+    const io = req.app.get('io');
+    io.emit('categoryUpdated', { action: 'delete', data: { _id: req.params.id } });
+    io.to('adminRoom').emit('categoryUpdated', { action: 'delete', data: { _id: req.params.id } });
+    
     res.json({ message: 'Category removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });

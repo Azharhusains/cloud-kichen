@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { SocketService } from './socket.service';
 
 export interface Category {
   _id?: string;
@@ -22,13 +23,53 @@ export interface Category {
   };
 }
 
+export interface CategoryUpdate {
+  action: 'create' | 'update' | 'delete';
+  data: Category | { _id: string };
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class CategoryService {
   private apiUrl = `${environment.apiUrl}/categories`;
+  
+  // Reactive categories for real-time updates
+  private categoriesSubject = new BehaviorSubject<Category[]>([]);
+  public categories$ = this.categoriesSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private socketService: SocketService
+  ) {
+    // Listen for category updates
+    this.socketService.onCategoryUpdated().subscribe((update: CategoryUpdate) => {
+      console.log('CategoryService: Received update:', update);
+      let currentCategories = this.categoriesSubject.value;
+      
+      if (update.action === 'create') {
+        currentCategories = [update.data as Category, ...currentCategories];
+      } else if (update.action === 'update') {
+        const index = currentCategories.findIndex(c => c._id === (update.data as Category)._id);
+        if (index > -1) {
+          currentCategories[index] = update.data as Category;
+        }
+      } else if (update.action === 'delete') {
+        currentCategories = currentCategories.filter(c => c._id !== (update.data as { _id: string })._id);
+      }
+      
+      this.categoriesSubject.next(currentCategories);
+    });
+  }
+
+  // Load categories and update reactive stream (call on component init)
+  loadCategories(): void {
+    this.getCategories().subscribe({
+      next: (categories) => {
+        this.categoriesSubject.next(categories);
+      }
+    });
+  }
 
   // Get all categories (admin only - requires auth)
   getCategories(): Observable<Category[]> {
@@ -45,18 +86,23 @@ export class CategoryService {
     return this.http.get<Category>(`${this.apiUrl}/${id}`);
   }
 
-  // Create new category (admin only)
+  // Create new category (admin only) - optimistic update handled by socket
   createCategory(category: Partial<Category>): Observable<Category> {
     return this.http.post<Category>(this.apiUrl, category);
   }
 
-  // Update category (admin only)
+  // Update category (admin only) - optimistic update handled by socket
   updateCategory(id: string, category: Partial<Category>): Observable<Category> {
     return this.http.put<Category>(`${this.apiUrl}/${id}`, category);
   }
 
-  // Delete category (admin only)
+  // Delete category (admin only) - optimistic update handled by socket
   deleteCategory(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
+  }
+
+  // Expose current categories snapshot
+  getCurrentCategories(): Category[] {
+    return this.categoriesSubject.value;
   }
 }

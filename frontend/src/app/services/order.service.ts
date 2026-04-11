@@ -1,13 +1,62 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { SocketService } from './socket.service';
+
+export interface Order {
+  _id: string;
+  orderNumber: number;
+  orderStatus: string;
+  orderType: string;
+  tableNumber?: string;
+  totalAmount: number;
+  // ... other fields
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class OrderService {
-  constructor(private http: HttpClient) {}
+  // Reactive recent orders for admin dashboard
+  private recentOrdersSubject = new BehaviorSubject<Order[]>([]);
+  public recentOrders$ = this.recentOrdersSubject.asObservable();
+
+  constructor(
+    private http: HttpClient,
+    private socketService: SocketService
+  ) {
+    // Listen for new orders (admin)
+    this.socketService.onNewOrder().subscribe((order) => {
+      console.log('OrderService: New order via socket:', order);
+      const currentOrders = this.recentOrdersSubject.value;
+      // Keep last 10 recent orders
+      const updatedOrders = [order, ...currentOrders].slice(0, 10);
+      this.recentOrdersSubject.next(updatedOrders);
+    });
+
+    // Listen for order updates
+    this.socketService.onOrderUpdated().subscribe((order) => {
+      console.log('OrderService: Order updated via socket:', order);
+      const currentOrders = this.recentOrdersSubject.value;
+      const index = currentOrders.findIndex(o => o._id === order._id);
+      if (index > -1) {
+        currentOrders[index] = { ...currentOrders[index], ...order };
+        this.recentOrdersSubject.next([...currentOrders]);
+      }
+    });
+  }
+
+  // Load recent orders on init (admin dashboard)
+  loadRecentOrders(): void {
+    this.getOrders().subscribe({
+      next: (orders) => {
+        // Sort by createdAt desc, take last 10
+        const recent = orders.slice(0, 10);
+        this.recentOrdersSubject.next(recent);
+      }
+    });
+  }
 
   createOrder(orderData: any): Observable<any> {
     return this.http.post(`${environment.apiUrl}/orders`, orderData);

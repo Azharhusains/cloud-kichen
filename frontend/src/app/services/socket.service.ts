@@ -261,5 +261,18 @@ export class SocketService {
       });
     });
   }
+
+  // NEW: Listen for category updates
+  onCategoryUpdated(): Observable<any> {
+    console.log('SocketService: Listening for categoryUpdated events');
+    return new Observable(observer => {
+      this.socket.on('categoryUpdated', (data) => {
+        console.log('SocketService: Received categoryUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
 }
+
+
 
