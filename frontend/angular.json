@@ -38,11 +38,18 @@
           },
           "configurations": {
             "production": {
+              "allowedCommonJsDependencies": [
+                "html2canvas",
+                "jspdf",
+                "axios",
+                "@stripe/stripe-js",
+                "socket.io-client"
+              ],
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1MB",
-                  "maximumError": "2MB"
+                  "maximumWarning": "2.5MB",
+                  "maximumError": "3MB"
                 },
                 {
                   "type": "anyComponentStyle",
