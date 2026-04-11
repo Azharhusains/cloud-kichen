@@ -11,10 +11,29 @@ const getCategories = async (req, res) => {
   }
 };
 
-// Get active categories (for customers)
+// Get active categories with available menu items (for customers)
 const getActiveCategories = async (req, res) => {
   try {
-    const categories = await Category.find({ isActive: true }).sort({ sortOrder: 1 });
+    const categories = await Category.aggregate([
+      { $match: { isActive: true } },
+      {
+        $lookup: {
+          from: 'menuitems',
+          let: { catName: '$name' },
+          pipeline: [
+            { $match: { 
+              $expr: { $eq: ['$category', '$$catName'] },
+              isAvailable: true 
+            } }
+          ],
+          as: 'menuItems'
+        }
+      },
+      { $addFields: { menuItemCount: { $size: '$menuItems' } } },
+      { $match: { menuItemCount: { $gt: 0 } } },
+      { $project: { menuItems: 0, menuItemCount: 0 } },
+      { $sort: { sortOrder: 1 } }
+    ]);
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -103,10 +122,13 @@ const deleteCategory = async (req, res) => {
     }
 
     // Check if there are menu items using this category
-    const menuItemCount = await MenuItem.countDocuments({ category: category.name });
+    const menuItemCount = await MenuItem.countDocuments({ 
+      category: category.name, 
+      isAvailable: true 
+    });
     if (menuItemCount > 0) {
       return res.status(400).json({ 
-        message: `Cannot delete category. ${menuItemCount} menu item(s) are using this category.` 
+        message: `Cannot delete category. ${menuItemCount} available menu item(s) are using this category.` 
       });
     }
 
