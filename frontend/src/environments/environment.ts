@@ -1,6 +1,6 @@
 export const environment = {
-  production: false, 
-  apiUrl: 'http://localhost:5000/api',
-  socketUrl: 'http://localhost:5000',
-  clientUrl: 'http://localhost:4200'
+  production: true,
+  apiUrl: 'https://cloud-kitchen-api.onrender.com/api',
+  socketUrl: 'https://cloud-kitchen-api.onrender.com',
+  clientUrl: 'https://your-app.netlify.app'
 };
