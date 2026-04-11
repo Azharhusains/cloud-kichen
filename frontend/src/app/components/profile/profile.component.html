@@ -9,7 +9,7 @@
         <h1>{{ user.name }}</h1>
         <p>{{ user.email }}</p>
         <mat-chip-set>
-          <mat-chip [class]="user.role === 'admin' ? 'admin-chip' : 'customer-chip'">
+          <mat-chip [class]="user.role.toLowerCase() === 'admin' ? 'admin-chip' : 'customer-chip'">
             {{ user.role | titlecase }}
           </mat-chip>
         </mat-chip-set>
@@ -49,7 +49,7 @@
             
             <div class="toggle-controls">
               <mat-slide-toggle 
-                [checked]="kitchenStatus?.status === 'open'"
+                [checked]="kitchenStatus.status === 'open'"
                 (change)="toggleKitchen($event.checked ? 'open' : 'closed', 'Manual toggle from profile')"
                 color="primary">
                 Open Kitchen
@@ -203,13 +203,13 @@
 
               <div class="order-items">
                 <div *ngFor="let item of order.items" class="order-item">
-                  {{ item.menuItem?.name || 'Item unavailable' }} x {{ item.quantity || 0 }}
+                  {{ item.menuItem.name || 'Item unavailable' }} x {{ item.quantity || 0 }}
                 </div>
               </div>
 
               <div class="order-footer">
                 <div class="order-total">
-                  <strong>Total: ₹{{ order.totalAmount?.toFixed(2) || '0.00' }}</strong>
+                  <strong>Total: ₹{{ order.totalAmount.toFixed(2) }}</strong>
                 </div>
                 <button mat-stroked-button color="primary" (click)="trackOrder(order._id)">
                   <mat-icon>local_shipping</mat-icon>
@@ -238,4 +238,3 @@
     </div>
   </div>
 </div>
-

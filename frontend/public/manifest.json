@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest",
+  "name": "Cloud Kitchen - Premium Restaurant App",
+  "short_name": "CloudKitchen",
+  "description": "Premium cloud kitchen ordering system with real-time updates and offline support",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9Ijk2IiBjeT0iOTYiIHI9Ijk2IiBmaWxsPSIjZTU1NTU1Ii8+CjxwYXRoIGQ9Ik0xMjEuNSA4OS41SDBIMTY4SDBIMjguNUgyMDMuNUgyMzBIMjU3SDI4My41SDMxMVYxMjFDMzExIDEyOS4yIDMwMC4yIDE0MCAyODguNSAxNDBIMjQ4VjE0My4yOEMyNDggMTQ1LjUgMjQ2LjUgMTQ3LjcgMjQ0LjUgMTQ3LjcgSDIzMy41SDIyMiBDMjE5LjUgMTQ3LjcgMjE3ID146LjUgMjE3IDE0My4yIFYyNDBIMjEyIEgyMDIuNUgyMTMuNUgxOTQuNUgxODUuNUgxNzYuNSBIMTY3LjUgSDE1OC41IEgxNDkuNUgxNDAuNUgxMzEuNSBIMTIyLjUgSDEwNy4zIEg5MiBDODkuNSA2OS4zIDc0LjcgNTUgNjAgNTUgNTUuNSA1NSA1NS41IDUxLjUgNTUuNSA0OC4yIFY0OC4yIEg1NS41IEg1NSBDNTIuNSA0OC4yIDUwIDQ5LjkgNTAgNTMuMiA1MCA1Ni41IDUyLjUgNjAgNTUuNSA2MCBDNjEuMiA2MCA2NS41IDU3LjcgNjggNTUuNSBIMzEuNUgzMiBIMzIuNUgzMy41IEgzOC4yIEg0MS41IEg0Mi41IEg0My41IEg0NC41IEg0Ni4zIEg0Ny41IEg0OS4xIEg1MC4zIEg1MS41IEg1Mi41IEg1My41IEg1NC41IEg1NS41IEg1Ni41IEg1Ny41IEg1OC41IEg1OS41IEg2MC41IEg2MS41IEg2Mi41IEg2My41IEg2NC41IEg2NS41IEg2Ni41IEg2Ny41IEg2OC41IEg2OS41IEg3MC41IEg3MS41IEg3Mi41IEg3My41IEg3NC41IEg3NS41IEg3Ni41IEg3Ny41IEg3OC41IEg3OS41IEg4MC41IEg4MS41IEg4Mi41IEg4My41IEg4NC41IEg4NS41IEg4Ni41IEg4Ny41IEg4OC41IEg4OS41IEg5MC41IEg5MS41IEg5Mi41IEg5My41IEg5NC41IEg5NS41IEg5Ni41IEg5Ny41IEg5OC41IEg5OS41IEg4OS41IEgxMDAuNSBIMTAxLjUgSDEwMi41IEgxMDMuNUgxMDQuNUgxMDUuNUgxMDYuNUgxMDcuNUgxMDguNUgxMDkuNUgxMTAuNUgxMTEuNUgxMTIuNUgxMTMuNUgxMTQuNUgxMTUuNUgxMTYuNUgxMTcuNUgxMTguNUgxMTkuNUgxMjAuNUgxMjEuNSIvPgo8L3N2Zz4K",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["food", "restaurant", "ordering"],
+  "lang": "en-US"
+}

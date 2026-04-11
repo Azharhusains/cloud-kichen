@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { NetworkService } from './network.service';
 import { Category } from './category.service';
 
 export interface MenuItem {
@@ -37,10 +38,27 @@ export interface MenuResponse {
   providedIn: 'root'
 })
 export class MenuService {
-  constructor(private http: HttpClient) {}
+  private cachedMenu: MenuResponse | null = null;
+  private menuSubject = new BehaviorSubject<MenuResponse | null>(null);
+  public menu$ = this.menuSubject.asObservable();
 
-  getMenuItems(): Observable<MenuResponse> {
-    return this.http.get<MenuResponse>(`${environment.apiUrl}/menu`);
+  constructor(
+    private http: HttpClient,
+    private networkService: NetworkService
+  ) {}
+
+  getMenuItems(forceRefresh: boolean = false): Observable<MenuResponse> {
+    // Premium offline caching
+    if (!forceRefresh && this.cachedMenu) {
+      return new Observable(observer => observer.next(this.cachedMenu!));
+    }
+
+    return this.http.get<MenuResponse>(`${environment.apiUrl}/menu`).pipe(
+      tap(menuData => {
+        this.cachedMenu = menuData;
+        this.menuSubject.next(menuData);
+      })
+    );
   }
 
   getRecommendedItems(): Observable<{recommendedItems: (MenuItem & {totalQuantity: number, orderCount: number, popularityScore: number})[]}> {

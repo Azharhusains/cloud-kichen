@@ -83,6 +83,33 @@ setInterval(async () => {
   }
 }, 10000); // 10 seconds
 
+// NEW: Periodic health updates via socket (every 30 seconds)
+setInterval(async () => {
+  try {
+    const io = app.get('io');
+    
+    // Get current kitchen status
+    const kitchenStatus = await KitchenStatus.findOne().sort({ updatedAt: -1 });
+    
+    const healthData = {
+      server: 'healthy',
+      database: 'healthy',
+      timestamp: new Date().toISOString(),
+      kitchen: kitchenStatus ? kitchenStatus.status : 'open',
+      overallHealth: kitchenStatus ? kitchenStatus.overallHealth : {}
+    };
+    
+    // Emit to all connected clients
+    io.emit('healthUpdate', healthData);
+    console.log('Health update emitted:', healthData.server, healthData.kitchen);
+    
+  } catch (error) {
+    console.error('Health cron error:', error);
+    const io = app.get('io');
+    io.emit('healthUpdate', { server: 'unhealthy', error: error.message });
+  }
+}, 30000); // 30 seconds
+
 // Kitchen auto status DISABLED - Manual closes respected permanently
 // Manual close during open hours stays closed until manual reopen
 // (No auto-override)
@@ -111,6 +138,8 @@ app.use('/api/payment', require('./routes/payment'));
 app.use('/api/coupons', require('./routes/coupon'));
 app.use('/api/tables', require('./routes/table'));
 app.use('/api/kitchen', require('./routes/kitchen'));
+app.use('/api/health', require('./routes/health'));
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -16,6 +16,8 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
 import { CartService, CartItem } from '../../services/cart.service';
 import { MatChipsModule } from '@angular/material/chips';
 import { environment } from '../../../environments/environment';
+import { NetworkService } from '../../services/network.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-cart',
@@ -55,7 +57,12 @@ export class CartComponent implements OnInit, OnDestroy {
   taxRate: number = 0.05;
   private cartSubscription!: Subscription;
 
-constructor(private router: Router, public cartService: CartService) {}
+constructor(
+  private router: Router, 
+  public cartService: CartService,
+  private networkService: NetworkService,
+  private toastService: ToastService
+) {}
 
   ngOnInit(): void {
     // Subscribe to cart changes from CartService for real-time updates
@@ -98,7 +105,11 @@ constructor(private router: Router, public cartService: CartService) {}
     this.router.navigate(['/menu']);
   }
 
-  checkout(): void {
+  async checkout(): Promise<void> {
+    if (!this.networkService.isOnline()) {
+      this.toastService.show('Cannot checkout while offline. Please connect to internet.', 'error');
+      return;
+    }
     // Navigate to table-select to choose between dine-in or delivery
     this.router.navigate(['/table-select']);
   }

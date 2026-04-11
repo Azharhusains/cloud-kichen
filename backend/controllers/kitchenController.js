@@ -7,35 +7,34 @@ const getKitchenStatus = async (req, res) => {
       .sort({ updatedAt: -1 })
       .populate('manualBy', 'name email role');
 
+    let responseData;
     if (!status) {
       // Default to open if no record
-      return res.json({ 
+      responseData = { 
         status: 'open', 
         isManual: false, 
         manualBy: null,
         note: null,
         updatedAt: new Date()
-      });
+      };
+    } else {
+      responseData = status;
     }
 
     const io = req.app.get('io');
-    // Emit realtime update
-    io.emit('kitchenStatusChanged', {
-      status: status.status,
-      isManual: status.isManual,
-      manualBy: status.manualBy ? status.manualBy.name : null,
-      note: status.note,
-      updatedAt: status.updatedAt
-    });
-    io.to('adminRoom').emit('kitchenStatusChanged', {
-      status: status.status,
-      isManual: status.isManual,
-      manualBy: status.manualBy ? status.manualBy.name : null,
-      note: status.note,
-      updatedAt: status.updatedAt
-    });
+    // Emit realtime update WITH health data
+    const emitData = {
+      status: responseData.status,
+      isManual: responseData.isManual,
+      manualBy: responseData.manualBy ? responseData.manualBy.name : null,
+      note: responseData.note,
+      updatedAt: responseData.updatedAt,
+      overallHealth: responseData.overallHealth
+    };
+    io.emit('kitchenStatusChanged', emitData);
+    io.to('adminRoom').emit('kitchenStatusChanged', emitData);
 
-    res.json(status);
+    res.json(responseData);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -58,14 +57,15 @@ const toggleKitchenStatus = async (req, res) => {
 
     await newStatus.save();
 
-    // Emit to ALL clients for instant realtime update
+    // Emit to ALL clients for instant realtime update WITH health
     const io = req.app.get('io');
     const emitStatus = {
       status: newStatus.status,
       isManual: newStatus.isManual,
       manualBy: req.user.name,
       note: newStatus.note,
-      updatedAt: newStatus.updatedAt
+      updatedAt: newStatus.updatedAt,
+      overallHealth: newStatus.overallHealth
     };
     
     io.emit('kitchenStatusChanged', emitStatus); // All clients

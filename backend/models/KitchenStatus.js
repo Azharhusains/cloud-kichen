@@ -20,6 +20,23 @@ const kitchenStatusSchema = new mongoose.Schema({
   note: {
     type: String,
     maxlength: 500
+  },
+  // Health integration
+  overallHealth: {
+    type: {
+      server: { type: String, default: 'healthy' },
+      database: { type: String, default: 'healthy' },
+      responseTime: { type: Number },
+      uptime: { type: Number },
+      recentOrders24h: { type: Number, default: 0 }
+    },
+    default: () => ({
+      server: 'healthy',
+      database: 'healthy',
+      responseTime: 0,
+      uptime: 0,
+      recentOrders24h: 0
+    })
   }
 }, {
   timestamps: true

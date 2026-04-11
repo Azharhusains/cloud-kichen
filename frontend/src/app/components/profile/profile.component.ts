@@ -26,6 +26,42 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../admin/confirm-dial
 import { KitchenService, KitchenStatus } from '../../services/kitchen.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+
+// Type definitions to fix NG8107 - strict typing
+interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
+interface OrderItem {
+  menuItem: {
+    name: string;
+  };
+  quantity: number;
+}
+
+interface Order {
+  _id: string;
+  orderNumber?: string;
+  orderStatus: string;
+  createdAt: string;
+  items: OrderItem[];
+  totalAmount: number;
+  refundStatus?: string;
+  refundAmount?: number;
+  refundNotes?: string;
+}
+
+interface ProfileUser {
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'SUPER_ADMIN' | 'CUSTOMER';
+  addresses: Address[];
+}
+
 @Component({
   selector: 'app-profile',
   standalone: true,
@@ -33,7 +69,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    AsyncPipe,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -66,10 +101,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
   ]
 })
 export class ProfileComponent implements OnInit {
-  user: any = null;
-  addresses: any[] = [];
-  orders: any[] = [];
-  filteredOrders: any[] = [];
+  user: ProfileUser | null = null;
+  addresses: Address[] = [];
+  orders: Order[] = [];
+  filteredOrders: Order[] = [];
   showAddressForm: boolean = false;
   addressForm: FormGroup;
   searchTerm: string = '';
@@ -109,7 +144,7 @@ export class ProfileComponent implements OnInit {
   }
 
   toggleKitchen(status: 'open' | 'closed', note: string): void {
-    if (this.user.role !== 'ADMIN' && this.user.role !== 'SUPER_ADMIN') return;
+    if (!this.user || this.user.role !== 'ADMIN' && this.user.role !== 'SUPER_ADMIN') return;
     
     this.kitchenService.toggleStatus(status, note).subscribe({
       next: () => {
@@ -196,7 +231,7 @@ loadOrders(): void {
     }
   }
 
-  removeAddress(address: any, index: number): void {
+  removeAddress(address: Address, index: number): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
@@ -226,7 +261,7 @@ loadOrders(): void {
     this.router.navigate(['/order-tracking', orderId]);
   }
 
-  getStatusClass(status: string, order: any): string {
+  getStatusClass(status: string, order: Order): string {
     switch (status) {
       case 'received': return 'status-received';
       case 'preparing': return 'status-preparing';
@@ -234,7 +269,7 @@ loadOrders(): void {
       case 'delivered': return 'status-delivered';
       case 'completed': return 'status-completed';
       case 'cancelled': 
-        if (order?.refundStatus === 'succeeded') {
+        if (order.refundStatus === 'succeeded') {
           return 'status-refunded';
         }
         return 'status-cancelled';
@@ -242,11 +277,11 @@ loadOrders(): void {
     }
   }
 
-  getRefundDisplay(order: any): string {
+  getRefundDisplay(order: Order): string {
     if (!order.refundStatus) return '';
     
     const labels: { [key: string]: string } = {
-      'succeeded': `Refunded ₹${order.refundAmount?.toFixed(2) || 0}`,
+      'succeeded': `Refunded ₹${(order.refundAmount || 0).toFixed(2)}`,
       'manual_pending': 'Cash refunded',
       'failed': `Refund failed: ${order.refundNotes || 'Unknown error'}`,
       'processing': 'Refund processing... (30min)'
@@ -258,7 +293,7 @@ loadOrders(): void {
   /**
    * Check if invoice is available for order
    */
-  canShowInvoice(order: any): boolean {
+  canShowInvoice(order: Order): boolean {
     return ['delivered', 'completed'].includes(order.orderStatus);
   }
 

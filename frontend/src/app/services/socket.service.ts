@@ -272,6 +272,17 @@ export class SocketService {
       });
     });
   }
+
+  // NEW: Health updates integration with NetworkService
+  onHealthUpdate(): Observable<any> {
+    console.log('SocketService: Listening for healthUpdate events');
+    return new Observable(observer => {
+      this.socket.on('healthUpdate', (data) => {
+        console.log('SocketService: Health update received:', data);
+        observer.next(data);
+      });
+    });
+  }
 }
 
 

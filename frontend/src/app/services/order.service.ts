@@ -3,6 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { SocketService } from './socket.service';
+import { NetworkService } from './network.service';
+
+declare global {
+  interface Window {
+    idb: any;
+  }
+}
 
 export interface Order {
   _id: string;
@@ -24,13 +31,13 @@ export class OrderService {
 
   constructor(
     private http: HttpClient,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private networkService: NetworkService
   ) {
     // Listen for new orders (admin)
     this.socketService.onNewOrder().subscribe((order) => {
       console.log('OrderService: New order via socket:', order);
       const currentOrders = this.recentOrdersSubject.value;
-      // Keep last 10 recent orders
       const updatedOrders = [order, ...currentOrders].slice(0, 10);
       this.recentOrdersSubject.next(updatedOrders);
     });
@@ -51,7 +58,6 @@ export class OrderService {
   loadRecentOrders(): void {
     this.getOrders().subscribe({
       next: (orders) => {
-        // Sort by createdAt desc, take last 10
         const recent = orders.slice(0, 10);
         this.recentOrdersSubject.next(recent);
       }
@@ -59,6 +65,9 @@ export class OrderService {
   }
 
   createOrder(orderData: any): Observable<any> {
+    if (!this.networkService.isOnline()) {
+      throw new Error('Cannot place order while offline');
+    }
     return this.http.post(`${environment.apiUrl}/orders`, orderData);
   }
 
@@ -120,4 +129,3 @@ export class OrderService {
     });
   }
 }
-

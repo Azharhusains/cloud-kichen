@@ -1,10 +1,4 @@
-# Task: Fix menu filters showing categories without items (e.g., mutton when only chicken available)
-
-## Steps:
-- [x] 1. Understand issue and create detailed plan (completed)
-- [x] 2. Read relevant backend controller for edit
-- [x] 3. Implement backend fix in categoryController.js
-- [ ] 4. Test the fix
-- [ ] 5. Complete task
-
-Current step: 2/5
+- [x] 1. Add TypeScript interfaces to profile.component.ts
+- [x] 2. Type properties (user, orders, addresses, etc.) in profile.component.ts
+- [x] 3. Update methods (getRefundDisplay, getStatusClass, etc.) with types and remove unnecessary optional chaining
+- [ ] 4. Update profile.component.html: replace user?.role, kitchenStatus?.status, item.menuItem?.name, order.totalAmount?.toFixed(2) with direct access
