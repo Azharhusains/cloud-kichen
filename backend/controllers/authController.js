@@ -246,7 +246,10 @@ const forgotPassword = async (req, res) => {
 
     await user.save();
 
-    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:4200'}/reset-password/${user.resetToken}`;
+    if (!process.env.CLIENT_URL) {
+      return res.status(500).json({ message: 'Server configuration error: CLIENT_URL not set' });
+    }
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${user.resetToken}`;
 
     const message = `
       <h2>Password Reset Request</h2>
