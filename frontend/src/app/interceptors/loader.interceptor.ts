@@ -6,7 +6,9 @@ import { LoaderService } from '../services/loader.service';
 export const loaderInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: HttpHandlerFn): any => {
   const loaderService = inject(LoaderService);
   
-  loaderService.show();
+  if (!req.url.includes('/health') && !req.url.includes('/auth/check-super-admin')) {
+    loaderService.show();
+  }
 
   return next(req).pipe(
     finalize(() => loaderService.hide())
