@@ -1,4 +1,1 @@
-- [x] 1. Add TypeScript interfaces to profile.component.ts
-- [x] 2. Type properties (user, orders, addresses, etc.) in profile.component.ts
-- [x] 3. Update methods (getRefundDisplay, getStatusClass, etc.) with types and remove unnecessary optional chaining
-- [ ] 4. Update profile.component.html: replace user?.role, kitchenStatus?.status, item.menuItem?.name, order.totalAmount?.toFixed(2) with direct access
+# Fix Mongoose Buffering Timeout & 404 Errors\n\n## Status: 🚀 In Progress\n\n### 1. [ ] Update backend/config/database.js\n   - Add buffer options\n   - Connection events\n   - Export readyState\n\n### 2. [ ] Update backend/server.js (Major)\n   - Root health endpoint\n   - Connection retry logic\n   - Guard cron behind readyState\n\n### 3. [ ] Update backend/controllers/tableController.js\n   - Add connection checks\n\n### 4. [ ] Test & Deploy\n   - Local test\n   - Render deploy\n\n**Updated:** $(date)

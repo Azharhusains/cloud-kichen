@@ -6,16 +6,16 @@ const dotenv = require('dotenv');
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
-const connectDB = require('./config/database');
+const { connectDB, dbReady, mongooseConnection } = require('./config/database');
 
 // Load env
 dotenv.config();
 
-// Connect DB
-connectDB();
-
 const app = express();
 const server = http.createServer(app);
+
+// Connect DB with retry (async, non-blocking)
+connectDB();
 
 // ================= ✅ CORS CONFIG (PRODUCTION READY) =================
 
@@ -74,11 +74,7 @@ const io = new Server(server, {
 
 app.set('io', io);
 
-// Models
-const Table = require('./models/Table');
-const KitchenStatus = require('./models/KitchenStatus');
-
-// Socket events
+// Socket events (moved before models for cleaner structure)
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
@@ -95,16 +91,22 @@ io.on('connection', (socket) => {
   });
 });
 
-// ================= ✅ CRON JOBS =================
+// ================= ✅ CRON JOBS (DB READY GUARDED) =================
 
-// Auto unlock tables
-setInterval(async () => {
+// Auto unlock tables - only run when DB connected
+const autoUnlockTables = async () => {
+  if (!dbReady()) {
+    console.log('⏳ DB not ready, skipping auto-unlock');
+    return;
+  }
+
   try {
     const now = new Date();
+    const Table = require('./models/Table');
     const expiredLocks = await Table.find({
       status: 'locked',
       lockExpiresAt: { $lt: now }
-    });
+    }).lean();
 
     for (const table of expiredLocks) {
       await Table.findByIdAndUpdate(table._id, {
@@ -113,33 +115,64 @@ setInterval(async () => {
         lockExpiresAt: null
       });
 
-      io.emit('table_unlocked', {
+      io?.emit('table_unlocked', {
         tableId: table._id,
         tableNumber: table.tableNumber
       });
 
-      io.to('adminRoom').emit('tableStatusChanged', table);
+      io?.to('adminRoom').emit('tableStatusChanged', table);
+    }
+    
+    if (expiredLocks.length > 0) {
+      console.log(`🔓 Auto-unlocked ${expiredLocks.length} expired table locks`);
     }
   } catch (error) {
     console.error('Auto-unlock error:', error);
   }
-}, 10000);
+};
 
-// Health updates
-setInterval(async () => {
+// Initial delay + recurring (safer than immediate setInterval)
+setTimeout(() => {
+  autoUnlockTables(); // First run after delay
+  setInterval(autoUnlockTables, 10000);
+}, 15000); // 15s initial delay
+
+// Health updates - DB ready guarded
+const sendHealthUpdate = async () => {
+  if (!dbReady()) {
+    io?.emit('healthUpdate', { 
+      server: 'starting', 
+      database: 'connecting',
+      timestamp: new Date().toISOString() 
+    });
+    return;
+  }
+
   try {
+    const KitchenStatus = require('./models/KitchenStatus');
     const kitchenStatus = await KitchenStatus.findOne().sort({ updatedAt: -1 });
 
-    io.emit('healthUpdate', {
+    io?.emit('healthUpdate', {
       server: 'healthy',
       database: 'healthy',
       timestamp: new Date().toISOString(),
-      kitchen: kitchenStatus?.status || 'open'
+      kitchen: kitchenStatus?.status || 'open',
+      readyState: mongooseConnection().readyState
     });
   } catch (error) {
-    io.emit('healthUpdate', { server: 'unhealthy', error: error.message });
+    io?.emit('healthUpdate', { 
+      server: 'healthy', 
+      database: 'unhealthy', 
+      error: error.message 
+    });
   }
-}, 30000);
+};
+
+// Safer interval with initial delay
+setTimeout(() => {
+  sendHealthUpdate();
+  setInterval(sendHealthUpdate, 30000);
+}, 10000);
 
 // ================= ✅ MIDDLEWARE =================
 
@@ -151,8 +184,32 @@ app.use(express.urlencoded({ extended: true }));
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ================= ✅ ROUTES =================
+// ================= ✅ ROOT HEALTH (Render PaaS) =================
+app.head('/', (req, res) => {
+  res.set('Content-Type', 'text/plain').status(200).send('OK');
+});
 
+app.get('/', async (req, res) => {
+  const health = {
+    status: 'healthy',
+    database: dbReady() ? 'ready' : 'connecting',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development'
+  };
+  
+  if (dbReady()) {
+    try {
+      await mongooseConnection().db.admin().ping();
+      health.database = 'healthy';
+    } catch {
+      health.database = 'unhealthy';
+    }
+  }
+  
+  res.json(health);
+});
+
+// ================= ✅ ROUTES =================
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/revenue', require('./routes/revenue'));
