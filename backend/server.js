@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
-const { connectDB, dbReady, mongooseConnection } = require('./config/database');
+const { connectDB, dbReady, mongooseConnection, onReady } = require('./config/database');
 
 // Load env
 dotenv.config();
@@ -131,11 +131,7 @@ const autoUnlockTables = async () => {
   }
 };
 
-// Initial delay + recurring (safer than immediate setInterval)
-setTimeout(() => {
-  autoUnlockTables(); // First run after delay
-  setInterval(autoUnlockTables, 10000);
-}, 15000); // 15s initial delay
+// Started after DB ready
 
 // Health updates - DB ready guarded
 const sendHealthUpdate = async () => {
@@ -168,11 +164,22 @@ const sendHealthUpdate = async () => {
   }
 };
 
-// Safer interval with initial delay
-setTimeout(() => {
+// Started after DB ready
+
+// ================= ✅ CRON JOBS - DB READY =================
+
+// Start cron jobs when DB is ready
+onReady().then(() => {
+  console.log('🚀 Starting DB-dependent cron jobs');
+  
+  autoUnlockTables();
+  setInterval(autoUnlockTables, 10000);
+  
   sendHealthUpdate();
   setInterval(sendHealthUpdate, 30000);
-}, 10000);
+}).catch(err => {
+  console.error('❌ Failed to start cron jobs:', err);
+});
 
 // ================= ✅ MIDDLEWARE =================
 

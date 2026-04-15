@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 
 let dbReady = false;
 let retries = 0;
+let resolveReady;
+const readyPromise = new Promise((resolve) => {
+  resolveReady = resolve;
+});
 const MAX_RETRIES = 10;
 
 // Serverless-safe options (no buffering)
@@ -22,8 +26,9 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGO_URI, mongooseOptions);
     
     // Connection events
-    mongoose.connection.once('connected', () => {
+mongoose.connection.once('connected', () => {
       dbReady = true;
+      resolveReady?.();
       console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
     });
     
@@ -52,4 +57,4 @@ const connectDB = async () => {
 };
 
 // Export for use in server.js
-module.exports = { connectDB, dbReady: () => dbReady, mongooseConnection: () => mongoose.connection };
+module.exports = { connectDB, dbReady: () => dbReady, mongooseConnection: () => mongoose.connection, onReady: () => readyPromise };
