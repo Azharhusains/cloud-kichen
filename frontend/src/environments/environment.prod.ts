@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://your-production-api-url.com/api'
+  apiUrl: 'https://cloud-kichen-3.onrender.com/api'
 };
