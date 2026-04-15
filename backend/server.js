@@ -216,20 +216,7 @@ app.get('/', async (req, res) => {
   res.json(health);
 });
 
-// ================= ✅ ROUTES =================
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/revenue', require('./routes/revenue'));
-app.use('/api/menu', require('./routes/menu'));
-app.use('/api/orders', require('./routes/order'));
-app.use('/api/inventory', require('./routes/inventory'));
-app.use('/api/categories', require('./routes/category'));
-app.use('/api/ai', require('./routes/ai'));
-app.use('/api/payment', require('./routes/payment'));
-app.use('/api/coupons', require('./routes/coupon'));
-app.use('/api/tables', require('./routes/table'));
-app.use('/api/kitchen', require('./routes/kitchen'));
-app.use('/api/health', require('./routes/health'));
+
 
 // ================= ✅ ERROR HANDLING =================
 
