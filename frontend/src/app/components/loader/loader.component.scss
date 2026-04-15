@@ -1,0 +1,153 @@
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+
+  /* Dark kitchen ambience */
+  background: rgba(10, 10, 10, 0.65);
+  backdrop-filter: blur(8px);
+
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  opacity: 0;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Glassmorphism + premium card */
+.loader-container {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 2rem 2.2rem;
+
+  /* Glass effect */
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  /* Soft glow (food-tech warmth) */
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(255, 107, 53, 0.25);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+
+  animation: scaleIn 0.35s ease-out;
+}
+
+/* Animation container */
+.image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Cooking animation */
+.cooking-pot {
+  width: 150px;
+  height: 150px;
+
+  /* Floating feel instead of bounce */
+  animation: float 3s ease-in-out infinite;
+
+  /* Subtle glow */
+  filter: drop-shadow(0 10px 20px rgba(255, 107, 53, 0.4));
+}
+
+/* Optional rotating aura ring (VERY PREMIUM LOOK) */
+.image-container::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 107, 53, 0.4),
+    transparent,
+    rgba(255, 210, 63, 0.4),
+    transparent
+  );
+
+  animation: rotate 4s linear infinite;
+  filter: blur(20px);
+  z-index: -1;
+}
+
+/* Message styling */
+.loader-message {
+  font-size: 0.95rem;
+  color: #ffd23f;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: 0.4px;
+
+  animation: textFade 2s ease-in-out infinite;
+}
+
+/* ---------------- Animations ---------------- */
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Smooth floating instead of bounce */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Rotating glow */
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Text breathing effect */
+@keyframes textFade {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ---------------- Responsive ---------------- */
+
+@media (max-width: 480px) {
+  .loader-container {
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+
+  .cooking-pot {
+    width: 120px;
+    height: 120px;
+  }
+
+  .image-container::after {
+    width: 150px;
+    height: 150px;
+  }
+}

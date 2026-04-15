@@ -1,19 +1,10 @@
-# Fix Mongoose Duplicate Schema Index Warnings
+# Fix Interceptor Error: "interceptor.intercept is not a function"
 
-## Steps to Complete:
+## Steps:
+- [x] Step 1: Update `frontend/src/app/app.config.ts` to use `withInterceptors([loaderInterceptor, authInterceptor])` instead of mixed DI setup
+- [ ] Step 2: Restart Angular dev server (`cd frontend && ng serve`)
+- [ ] Step 3: Test `/menu` route - verify categories and menu items load without interceptor errors
+- [ ] Step 4: Confirm loader interceptor works (shows/hides on requests) and auth token attaches
 
-### 1. [x] Create TODO.md (tracking file)
-### 2. [x] Analyze project and identify affected files
-### 3. [x] Create detailed edit plan
-### 4. [x] Get user approval for plan
-### 5. [x] Edit backend model files to remove duplicate indexes
-   - Table.js ✅
-   - Category.js ✅
-   - MenuItem.js ✅
-   - Inventory.js ✅
-   - Coupon.js ✅
-### 6. [x] Update TODO.md with completion status
-### 7. [ ] Test by restarting backend server
-### 8. [x] Verify no warnings and attempt completion
+**Current Status:** app.config.ts updated successfully. Please restart dev server (Step 2) and test.
 
-**Status:** ✅ Complete! Duplicate indexes removed from all identified models. Search confirms no remaining matches. Restart your backend server to verify warnings are gone.

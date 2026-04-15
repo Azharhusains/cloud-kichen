@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { LoaderComponent } from './components/loader/loader.component';
 import { NavigationComponent } from './components/navigation/navigation.component';
 import { FooterComponent } from './components/navigation/footer.component';
 import { NetworkService, HealthStatus } from './services/network.service';
@@ -10,7 +11,7 @@ import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, NavigationComponent, FooterComponent],
+  imports: [CommonModule, RouterOutlet, LoaderComponent, NavigationComponent, FooterComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
