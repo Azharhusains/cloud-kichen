@@ -1,5 +1,6 @@
+// @ts-nocheck
 // Service Worker for Premium Offline Support
-const CACHE_NAME = 'cloud-kitchen-v1';
+const CACHE_NAME = 'cloud-kitchen-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -20,34 +21,43 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Cache API responses for offline (menu, tables, etc.)
   if (url.origin === location.origin && url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request).then(response => {
-        // Clone and cache successful responses
-        if (response.ok) {
-          const clonedResponse = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clonedResponse));
-        }
-        return response;
-      }).catch(() => {
-        // Offline fallback - return cached API data
-        return caches.match(event.request);
-      })
-    );
+    event.respondWith(handleApiRequest(event.request));
   } else {
-    // Static assets: cache-first
-    event.respondWith(
-      caches.match(event.request)
-        .then(response => response || fetch(event.request)
-          .then(newResponse => {
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, newResponse.clone()));
-            return newResponse;
-          })
-        )
-    );
+    event.respondWith(handleStaticRequest(event.request));
   }
 });
+
+async function handleApiRequest(request) {
+  try {
+    const networkResponse = await fetch(request);
+    const cache = await caches.open(CACHE_NAME);
+    if (networkResponse.ok && !networkResponse.bodyUsed) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    console.error('API fetch failed:', error);
+    return caches.match(request);
+  }
+}
+
+async function handleStaticRequest(request) {
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const networkResponse = await fetch(request);
+    const cache = await caches.open(CACHE_NAME);
+    cache.put(request, networkResponse.clone());
+    return networkResponse;
+  } catch (error) {
+    console.error('Static fetch failed:', error);
+    return caches.match(request);
+  }
+};
 
 // Activate - clean old caches
 self.addEventListener('activate', event => {

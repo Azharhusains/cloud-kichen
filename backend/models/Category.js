@@ -40,11 +40,7 @@ const categorySchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Additional indexes for audit trail
-categorySchema.index({ createdBy: 1 });
-categorySchema.index({ updatedBy: 1, updatedAt: -1 });
-
-// Indexes for faster queries and audit trail
+// Indexes (duplicates removed)
 categorySchema.index({ isActive: 1, sortOrder: 1 });
 categorySchema.index({ createdBy: 1 });
 categorySchema.index({ updatedBy: 1, updatedAt: -1 });
