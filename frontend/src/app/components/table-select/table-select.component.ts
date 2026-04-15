@@ -58,6 +58,7 @@ export class TableSelectComponent implements OnInit, OnDestroy {
     if (this.lockTimer) {
       clearInterval(this.lockTimer);
     }
+    this.clearTable();
   }
 
 
@@ -236,6 +237,7 @@ export class TableSelectComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
+    this.clearTable();
     this.router.navigate(['/menu']);
   }
 
