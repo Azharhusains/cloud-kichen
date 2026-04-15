@@ -41,10 +41,9 @@ const corsOptions = {
 };
 
 // Apply CORS
-app.use(cors(corsOptions));
+app.use(cors());
 
-// Handle preflight
-app.options('*', cors(corsOptions));
+// Handle preflight OPTIONS\napp.options('*', cors());
 
 // Fallback headers (extra safety)
 app.use((req, res, next) => {
@@ -69,11 +68,8 @@ app.use((req, res, next) => {
 // ================= ✅ SOCKET.IO =================
 
 const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
+  cors: { origin: '*',
+    methods: ['GET', 'POST'] }
 });
 
 app.set('io', io);
@@ -189,5 +185,4 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+  console.log(`🚀 Server running on port ${PORT}`);});
