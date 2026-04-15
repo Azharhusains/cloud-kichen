@@ -28,7 +28,7 @@ const fileFilter = (req, file, cb) => {
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 
-  if (mimetypes && mimetype) {
+  if (extname && mimetype) {
     return cb(null, true);
   } else {
     cb(new Error('Only image files are allowed!'), false);
