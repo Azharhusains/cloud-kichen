@@ -8,42 +8,90 @@ const path = require('path');
 const { Server } = require('socket.io');
 const connectDB = require('./config/database');
 
-// Load environment variables
+// Load env
 dotenv.config();
 
-// Connect to database
+// Connect DB
 connectDB();
 
 const app = express();
 const server = http.createServer(app);
 
-// Socket.IO setup
-const Table = require('./models/Table');
-const KitchenStatus = require('./models/KitchenStatus');
+// ================= ✅ CORS CONFIG (PRODUCTION READY) =================
+
+const allowedOrigins = [
+  'https://cloud-kichen-az.netlify.app',
+  'http://localhost:4200',
+  'http://localhost:3000'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // mobile/postman
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed: ' + origin));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+// Apply CORS
+app.use(cors(corsOptions));
+
+// Handle preflight
+app.options('*', cors(corsOptions));
+
+// Fallback headers (extra safety)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+  );
+  res.header(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+  );
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
+// ================= ✅ SOCKET.IO =================
+
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
-
-// Make io accessible to routes
 app.set('io', io);
 
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('A client connected:', socket.id);
+// Models
+const Table = require('./models/Table');
+const KitchenStatus = require('./models/KitchenStatus');
 
-  // Join rooms based on user role
+// Socket events
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
   socket.on('joinAdmin', () => {
     socket.join('adminRoom');
-    console.log('Client joined admin room:', socket.id);
   });
 
   socket.on('joinOrder', (orderId) => {
     socket.join(`order_${orderId}`);
-    console.log(`Client joined order room: order_${orderId}`);
   });
 
   socket.on('disconnect', () => {
@@ -51,12 +99,12 @@ io.on('connection', (socket) => {
   });
 });
 
-// NEW: Auto-unlock expired table locks (every 10 seconds)
+// ================= ✅ CRON JOBS =================
+
+// Auto unlock tables
 setInterval(async () => {
   try {
-    const io = app.get('io');
     const now = new Date();
-    
     const expiredLocks = await Table.find({
       status: 'locked',
       lockExpiresAt: { $lt: now }
@@ -69,63 +117,46 @@ setInterval(async () => {
         lockExpiresAt: null
       });
 
-      // Emit unlock event
       io.emit('table_unlocked', {
         tableId: table._id,
         tableNumber: table.tableNumber
       });
-      io.to('adminRoom').emit('tableStatusChanged', table);
 
-      console.log(`Auto-unlocked expired table ${table.tableNumber}`);
+      io.to('adminRoom').emit('tableStatusChanged', table);
     }
   } catch (error) {
-  console.error('Auto-unlock cron error:', error);
+    console.error('Auto-unlock error:', error);
   }
-}, 10000); // 10 seconds
+}, 10000);
 
-// NEW: Periodic health updates via socket (every 30 seconds)
+// Health updates
 setInterval(async () => {
   try {
-    const io = app.get('io');
-    
-    // Get current kitchen status
     const kitchenStatus = await KitchenStatus.findOne().sort({ updatedAt: -1 });
-    
-    const healthData = {
+
+    io.emit('healthUpdate', {
       server: 'healthy',
       database: 'healthy',
       timestamp: new Date().toISOString(),
-      kitchen: kitchenStatus ? kitchenStatus.status : 'open',
-      overallHealth: kitchenStatus ? kitchenStatus.overallHealth : {}
-    };
-    
-    // Emit to all connected clients
-    io.emit('healthUpdate', healthData);
-    console.log('Health update emitted:', healthData.server, healthData.kitchen);
-    
+      kitchen: kitchenStatus?.status || 'open'
+    });
   } catch (error) {
-    console.error('Health cron error:', error);
-    const io = app.get('io');
     io.emit('healthUpdate', { server: 'unhealthy', error: error.message });
   }
-}, 30000); // 30 seconds
+}, 30000);
 
-// Kitchen auto status DISABLED - Manual closes respected permanently
-// Manual close during open hours stays closed until manual reopen
-// (No auto-override)
+// ================= ✅ MIDDLEWARE =================
 
-
-// Middleware
 app.use(helmet());
-app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files statically at root /uploads path
+// Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
+// ================= ✅ ROUTES =================
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/revenue', require('./routes/revenue'));
@@ -140,20 +171,23 @@ app.use('/api/tables', require('./routes/table'));
 app.use('/api/kitchen', require('./routes/kitchen'));
 app.use('/api/health', require('./routes/health'));
 
+// ================= ✅ ERROR HANDLING =================
 
-// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error('Error:', err.message);
+  res.status(500).json({
+    message: err.message || 'Internal Server Error'
+  });
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
+// ================= ✅ START SERVER =================
+
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
