@@ -56,36 +56,52 @@ const getOrders = async (req, res) => {
         }
       }
       
-      // Second pass: build the aggregated orders list
-      const aggregatedOrders = [];
-      const processedMasterIds = new Set();
-      
-      for (const order of orders) {
-        // Delivery orders go straight through
-        if (order.orderType === 'delivery') {
-          aggregatedOrders.push(order);
-          continue;
-        }
-        
-        // Legacy dine-in orders (no masterOrderId) go straight through
-        if (!order.masterOrderId) {
-          aggregatedOrders.push(order);
-          continue;
-        }
-        
-        const masterId = order.masterOrderId.toString();
-        
-        // Skip if we already processed this master order
-        if (processedMasterIds.has(masterId)) {
-          continue;
-        }
-        
-        const group = masterOrderMap.get(masterId);
-        processedMasterIds.add(masterId);
-        
-        // Use main order if available, otherwise use first addon order as fallback
-        const mainOrder = group.mainOrder || group.addonOrders[0];
-        const orderObj = mainOrder.toObject();
+       // Second pass: build the aggregated orders list
+       const aggregatedOrders = [];
+       const processedMasterIds = new Set();
+       
+       for (const order of orders) {
+         // Delivery orders go straight through
+         if (order.orderType === 'delivery') {
+           aggregatedOrders.push(order);
+           continue;
+         }
+         
+         // Legacy dine-in orders (no masterOrderId) go straight through
+         if (!order.masterOrderId) {
+           aggregatedOrders.push(order);
+           continue;
+         }
+         
+         const masterId = order.masterOrderId.toString();
+         
+         // Skip if we already processed this master order
+         if (processedMasterIds.has(masterId)) {
+           continue;
+         }
+         
+         const group = masterOrderMap.get(masterId);
+         processedMasterIds.add(masterId);
+         
+         // Use main order if available, otherwise use first addon order as fallback
+         const mainOrder = group.mainOrder || group.addonOrders[0];
+         const orderObj = mainOrder.toObject();
+         
+         // Mark main order items with status
+         orderObj.items = mainOrder.items.map(item => ({
+           ...item.toObject(),
+           subOrderId: mainOrder._id,
+           isAddon: false,
+           orderStatus: mainOrder.orderStatus,
+           isCancelled: mainOrder.orderStatus === 'cancelled'
+         }));
+         
+         // If main order is cancelled, zero out its totals before adding addons
+         if (mainOrder.orderStatus === 'cancelled') {
+           orderObj.subtotal = 0;
+           orderObj.taxAmount = 0;
+           orderObj.totalAmount = 0;
+         }
         
         // Merge all addon items into main order - skip the main order itself if it's in addonOrders
         for (const addonOrder of group.addonOrders) {
@@ -94,22 +110,26 @@ const getOrders = async (req, res) => {
             continue;
           }
           
-          if (addonOrder.items) {
-            // Populate menuItem for addon order items
-            await addonOrder.populate('items.menuItem');
-            
-            const addonItems = addonOrder.items.map(item => ({
-              ...item.toObject(),
-              subOrderId: addonOrder._id,
-              isAddon: true
-            }));
-            orderObj.items = [...orderObj.items, ...addonItems];
-            
-            // Update totals
-            orderObj.subtotal += addonOrder.subtotal;
-            orderObj.taxAmount += addonOrder.taxAmount;
-            orderObj.totalAmount += addonOrder.totalAmount;
-          }
+           if (addonOrder.items) {
+             // Populate menuItem for addon order items
+             await addonOrder.populate('items.menuItem');
+             
+             const addonItems = addonOrder.items.map(item => ({
+               ...item.toObject(),
+               subOrderId: addonOrder._id,
+               isAddon: true,
+               orderStatus: addonOrder.orderStatus,
+               isCancelled: addonOrder.orderStatus === 'cancelled'
+             }));
+             orderObj.items = [...orderObj.items, ...addonItems];
+             
+             // Update totals - only add non-cancelled addon orders
+             if (addonOrder.orderStatus !== 'cancelled') {
+               orderObj.subtotal += addonOrder.subtotal;
+               orderObj.taxAmount += addonOrder.taxAmount;
+               orderObj.totalAmount += addonOrder.totalAmount;
+             }
+           }
         }
         
         aggregatedOrders.push(orderObj);
@@ -153,21 +173,24 @@ const getOrder = async (req, res) => {
           orderResponse.orderNumber = mainOrder.orderNumber;
           orderResponse.originalOrderId = mainOrder._id;
           
-          // Merge ALL items from ALL suborders
-          const allItems = allSubOrders.flatMap(subOrder => 
-            subOrder.items.map(item => ({
-              ...item.toObject(),
-              subOrderId: subOrder._id,
-              isAddon: subOrder.isAddon
-            }))
-          );
-          
-          orderResponse.items = allItems;
-          
-          // Update totals to sum of all suborders
-          orderResponse.subtotal = allSubOrders.reduce((sum, o) => sum + o.subtotal, 0);
-          orderResponse.taxAmount = allSubOrders.reduce((sum, o) => sum + o.taxAmount, 0);
-          orderResponse.totalAmount = allSubOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+           // Merge ALL items from ALL suborders
+           const allItems = allSubOrders.flatMap(subOrder => 
+             subOrder.items.map(item => ({
+               ...item.toObject(),
+               subOrderId: subOrder._id,
+               isAddon: subOrder.isAddon,
+               orderStatus: subOrder.orderStatus,
+               isCancelled: subOrder.orderStatus === 'cancelled'
+             }))
+           );
+           
+           orderResponse.items = allItems;
+           
+           // Update totals to sum of all NON-CANCELLED suborders only
+           const activeOrders = allSubOrders.filter(o => o.orderStatus !== 'cancelled');
+           orderResponse.subtotal = activeOrders.reduce((sum, o) => sum + o.subtotal, 0);
+           orderResponse.taxAmount = activeOrders.reduce((sum, o) => sum + o.taxAmount, 0);
+           orderResponse.totalAmount = activeOrders.reduce((sum, o) => sum + o.totalAmount, 0);
         }
         
         // Also keep aggregatedItems for backward compatibility
@@ -855,6 +878,14 @@ const cancelOrder = async (req, res) => {
     // Emit to specific order room
     io.to(orderRoom).emit('orderStatusChanged', populatedOrder);
     io.to(orderRoom).emit('orderCancelled', populatedOrder);
+
+    // If this is a dine-in suborder, emit master order updated event to refresh all tracking pages
+    if (order.masterOrderId && order.orderType === 'dine-in') {
+      io.to(`user_${order.masterOrderId}`).emit('master_order_updated', {
+        masterOrderId: order.masterOrderId,
+        tableId: order.tableNumber
+      });
+    }
 
     // Broadcast as fallback
     io.emit('orderStatusBroadcast', populatedOrder);

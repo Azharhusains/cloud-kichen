@@ -146,13 +146,16 @@
 
       <mat-card-content>
             <div class="order-items">
-              <div *ngFor="let item of getDisplayItems()" class="order-item">
+              <div *ngFor="let item of getDisplayItems()" class="order-item" [class.cancelled]="item.isCancelled">
                 <div class="item-image">
                   <mat-icon>restaurant</mat-icon>
                 </div>
                 <div class="item-info">
                   <span class="item-name">{{ item.menuItem.name }}{{ getPortionLabel(item) }}</span>
-                  <span class="item-qty">Qty: {{ item.quantity }}</span>
+                  <span class="item-qty">
+                    Qty: {{ item.quantity }}
+                    <span *ngIf="item.isCancelled" class="cancelled-badge">Cancelled</span>
+                  </span>
                 </div>
                 <span class="item-price"
                   >₹{{ (getItemDisplayPrice(item) * item.quantity) | number : '1.2-2' }}</span

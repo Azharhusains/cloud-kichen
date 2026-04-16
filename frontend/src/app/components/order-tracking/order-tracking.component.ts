@@ -580,10 +580,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   getSubtotal(): number {
     if (!this.order) return 0;
     
-    // For dine-in orders with aggregated items, calculate from all items
+    // For dine-in orders with aggregated items, calculate from all NON-CANCELLED items
     if (this.order.aggregatedItems && this.order.aggregatedItems.length > 0) {
-      return this.order.aggregatedItems.reduce((sum: number, item: any) => 
-        sum + (this.getItemDisplayPrice(item) * item.quantity), 0);
+      return this.order.aggregatedItems
+        .filter((item: any) => !item.isCancelled)
+        .reduce((sum: number, item: any) => 
+          sum + (this.getItemDisplayPrice(item) * item.quantity), 0);
     }
     
     return typeof this.order.subtotal === 'number' ? this.order.subtotal : 0;

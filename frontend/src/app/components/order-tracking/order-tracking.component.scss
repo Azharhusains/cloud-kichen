@@ -394,6 +394,27 @@ mat-card {
       &:last-child {
         margin-bottom: 0;
       }
+      
+      &.cancelled {
+        opacity: 0.5;
+        background: #ffebee;
+        text-decoration: line-through;
+        
+        &:hover {
+          background: #ffcdd2;
+        }
+        
+        .cancelled-badge {
+          background: #f44336;
+          color: white;
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 0.7rem;
+          font-weight: 500;
+          margin-left: 8px;
+          text-decoration: none;
+        }
+      }
 
       .item-image {
         width: 48px;

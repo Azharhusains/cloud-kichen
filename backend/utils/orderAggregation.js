@@ -43,14 +43,21 @@ async function getAggregatedOrder(masterOrderId) {
         subOrderId: order._id,
         subOrderNumber: order.orderNumber,
         isAddon: order.isAddon,
-        orderStatus: order.orderStatus
+        orderStatus: order.orderStatus,
+        isCancelled: order.orderStatus === 'cancelled'
       }))
     );
 
-    // Calculate aggregated amounts (sum across all suborders)
-    const aggregatedSubtotal = subOrders.reduce((sum, order) => sum + order.subtotal, 0);
-    const aggregatedTaxAmount = subOrders.reduce((sum, order) => sum + order.taxAmount, 0);
-    const aggregatedTotalAmount = subOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    // Calculate aggregated amounts (sum across all NON-CANCELLED suborders only)
+    const aggregatedSubtotal = subOrders
+      .filter(order => order.orderStatus !== 'cancelled')
+      .reduce((sum, order) => sum + order.subtotal, 0);
+    const aggregatedTaxAmount = subOrders
+      .filter(order => order.orderStatus !== 'cancelled')
+      .reduce((sum, order) => sum + order.taxAmount, 0);
+    const aggregatedTotalAmount = subOrders
+      .filter(order => order.orderStatus !== 'cancelled')
+      .reduce((sum, order) => sum + order.totalAmount, 0);
 
     return {
       masterOrder: masterOrder.toObject(),
