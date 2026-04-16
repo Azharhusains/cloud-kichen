@@ -1,5 +1,5 @@
 const express = require('express');
-const { getOrders, getOrder, createOrder, updateOrderStatus, getInvoice, getOrderInvoicePDF, cancelOrder, getMasterOrderByTable, getMasterOrderAggregated, addMoreItems } = require('../controllers/orderController');
+const { getOrders, getOrder, createOrder, updateOrderStatus, getInvoice, getOrderInvoicePDF, cancelOrder, getMasterOrderByTable, getMasterOrderAggregated, addMoreItems, cancelMasterOrder } = require('../controllers/orderController');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -28,6 +28,7 @@ router.get('/master-orders/table/:tableNumber/active', protect, async (req, res)
 });
 router.get('/master-orders/:masterOrderId', protect, getMasterOrderAggregated);
 router.post('/master-orders/dinein/:tableNumber/add-more', protect, addMoreItems);
+router.put('/master-orders/:id/cancel', protect, cancelMasterOrder);
 
 module.exports = router;
 

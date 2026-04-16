@@ -119,6 +119,15 @@ export class OrderService {
   }
 
   /**
+   * Cancel a master order (all suborders)
+   * @param id - Master Order ID
+   * @param reason - Reason for cancellation
+   */
+  cancelMasterOrder(id: string, reason: string): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/orders/master-orders/${id}/cancel`, { reason });
+  }
+
+  /**
    * Download PDF invoice for order (server-generated)
    * @param orderNumber - Order number as string (e.g. "16")
    * @returns Observable<Blob> for browser download

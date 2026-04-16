@@ -339,10 +339,23 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe((reason: string | null) => {
       if (reason && reason.trim() !== '') {
-        this.orderService.cancelOrder(this.order!._id, reason.trim()).subscribe({
-          next: (updatedOrder) => {
-            this.order = { ...updatedOrder };
-            this.toastService.success('Order cancelled successfully');
+        // Check if this is a master order (has masterOrder field or aggregatedItems)
+        const isMasterOrder = this.order!.masterOrder || this.order!.aggregatedItems || this.order!._id?.toString() === this.order!.masterOrderId?.toString();
+        
+        const cancelObservable = isMasterOrder 
+          ? this.orderService.cancelMasterOrder(this.order!._id, reason.trim())
+          : this.orderService.cancelOrder(this.order!._id, reason.trim());
+          
+        cancelObservable.subscribe({
+          next: (result) => {
+            // For master order cancel, reload the order to show updated status
+            if (isMasterOrder) {
+              this.loadOrder(this.orderId);
+              this.toastService.success(result.message || 'All orders cancelled successfully');
+            } else {
+              this.order = { ...result };
+              this.toastService.success('Order cancelled successfully');
+            }
             this.cdr.detectChanges();
           },
           error: (error: any) => {

@@ -872,11 +872,165 @@ const getMasterOrderAggregated = require('./getMasterOrderAggregated');  // 4e
 const addMoreItems = require('./addMoreItems');
 const completeMasterOrder = require('./completeMasterOrder');
 
+const cancelMasterOrder = async (req, res) => {
+  try {
+    const masterOrder = await MasterOrder.findById(req.params.id);
+    if (!masterOrder) {
+      return res.status(404).json({ message: 'Master order not found' });
+    }
+
+    // Check if user is admin or super admin
+    const isAdmin = req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN';
+    
+    // Find all suborders for this master order
+    const subOrders = await Order.find({ masterOrderId: masterOrder._id });
+    
+    if (subOrders.length === 0) {
+      return res.status(400).json({ message: 'No suborders found for this master order' });
+    }
+
+    // For customers, verify they own the order and at least one suborder is cancellable
+    if (!isAdmin) {
+      // Check if user owns the master order (all suborders should be same user)
+      const firstOrder = subOrders[0];
+      if (firstOrder.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to cancel this order' });
+      }
+
+      // Check if at least one suborder is cancellable
+      const cancellableStatuses = ['received', 'preparing'];
+      const hasCancellable = subOrders.some(order => cancellableStatuses.includes(order.orderStatus));
+      
+      if (!hasCancellable) {
+        return res.status(400).json({ 
+          message: 'Order cannot be cancelled at this stage. Only orders in received or preparing status can be cancelled.' 
+        });
+      }
+    }
+
+    const { reason, reasonUser, reasonAdmin } = req.body;
+
+    // Cancel ALL suborders
+    const cancelledOrders = [];
+    for (const order of subOrders) {
+      // Skip already cancelled orders
+      if (order.orderStatus === 'cancelled') continue;
+
+      // Only cancel cancellable statuses for customers
+      if (!isAdmin) {
+        const cancellableStatuses = ['received', 'preparing'];
+        if (!cancellableStatuses.includes(order.orderStatus)) continue;
+      }
+
+      // Update order with cancellation details
+      order.orderStatus = 'cancelled';
+      order.cancellationReason = reason || (isAdmin ? 'Cancelled by admin' : 'Cancelled by customer');
+      
+      // Store separate reasons for user-facing and admin internal notes
+      if (isAdmin) {
+        order.cancellationReasonUser = reasonUser || reason || 'Cancelled by admin';
+        order.cancellationReasonAdmin = reasonAdmin || null;
+      } else {
+        order.cancellationReasonUser = reason || 'Cancelled by customer';
+        order.cancellationReasonAdmin = null;
+      }
+      
+      order.cancelledBy = req.user._id;
+      order.cancelledAt = new Date();
+
+      await order.save();
+
+      // Universal refund for ALL online payments on cancel (customer/admin)
+      if (order.paymentMethod === 'online' && order.paymentStatus === 'succeeded') {
+        const PaymentController = require('./paymentController');
+        const refundResult = await PaymentController.processRefund(order);
+        
+        if (refundResult.success) {
+          console.log(`✅ Auto-refund succeeded for order ${order.orderNumber}: ${refundResult.refund.id} (${isAdmin ? 'ADMIN' : 'CUSTOMER'} cancel)`);
+        } else {
+          console.error(`❌ Auto-refund failed for order ${order.orderNumber}:`, refundResult.error);
+        }
+      } else if (order.paymentMethod === 'cash') {
+        order.refundStatus = 'manual_pending';
+        order.refundNotes = 'Cash refund - process manually';
+        await order.save();
+        console.log(`💰 Cash refund pending (manual) for order ${order.orderNumber}`);
+      }
+
+      // Restore inventory stock (only for non-delivered orders)
+      if (order.orderStatus !== 'delivered') {
+        await restoreStock(order.items);
+      }
+
+      cancelledOrders.push(order);
+    }
+
+    // Mark master order as CANCELLED
+    await MasterOrder.findByIdAndUpdate(masterOrder._id, {
+      status: 'CANCELLED',
+      cancelledAt: new Date()
+    });
+
+    // For dine-in orders, if cancelled, set table back to available
+    if (masterOrder.tableId) {
+      await Table.findOneAndUpdate(
+        { tableNumber: masterOrder.tableId },
+        { status: 'available' }
+      );
+      console.log(`Table ${masterOrder.tableId} marked as available (master order cancelled)`);
+    }
+
+    // Emit real-time events
+    const io = req.app.get('io');
+    
+    // Emit master order cancelled event
+    io.to('adminRoom').emit('master_order_cancelled', {
+      masterOrderId: masterOrder._id,
+      tableId: masterOrder.tableId,
+      cancelledOrders: cancelledOrders.length
+    });
+    
+    io.to(`table_${masterOrder.tableId}`).emit('master_order_cancelled', {
+      masterOrderId: masterOrder._id,
+      tableId: masterOrder.tableId
+    });
+
+    // Emit individual order cancelled events for each suborder
+    for (const order of cancelledOrders) {
+      const populatedOrder = await Order.findById(order._id)
+        .populate('user', 'name email')
+        .populate('items.menuItem');
+      
+      const orderRoom = `order_${order._id.toString()}`;
+      
+      io.to('adminRoom').emit('orderUpdated', populatedOrder);
+      io.to('adminRoom').emit('revenueUpdated', populatedOrder);
+      io.to('adminRoom').emit('orderCancelled', populatedOrder);
+      
+      io.to(orderRoom).emit('orderStatusChanged', populatedOrder);
+      io.to(orderRoom).emit('orderCancelled', populatedOrder);
+      
+      io.emit('orderStatusBroadcast', populatedOrder);
+      io.emit('orderCancelledBroadcast', populatedOrder);
+    }
+
+    res.json({
+      masterOrderId: masterOrder._id,
+      cancelledOrders: cancelledOrders.length,
+      message: `${cancelledOrders.length} order(s) cancelled successfully`
+    });
+  } catch (error) {
+    console.error('Error cancelling master order:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = { 
   getOrders, getOrder, createOrder, getInvoice, getOrderInvoicePDF, updateOrderStatus, cancelOrder,
   getMasterOrderByTable,
   getMasterOrderAggregated,
   // NEW: Dine-In Add More Items feature (others coming)
   addMoreItems, 
-  completeMasterOrder 
+  completeMasterOrder,
+  cancelMasterOrder
 };
