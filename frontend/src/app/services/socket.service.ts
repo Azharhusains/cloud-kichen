@@ -283,6 +283,45 @@ export class SocketService {
       });
     });
   }
+
+  // NEW: Listen for new sub-order (add more items)
+  onNewSubOrder(): Observable<any> {
+    console.log('SocketService: Listening for new_sub_order events');
+    return new Observable(observer => {
+      this.socket.on('new_sub_order', (data) => {
+        console.log('SocketService: Received new_sub_order:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // NEW: Listen for master order updates (aggregated items)
+  onMasterOrderUpdated(): Observable<any> {
+    console.log('SocketService: Listening for master_order_updated events');
+    return new Observable(observer => {
+      this.socket.on('master_order_updated', (data) => {
+        console.log('SocketService: Received master_order_updated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // Join user room for master order updates
+  joinUserRoom(masterOrderId: string): void {
+    console.log('SocketService: Joining user room for master order:', masterOrderId);
+    this.socket.emit('joinUserRoom', masterOrderId);
+  }
+  
+  // Listen for master order completion
+  onMasterOrderCompleted(): Observable<any> {
+    console.log('SocketService: Listening for master_order_completed events');
+    return new Observable(observer => {
+      this.socket.on('master_order_completed', (data) => {
+        console.log('SocketService: Received master_order_completed:', data);
+        observer.next(data);
+      });
+    });
+  }
 }
 
 

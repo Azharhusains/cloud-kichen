@@ -82,8 +82,18 @@ export class OrderConfirmationComponent implements OnInit {
         this.orderDate = order.createdAt;
         this.estimatedDelivery = order.estimatedDelivery;
         this.deliveryAddress = order.deliveryAddress;
-        this.orderItems = order.items;
-        this.totalAmount = order.totalAmount;
+        
+        // For dine-in orders with aggregated items, show all items
+        if (order.aggregatedItems && order.aggregatedItems.length > 0) {
+          this.orderItems = order.aggregatedItems;
+          // Calculate total from aggregated subtotal
+          this.totalAmount = order.aggregatedItems.reduce((sum: number, item: any) => 
+            sum + (item.price * item.quantity), 0);
+        } else {
+          this.orderItems = order.items;
+          this.totalAmount = order.totalAmount;
+        }
+        
         this.customOrderId = order.orderNumber;
       },
       error: (error) => {
@@ -93,6 +103,16 @@ export class OrderConfirmationComponent implements OnInit {
   }
 
   trackOrder(): void {
+    // For dine-in orders with masterOrderId, track the main order
+    if (this.order?.masterOrderId && this.order.orderType === 'dine-in') {
+      // Find the first sub-order to use as main tracking link
+      // First check localStorage for original order id
+      const activeMasterOrderId = localStorage.getItem('activeMasterOrderId');
+      if (activeMasterOrderId !== null) {
+        this.router.navigate(['/order-tracking', activeMasterOrderId]);
+        return;
+      }
+    }
     this.router.navigate(['/order-tracking', this.orderId]);
   }
 

@@ -80,10 +80,22 @@ io.on('connection', (socket) => {
 
   socket.on('joinAdmin', () => {
     socket.join('adminRoom');
+    socket.join('kitchen_global');  // Alias for kitchen
   });
 
   socket.on('joinOrder', (orderId) => {
     socket.join(`order_${orderId}`);
+  });
+
+  // NEW: Dine-In Add More rooms
+  socket.on('joinTableRoom', (tableId) => {
+    socket.join(`table_${tableId}`);
+    console.log(`Socket ${socket.id} joined table room: table_${tableId}`);
+  });
+
+  socket.on('joinUserRoom', (masterOrderId) => {
+    socket.join(`user_${masterOrderId}`);
+    console.log(`Socket ${socket.id} joined user room: user_${masterOrderId}`);
   });
 
   socket.on('disconnect', () => {

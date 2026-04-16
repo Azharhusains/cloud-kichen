@@ -22,6 +22,16 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  // NEW: For Add More Items feature - links to MasterOrder (null for legacy orders)
+  masterOrderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MasterOrder',
+    default: null
+  },
+  isAddon: {
+    type: Boolean,
+    default: false
+  },
   items: [{
     menuItem: {
       type: mongoose.Schema.Types.ObjectId,
@@ -170,7 +180,11 @@ const orderSchema = new mongoose.Schema({
     default: null
   },
 }, {
-  timestamps: true,
+  timestamps: true
 });
+
+// NEW indexes for Dine-In Add More Items feature
+orderSchema.index({ masterOrderId: 1 });
+orderSchema.index({ tableNumber: 1, orderStatus: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

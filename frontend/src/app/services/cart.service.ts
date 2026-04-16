@@ -153,6 +153,8 @@ export class CartService {
 
   clearCart(): void {
     this.saveCart([]);
+    // Clear table info by default when cart is cleared for completed orders
+    // But keep table info when adding more items to active orders
   }
 
   getCartItemPrice(item: CartItem): number {

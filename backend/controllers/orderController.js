@@ -1,10 +1,12 @@
 const Order = require('../models/Order');
+const MasterOrder = require('../models/MasterOrder');
 const MenuItem = require('../models/MenuItem');
 const User = require('../models/User');
 const Counter = require('../models/Counter');
 const Table = require('../models/Table');
 const KitchenStatus = require('../models/KitchenStatus');
 const { deductStock, checkStockAvailability, restoreStock } = require('./inventoryController');
+const { getOrCreateMasterOrder, getAggregatedOrder } = require('../utils/orderAggregation');
 const nodemailer = require('nodemailer');
 const { generateInvoicePDF, savePDFToFile } = require('../utils/pdfGenerator');
 const { generateOrderConfirmationEmail } = require('../utils/emailTemplate');
@@ -24,7 +26,98 @@ const getOrders = async (req, res) => {
     if (req.query.orderType) {
       query.orderType = req.query.orderType;
     }
-    const orders = await Order.find(query).populate('user', 'name email').populate('items.menuItem').sort({ createdAt: -1 });
+    let orders = await Order.find(query).populate('user', 'name email').populate('items.menuItem').sort({ createdAt: -1 });
+    
+    // For customers: group dine-in orders by masterOrderId to avoid showing multiple entries for same table session
+    if (req.user.role === 'CUSTOMER') {
+      const masterOrderMap = new Map();
+      
+      // First pass: collect all orders per master and find the main order (isAddon: false)
+      for (const order of orders) {
+        if (order.orderType === 'delivery') continue;
+        if (!order.masterOrderId) continue;
+        
+        const masterId = order.masterOrderId.toString();
+        
+        if (!masterOrderMap.has(masterId)) {
+          masterOrderMap.set(masterId, {
+            mainOrder: null,
+            addonOrders: []
+          });
+        }
+        
+        const group = masterOrderMap.get(masterId);
+        if (order.isAddon === false) {
+          // This is the main order for the session
+          group.mainOrder = order;
+        } else {
+          // This is an addon order
+          group.addonOrders.push(order);
+        }
+      }
+      
+      // Second pass: build the aggregated orders list
+      const aggregatedOrders = [];
+      const processedMasterIds = new Set();
+      
+      for (const order of orders) {
+        // Delivery orders go straight through
+        if (order.orderType === 'delivery') {
+          aggregatedOrders.push(order);
+          continue;
+        }
+        
+        // Legacy dine-in orders (no masterOrderId) go straight through
+        if (!order.masterOrderId) {
+          aggregatedOrders.push(order);
+          continue;
+        }
+        
+        const masterId = order.masterOrderId.toString();
+        
+        // Skip if we already processed this master order
+        if (processedMasterIds.has(masterId)) {
+          continue;
+        }
+        
+        const group = masterOrderMap.get(masterId);
+        processedMasterIds.add(masterId);
+        
+        // Use main order if available, otherwise use first addon order as fallback
+        const mainOrder = group.mainOrder || group.addonOrders[0];
+        const orderObj = mainOrder.toObject();
+        
+        // Merge all addon items into main order - skip the main order itself if it's in addonOrders
+        for (const addonOrder of group.addonOrders) {
+          // Don't add main order items again if we used an addon as fallback
+          if (addonOrder._id.toString() === mainOrder._id.toString()) {
+            continue;
+          }
+          
+          if (addonOrder.items) {
+            // Populate menuItem for addon order items
+            await addonOrder.populate('items.menuItem');
+            
+            const addonItems = addonOrder.items.map(item => ({
+              ...item.toObject(),
+              subOrderId: addonOrder._id,
+              isAddon: true
+            }));
+            orderObj.items = [...orderObj.items, ...addonItems];
+            
+            // Update totals
+            orderObj.subtotal += addonOrder.subtotal;
+            orderObj.taxAmount += addonOrder.taxAmount;
+            orderObj.totalAmount += addonOrder.totalAmount;
+          }
+        }
+        
+        aggregatedOrders.push(orderObj);
+      }
+      
+      orders = aggregatedOrders;
+    }
+    
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -33,14 +126,61 @@ const getOrders = async (req, res) => {
 
 const getOrder = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate('user', 'name email').populate('items.menuItem');
+    let order = await Order.findById(req.params.id).populate('user', 'name email').populate('items.menuItem');
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
     if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-    res.json(order);
+    
+    // For dine-in orders with masterOrderId, get ALL items from all suborders
+    let orderResponse = order.toObject();
+    if (order.orderType === 'dine-in' && order.masterOrderId) {
+      try {
+        // Get ALL suborders for this master session WITH menu items pre-populated
+        const allSubOrders = await Order.find({ 
+          masterOrderId: order.masterOrderId
+        })
+        .populate('items.menuItem')
+        .sort({ createdAt: 1 });
+        
+        if (allSubOrders.length > 0) {
+          // Find the FIRST (main) order in this master session (original main order)
+          const mainOrder = allSubOrders.find(o => !o.isAddon) || allSubOrders[0];
+          
+          // Keep original main order number
+          orderResponse.orderNumber = mainOrder.orderNumber;
+          orderResponse.originalOrderId = mainOrder._id;
+          
+          // Merge ALL items from ALL suborders
+          const allItems = allSubOrders.flatMap(subOrder => 
+            subOrder.items.map(item => ({
+              ...item.toObject(),
+              subOrderId: subOrder._id,
+              isAddon: subOrder.isAddon
+            }))
+          );
+          
+          orderResponse.items = allItems;
+          
+          // Update totals to sum of all suborders
+          orderResponse.subtotal = allSubOrders.reduce((sum, o) => sum + o.subtotal, 0);
+          orderResponse.taxAmount = allSubOrders.reduce((sum, o) => sum + o.taxAmount, 0);
+          orderResponse.totalAmount = allSubOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+        }
+        
+        // Also keep aggregatedItems for backward compatibility
+        const aggregated = await getMasterOrderAggregated({ params: { masterOrderId: order.masterOrderId.toString() } }, {}, () => {});
+        if (aggregated && aggregated.aggregatedItems) {
+          orderResponse.aggregatedItems = aggregated.aggregatedItems;
+        }
+      } catch (aggError) {
+        console.warn('Failed to get aggregated items for order:', aggError.message);
+      }
+    }
+    
+    res.json(orderResponse);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -187,12 +327,67 @@ const createOrder = async (req, res) => {
       }
     }
 
-    // Create order with orderNumber and charge breakdown
+
+
+// ===== NEW: Dine-In Add More Items - MasterOrder handling =====
+    let masterOrderId = null;
+    let isAddon = false;
+
+    if (orderType === 'dine-in' && tableNumber) {
+      // Get ACTIVE master order, if any
+      let masterOrder = await MasterOrder.findOne({ 
+        tableId: tableNumber, 
+        status: 'ACTIVE' 
+      });
+      
+      // If we found an ACTIVE master order, verify it's really still active
+      if (masterOrder && masterOrder.status === 'ACTIVE') {
+        // Double-check if all suborders are already completed
+        const activeSubOrders = await Order.countDocuments({ 
+          masterOrderId: masterOrder._id, 
+          orderStatus: { $ne: 'completed' } 
+        });
+        
+        if (activeSubOrders === 0) {
+          // All orders completed, this master order should be COMPLETED
+          await MasterOrder.findByIdAndUpdate(masterOrder._id, {
+            status: 'COMPLETED',
+            completedAt: new Date()
+          });
+          masterOrder = null;
+        }
+      }
+      
+      // If no valid active master order, create new one
+      if (!masterOrder) {
+        masterOrder = new MasterOrder({ tableId: tableNumber });
+        await masterOrder.save();
+        console.log(`Created new MasterOrder ${masterOrder._id} for table ${tableNumber}`);
+      }
+      
+      masterOrderId = masterOrder._id;
+      
+      // Check if there are ANY existing orders for this master order
+      const existingOrders = await Order.countDocuments({ masterOrderId: masterOrder._id });
+      
+      // First order in new session = isAddon: false, subsequent = true
+      isAddon = existingOrders > 0;
+
+      await Table.findOneAndUpdate(
+        { tableNumber: tableNumber },
+        { status: 'occupied' }
+      );
+      console.log(`Table ${tableNumber} marked as occupied (MasterOrder: ${masterOrderId}, addon: ${isAddon})`);
+    }
+
+    // Create order with orderNumber and charge breakdown + MasterOrder fields
     const order = new Order({
       user: req.user._id,
       orderNumber,
       orderType: orderType || 'delivery',
       tableNumber: orderType === 'dine-in' ? tableNumber : null,
+      masterOrderId,
+      isAddon,
       items,
       subtotal,
       deliveryCharge,
@@ -203,83 +398,6 @@ const createOrder = async (req, res) => {
       deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
       profit,
     });
-
-    const createdOrder = await order.save();
-
-    // ===== NEW: Generate PDF Invoice and Send Confirmation Email =====
-    try {
-      // Populate order for email/PDF
-      const populatedOrder = await Order.findById(createdOrder._id)
-        .populate('user', 'name email phone')
-        .populate('items.menuItem');
-
-      // Handle customer email (prefer DB user, fallback to request body)
-      const customerEmail = populatedOrder.user?.email || req.body.customerEmail;
-      const customerName = populatedOrder.user?.name || req.body.customerName;
-      
-      if (!customerEmail) {
-        console.warn('No customer email found for order', createdOrder.orderNumber);
-      } else {
-        // Generate PDF buffer
-        const pdfBuffer = await generateInvoicePDF(populatedOrder);
-        
-        // Save PDF file
-        const pdfFilePath = await savePDFToFile(pdfBuffer, createdOrder.orderNumber);
-        console.log(`PDF saved: ${pdfFilePath}`);
-
-        // Build PDF download URL
-        const pdfDownloadUrl = `${req.protocol}://${req.get('host')}/api/orders/${createdOrder.orderNumber}/invoice`;
-
-        // Generate HTML email
-        const htmlEmail = generateOrderConfirmationEmail(populatedOrder.toObject(), pdfDownloadUrl);
-
-        // Create nodemailer transporter
-        const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST || process.env.EMAIL_HOST,
-          port: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587'),
-          secure: false,
-          auth: {
-            user: process.env.SMTP_USER || process.env.EMAIL_USER,
-            pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
-          },
-        });
-
-        // Email options
-        const mailOptions = {
-          from: process.env.EMAIL_FROM || process.env.SMTP_USER || '"Cloud Kitchen" <no-reply@cloudkitchen.com>',
-          to: customerEmail,
-          subject: `Order Confirmed #${createdOrder.orderNumber} — Cloud Kitchen`,
-          html: htmlEmail,
-          attachments: [
-            {
-              filename: `Invoice_#${createdOrder.orderNumber}.pdf`,
-              path: pdfFilePath,
-              contentType: 'application/pdf',
-            },
-          ],
-        };
-
-        // Send email
-        await transporter.sendMail(mailOptions);
-        console.log(`✅ Confirmation email + PDF sent to ${customerEmail} for order #${createdOrder.orderNumber}`);
-      }
-    } catch (emailError) {
-      console.error('Email/PDF generation failed:', emailError);
-      // Don't fail the order creation on email error
-    }
-    // ===== END EMAIL/PDF =====
-
-    // Deduct stock
-    await deductStock(items);
-
-    // For dine-in orders, automatically set table to occupied
-    if (orderType === 'dine-in' && tableNumber) {
-      await Table.findOneAndUpdate(
-        { tableNumber: tableNumber },
-        { status: 'occupied' }
-      );
-      console.log(`Table ${tableNumber} marked as occupied`);
-    }
 
     // Save address to user profile if saveAddress is true
     if (saveAddress && deliveryAddress) {
@@ -293,19 +411,107 @@ const createOrder = async (req, res) => {
       }
     }
 
-    // Populate the order for Socket.IO emission
-    const populatedOrder = await Order.findById(createdOrder._id)
+    const createdOrder = await order.save();
+
+    // ===== NEW: Generate PDF Invoice and Send Confirmation Email ===== (for SubOrder)
+    try {
+      // Populate order for email/PDF
+      const populatedOrder = await Order.findById(createdOrder._id)
+        .populate('user', 'name email phone')
+        .populate('items.menuItem');
+
+      // Handle customer email (prefer DB user, fallback to request body)
+      const customerEmail = populatedOrder.user?.email || req.body.customerEmail;
+      const customerName = populatedOrder.user?.name || req.body.customerName;
+      
+      if (!customerEmail) {
+        console.warn('No customer email found for SubOrder', createdOrder.orderNumber);
+      } else {
+        // Generate PDF buffer
+        const pdfBuffer = await generateInvoicePDF(populatedOrder);
+        
+        // Save PDF file
+        const pdfFilePath = await savePDFToFile(pdfBuffer, createdOrder.orderNumber);
+        console.log(`SubOrder PDF saved: ${pdfFilePath}`);
+
+        // Build PDF download URL
+        const pdfDownloadUrl = `${req.protocol}://${req.get('host')}/api/orders/${createdOrder.orderNumber}/invoice`;
+
+        // Generate HTML email
+        const htmlEmail = generateOrderConfirmationEmail(populatedOrder.toObject(), pdfDownloadUrl);
+
+        // Create nodemailer transporter
+        const transporter = nodemailer.createTransporter({
+          host: process.env.SMTP_HOST || process.env.EMAIL_HOST,
+          port: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587'),
+          secure: false,
+          auth: {
+            user: process.env.SMTP_USER || process.env.EMAIL_USER,
+            pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
+          },
+        });
+
+        // Email options
+        const mailOptions = {
+          from: process.env.EMAIL_FROM || process.env.SMTP_USER || '"Cloud Kitchen" <no-reply@cloudkitchen.com>',
+          to: customerEmail,
+          subject: `Add-On Order Confirmed #${createdOrder.orderNumber} — Table ${tableNumber} — Cloud Kitchen`,
+          html: htmlEmail,
+          attachments: [
+            {
+              filename: `Invoice_#${createdOrder.orderNumber}.pdf`,
+              path: pdfFilePath,
+              contentType: 'application/pdf',
+            },
+          ],
+        };
+
+        // Send email
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ SubOrder confirmation email sent to ${customerEmail} for #${createdOrder.orderNumber}`);
+      }
+    } catch (emailError) {
+      console.error('SubOrder email/PDF failed:', emailError);
+    }
+
+    // Deduct stock
+    await deductStock(items);
+
+    // Populate SubOrder for sockets
+    const populatedSubOrder = await Order.findById(createdOrder._id)
       .populate('user', 'name email')
       .populate('items.menuItem');
 
-    console.log('Emitting newOrder event to adminRoom');
-    
-    // Emit real-time event to admin
+    // Emit NEW sub_order events
     const io = req.app.get('io');
-io.to('adminRoom').emit('newOrder', populatedOrder);
-io.to('adminRoom').emit('revenueUpdated', populatedOrder);
+    const tableRoom = `table_${tableNumber}`;
+    const userRoom = `user_${masterOrderId}`;
     
-    res.status(201).json(createdOrder);
+    const subOrderPayload = {
+      subOrderId: createdOrder._id,
+      masterOrderId,
+      tableId: tableNumber,
+      isAddon,
+      items: populatedSubOrder.items
+    };
+
+    console.log(`Emitting new_sub_order to rooms: adminRoom, ${tableRoom}, ${userRoom}`);
+    
+    // Emit to kitchen/admin, table room, user room
+    io.to('adminRoom').emit('new_sub_order', subOrderPayload);
+    io.to('kitchen_global').emit('new_sub_order', subOrderPayload);
+    io.to(tableRoom).emit('new_sub_order', subOrderPayload);
+    io.to(userRoom).emit('new_sub_order', subOrderPayload);
+    
+    // Legacy events for backward compat
+    io.to('adminRoom').emit('newOrder', populatedSubOrder);
+    io.to('adminRoom').emit('revenueUpdated', populatedSubOrder);
+
+    res.status(201).json({
+      subOrder: createdOrder,
+      masterOrderId,
+      message: isAddon ? 'Items added to your table session!' : 'New table session started!'
+    });
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({ message: error.message });
@@ -336,6 +542,33 @@ const updateOrderStatus = async (req, res) => {
         { status: 'available' }
       );
       console.log(`Table ${order.tableNumber} marked as available (order ${req.body.status})`);
+      
+      // If this order is part of a master order, mark ALL suborders in this master session as completed
+      if (order.masterOrderId) {
+        await Order.updateMany(
+          { masterOrderId: order.masterOrderId, orderStatus: { $ne: 'completed' } },
+          { $set: { orderStatus: 'completed' } }
+        );
+        console.log(`Marked all suborders for master ${order.masterOrderId} as completed`);
+        
+        // Also mark the MasterOrder itself as COMPLETED
+        const masterOrder = await MasterOrder.findByIdAndUpdate(order.masterOrderId, {
+          status: 'COMPLETED',
+          completedAt: new Date()
+        }, { new: true });
+        console.log(`MasterOrder ${order.masterOrderId} marked as COMPLETED`);
+        
+        // Emit master order completed event
+        const io = req.app.get('io');
+        io.to('adminRoom').emit('master_order_completed', {
+          masterOrderId: order.masterOrderId,
+          tableId: order.tableNumber
+        });
+        io.to(`table_${order.tableNumber}`).emit('master_order_completed', {
+          masterOrderId: order.masterOrderId,
+          tableId: order.tableNumber
+        });
+      }
     }
 
     // Populate the order for Socket.IO emission
@@ -382,6 +615,31 @@ const getInvoice = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to view this invoice' });
     }
     
+    let invoiceItems = order.items;
+    let invoiceSubtotal = order.subtotal;
+    let invoiceTaxAmount = order.taxAmount;
+    let invoiceTotalAmount = order.totalAmount;
+    
+    // For dine-in orders with master order, aggregate ALL items from ALL suborders
+    if (order.orderType === 'dine-in' && order.masterOrderId) {
+      try {
+        // Get all suborders for this master session
+        const allSubOrders = await Order.find({ 
+          masterOrderId: order.masterOrderId 
+        }).populate('items.menuItem', 'name price');
+        
+        // Aggregate all items
+        invoiceItems = allSubOrders.flatMap(subOrder => subOrder.items);
+        
+        // Recalculate totals
+        invoiceSubtotal = allSubOrders.reduce((sum, o) => sum + o.subtotal, 0);
+        invoiceTaxAmount = allSubOrders.reduce((sum, o) => sum + o.taxAmount, 0);
+        invoiceTotalAmount = allSubOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+      } catch (aggError) {
+        console.warn('Failed to aggregate invoice items for master order:', aggError.message);
+      }
+    }
+    
     // Format invoice data
     const invoiceData = {
       orderId: order._id,
@@ -393,17 +651,17 @@ const getInvoice = async (req, res) => {
       customerName: order.user.name,
       customerPhone: order.user.phone || '',
       customerEmail: order.user.email || '',
-      items: order.items.map((item) => ({
+      items: invoiceItems.map((item) => ({
         name: item.menuItem.name,
         quantity: item.quantity,
         price: item.price,
         total: item.price * item.quantity
       })),
-      subtotal: order.subtotal,
+      subtotal: invoiceSubtotal,
       deliveryCharge: order.deliveryCharge || 0,
       taxRate: (order.taxRate * 100).toFixed(0) + '% GST',
-      taxAmount: order.taxAmount,
-      totalAmount: order.totalAmount,
+      taxAmount: invoiceTaxAmount,
+      totalAmount: invoiceTotalAmount,
       orderType: order.orderType,
       tableNumber: order.tableNumber,
       deliveryAddress: order.deliveryAddress,
@@ -432,7 +690,7 @@ const getOrderInvoicePDF = async (req, res) => {
     const { orderNumber } = req.params;
     
     // Find order by orderNumber
-    const order = await Order.findOne({ orderNumber: parseInt(orderNumber) })
+    let order = await Order.findOne({ orderNumber: parseInt(orderNumber) })
       .populate('user', 'name email')
       .populate('items.menuItem');
     
@@ -443,6 +701,32 @@ const getOrderInvoicePDF = async (req, res) => {
     // Authorization: any auth user can download if order exists (admin/customer)
     if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
+    }
+    
+    // For dine-in orders with master order, aggregate ALL items from ALL suborders
+    if (order.orderType === 'dine-in' && order.masterOrderId) {
+      try {
+        // Get all suborders for this master session
+        const allSubOrders = await Order.find({ 
+          masterOrderId: order.masterOrderId 
+        }).populate('items.menuItem');
+        
+        // Convert to plain object to modify
+        const orderObj = order.toObject();
+        
+        // Aggregate all items
+        orderObj.items = allSubOrders.flatMap(subOrder => subOrder.items);
+        
+        // Recalculate totals
+        orderObj.subtotal = allSubOrders.reduce((sum, o) => sum + o.subtotal, 0);
+        orderObj.taxAmount = allSubOrders.reduce((sum, o) => sum + o.taxAmount, 0);
+        orderObj.totalAmount = allSubOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+        
+        // Replace order with aggregated version
+        order = orderObj;
+      } catch (aggError) {
+        console.warn('Failed to aggregate PDF invoice items for master order:', aggError.message);
+      }
     }
     
     const fileName = `Invoice_#${orderNumber}.pdf`;
@@ -583,4 +867,16 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getOrder, createOrder, getInvoice, getOrderInvoicePDF, updateOrderStatus, cancelOrder };
+const getMasterOrderByTable = require('./getMasterOrderByTable');  // 4a
+const getMasterOrderAggregated = require('./getMasterOrderAggregated');  // 4e
+const addMoreItems = require('./addMoreItems');
+const completeMasterOrder = require('./completeMasterOrder');
+
+module.exports = { 
+  getOrders, getOrder, createOrder, getInvoice, getOrderInvoicePDF, updateOrderStatus, cancelOrder,
+  getMasterOrderByTable,
+  getMasterOrderAggregated,
+  // NEW: Dine-In Add More Items feature (others coming)
+  addMoreItems, 
+  completeMasterOrder 
+};

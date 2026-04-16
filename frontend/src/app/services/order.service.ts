@@ -128,4 +128,36 @@ export class OrderService {
       responseType: 'blob' 
     });
   }
+
+  /**
+   * NEW: Get aggregated MasterOrder for dine-in tracking (all suborders items)
+   */
+  getMasterOrder(masterId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/orders/master-orders/${masterId}`);
+  }
+
+  /**
+   * NEW: Add more items to dine-in table session
+   */
+  addMoreItems(tableNumber: string, items: any[], masterOrderId?: string): Observable<any> {
+    const body: any = { items };
+    if (masterOrderId) {
+      body.masterOrderId = masterOrderId;
+    }
+    return this.http.post(`${environment.apiUrl}/orders/master-orders/dinein/${tableNumber}/add-more`, body);
+  }
+
+  /**
+   * NEW: Complete MasterOrder session (aggregate bill)
+   */
+  completeMasterOrder(masterId: string): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/orders/master-orders/${masterId}/complete`, {});
+  }
+
+  /**
+   * Check if table has active MasterOrder
+   */
+  hasActiveMasterOrder(tableNumber: string): Observable<boolean> {
+    return this.http.get<boolean>(`${environment.apiUrl}/orders/master-orders/table/${tableNumber}/active`);
+  }
 }

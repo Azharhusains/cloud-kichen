@@ -19,6 +19,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { TableService } from '../../services/table.service';
 import { SocketService } from '../../services/socket.service';
 import { CartService } from '../../services/cart.service';
+import { OrderService } from '../../services/order.service';
 
 @Component({
   selector: 'app-table-select',
@@ -68,7 +69,8 @@ export class TableSelectComponent implements OnInit, OnDestroy {
     private socketService: SocketService,
     private cartService: CartService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private orderService: OrderService
   ) {
     this.tableForm = this.fb.group({
       tableNumber: ['', Validators.required]
@@ -84,6 +86,14 @@ export class TableSelectComponent implements OnInit, OnDestroy {
       });
       this.router.navigate(['/menu']);
     }
+    
+    // If table info is already present (adding more items), skip to checkout
+    const tableInfo = this.cartService.getTableInfo();
+    if (tableInfo) {
+      this.router.navigate(['/checkout']);
+      return;
+    }
+    
     this.loadTables();
     
     // Socket real-time updates

@@ -128,6 +128,28 @@ export class CheckoutComponent implements OnInit {
     this.loadCart();
     this.loadAddresses();
     this.loadTableInfo();
+    
+    // If table info is present, validate it ONLY for add more items flow
+    // NEVER validate when creating a NEW first order
+    const activeMasterOrderId = localStorage.getItem('activeMasterOrderId');
+    if (this.tableInfo && activeMasterOrderId) {
+      // Only validate when adding more items to EXISTING order
+      this.orderService.hasActiveMasterOrder(this.tableInfo.tableNumber).subscribe({
+        next: (hasActive: boolean) => {
+          if (!hasActive) {
+            // No active order, clear invalid table info and redirect to table select
+            this.cartService.clearTableInfo();
+            localStorage.removeItem('activeMasterOrderId');
+            this.toastService.show('Order session expired. Please start new order.', 'info');
+            this.router.navigate(['/table-select']);
+          }
+        },
+        error: () => {
+          // If hasActiveMasterOrder fails, still allow proceed - backend will validate
+          console.log('Active master order check failed, proceeding anyway');
+        }
+      });
+    }
   }
 
   applyCoupon(): void {
@@ -295,15 +317,35 @@ export class CheckoutComponent implements OnInit {
     }
     
     if (this.paymentMethod === 'cod') {
-      // COD - create order directly
-      this.orderService.createOrder(orderData).subscribe({
+      // Check if we're adding to an existing active order
+      const activeMasterOrderId = localStorage.getItem('activeMasterOrderId');
+      
+      const orderObservable = activeMasterOrderId 
+        ? this.orderService.addMoreItems(this.tableInfo.tableNumber, orderData.items, activeMasterOrderId)
+        : this.orderService.createOrder(orderData);
+        
+      // COD - create or add to order
+      orderObservable.subscribe({
         next: (order: any) => {
+          console.log('COD order response:', order);
           this.loading = false;
           this.cartService.clearCart();
-          if (this.orderType === 'dine-in') {
-            this.cartService.clearTableInfo();
+          // Don't clear table info when adding more items - only clear on completion
+          // We'll let the master order completion clear it
+          
+          if (activeMasterOrderId !== null) {
+            // If adding to existing order, redirect back to original order tracking
+            // Add timestamp query param to force component refresh
+            this.router.navigate(['/order-tracking', activeMasterOrderId], { 
+              queryParams: { refresh: Date.now() } 
+            });
+            localStorage.removeItem('activeMasterOrderId');
+          } else if (order.subOrder?._id) {
+            this.router.navigate(['/order-confirmation', order.subOrder._id]);
+          } else {
+            console.error('Order created but missing subOrder._id:', order);
+            this.toastService.show('Order created but subOrder ID missing. Contact support.', 'error');
           }
-          this.router.navigate(['/order-confirmation', order._id]);
         },
         error: (error: any) => {
           console.error('Order error:', error);
@@ -397,11 +439,18 @@ export class CheckoutComponent implements OnInit {
       response.razorpay_signature
     ).subscribe({
       next: (result) => {
+        console.log('Payment verify result:', result);
         this.loadingPayment = false;
         this.loading = false;
         this.cartService.clearCart();
-        this.toastService.show(`Payment Success! Order ${result.orderNumber}`, 'success');
-        this.router.navigate(['/order-confirmation', result.orderId]);
+        this.toastService.show(`Payment Success! Order ${result?.orderNumber || 'Unknown'}`, 'success');
+        const orderId = result?.subOrderId || result?._id || result?.orderId;
+        if (orderId) {
+          this.router.navigate(['/order-confirmation', orderId]);
+        } else {
+          console.error('Payment verified but missing orderId:', result);
+          this.toastService.show('Payment success but order ID missing. Contact support.', 'error');
+        }
       },
       error: (err) => {
         console.error('Verify error:', err);

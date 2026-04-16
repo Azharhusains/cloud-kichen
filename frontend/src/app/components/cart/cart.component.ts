@@ -18,6 +18,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { environment } from '../../../environments/environment';
 import { NetworkService } from '../../services/network.service';
 import { ToastService } from '../../services/toast.service';
+import { OrderService } from '../../services/order.service';
 
 @Component({
   selector: 'app-cart',
@@ -61,7 +62,8 @@ constructor(
   private router: Router, 
   public cartService: CartService,
   private networkService: NetworkService,
-  private toastService: ToastService
+  private toastService: ToastService,
+  private orderService: OrderService
 ) {}
 
   ngOnInit(): void {
@@ -110,8 +112,15 @@ constructor(
       this.toastService.show('Cannot checkout while offline. Please connect to internet.', 'error');
       return;
     }
-    // Navigate to table-select to choose between dine-in or delivery
-    this.router.navigate(['/table-select']);
+    
+    // If table info is already present (adding more items), skip to checkout
+    console.log('this.cartService.getTableInfo()', this.cartService.getTableInfo());
+    if (this.cartService.getTableInfo()) {
+      this.router.navigate(['/checkout']);
+    } else {
+      // Navigate to table-select to choose between dine-in or delivery
+      this.router.navigate(['/table-select']);
+    }
   }
 
   getImageUrl(imagePath: string | null): string {

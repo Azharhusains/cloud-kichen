@@ -145,20 +145,20 @@
       </mat-card-header>
 
       <mat-card-content>
-        <div class="order-items">
-          <div *ngFor="let item of order.items" class="order-item">
-            <div class="item-image">
-              <mat-icon>restaurant</mat-icon>
+            <div class="order-items">
+              <div *ngFor="let item of getDisplayItems()" class="order-item">
+                <div class="item-image">
+                  <mat-icon>restaurant</mat-icon>
+                </div>
+                <div class="item-info">
+                  <span class="item-name">{{ item.menuItem.name }}{{ getPortionLabel(item) }}</span>
+                  <span class="item-qty">Qty: {{ item.quantity }}</span>
+                </div>
+                <span class="item-price"
+                  >₹{{ (getItemDisplayPrice(item) * item.quantity) | number : '1.2-2' }}</span
+                >
+              </div>
             </div>
-            <div class="item-info">
-              <span class="item-name">{{ item.menuItem.name }}{{ getPortionLabel(item) }}</span>
-              <span class="item-qty">Qty: {{ item.quantity }}</span>
-            </div>
-            <span class="item-price"
-              >₹{{ (getItemDisplayPrice(item) * item.quantity) | number : '1.2-2' }}</span
-            >
-          </div>
-        </div>
 
         <mat-divider></mat-divider>
 
@@ -249,6 +249,17 @@
       >
         <mat-icon>cancel</mat-icon>
         Cancel Order
+      </button>
+      <!-- Add More Items Button for Dine-in Orders -->
+      <button
+        *ngIf="canAddMoreItems()"
+        mat-raised-button
+        color="primary"
+        (click)="addMoreItems()"
+        class="add-more-btn"
+      >
+        <mat-icon>add_shopping_cart</mat-icon>
+        Add More Items
       </button>
       <button
         mat-raised-button
