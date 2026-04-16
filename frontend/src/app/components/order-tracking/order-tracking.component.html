@@ -156,6 +156,10 @@
                     Qty: {{ item.quantity }}
                     <span *ngIf="item.isCancelled" class="cancelled-badge">Cancelled</span>
                   </span>
+                  <span *ngIf="item.isCancelled && item.cancellationReason" class="cancellation-reason">
+                    <mat-icon fontIcon="info" inline="true"></mat-icon>
+                    {{ item.cancellationReason }}
+                  </span>
                 </div>
                 <span class="item-price"
                   >₹{{ (getItemDisplayPrice(item) * item.quantity) | number : '1.2-2' }}</span

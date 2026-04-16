@@ -44,7 +44,8 @@ async function getAggregatedOrder(masterOrderId) {
         subOrderNumber: order.orderNumber,
         isAddon: order.isAddon,
         orderStatus: order.orderStatus,
-        isCancelled: order.orderStatus === 'cancelled'
+        isCancelled: order.orderStatus === 'cancelled',
+        cancellationReason: order.cancellationReasonUser || order.cancellationReason || null
       }))
     );
 

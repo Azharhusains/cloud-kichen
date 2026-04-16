@@ -93,7 +93,8 @@ const getOrders = async (req, res) => {
            subOrderId: mainOrder._id,
            isAddon: false,
            orderStatus: mainOrder.orderStatus,
-           isCancelled: mainOrder.orderStatus === 'cancelled'
+           isCancelled: mainOrder.orderStatus === 'cancelled',
+           cancellationReason: mainOrder.cancellationReasonUser || mainOrder.cancellationReason || null
          }));
          
          // If main order is cancelled, zero out its totals before adding addons
@@ -119,7 +120,8 @@ const getOrders = async (req, res) => {
                subOrderId: addonOrder._id,
                isAddon: true,
                orderStatus: addonOrder.orderStatus,
-               isCancelled: addonOrder.orderStatus === 'cancelled'
+               isCancelled: addonOrder.orderStatus === 'cancelled',
+               cancellationReason: addonOrder.cancellationReasonUser || addonOrder.cancellationReason || null
              }));
              orderObj.items = [...orderObj.items, ...addonItems];
              
@@ -180,7 +182,8 @@ const getOrder = async (req, res) => {
                subOrderId: subOrder._id,
                isAddon: subOrder.isAddon,
                orderStatus: subOrder.orderStatus,
-               isCancelled: subOrder.orderStatus === 'cancelled'
+               isCancelled: subOrder.orderStatus === 'cancelled',
+               cancellationReason: subOrder.cancellationReasonUser || subOrder.cancellationReason || null
              }))
            );
            
