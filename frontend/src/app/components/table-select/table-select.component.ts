@@ -87,12 +87,18 @@ export class TableSelectComponent implements OnInit, OnDestroy {
       this.router.navigate(['/menu']);
     }
     
-    // If table info is already present (adding more items), skip to checkout
-    const tableInfo = this.cartService.getTableInfo();
-    if (tableInfo) {
-      this.router.navigate(['/checkout']);
-      return;
-    }
+    // Validate table session before skipping
+    this.cartService.validateTableSession().subscribe({
+      next: () => {
+        if (this.cartService.getTableInfo()) {
+          this.router.navigate(['/checkout']);
+          return;
+        }
+      },
+      error: (err) => {
+        console.error('TableSelect validation failed:', err);
+      }
+    });
     
     this.loadTables();
     

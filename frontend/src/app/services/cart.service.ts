@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { OrderService } from './order.service';
 
 export interface CartItem {
   menuItem: any;
@@ -27,7 +29,7 @@ export class CartService {
   private tableInfoSubject = new BehaviorSubject<TableInfo | null>(null);
   public tableInfo$ = this.tableInfoSubject.asObservable();
 
-  constructor() {
+constructor(private orderService: OrderService) {
     this.loadCartFromLocalStorage();
     this.loadTableInfoFromLocalStorage();
   }
@@ -83,6 +85,33 @@ export class CartService {
   clearTableInfo(): void {
     this.tableInfoSubject.next(null);
     localStorage.removeItem('tableInfo');
+    this.reloadTableInfo();
+  }
+
+  /**
+   * Reload table info from localStorage
+   */
+  reloadTableInfo(): void {
+    this.loadTableInfoFromLocalStorage();
+  }
+
+  /**
+   * Validate current table session - clear if no active master order
+   * @returns Observable<boolean> - true if valid or cleared
+   */
+  validateTableSession(): Observable<boolean> {
+    const tableInfo = this.getTableInfo();
+    if (!tableInfo) {
+      return of(true);
+    }
+    return this.orderService.hasActiveMasterOrder(tableInfo.tableNumber).pipe(
+      tap(hasActive => {
+        if (!hasActive) {
+          this.clearTableInfo();
+        }
+      }),
+      map(() => true)
+    );
   }
 
   /**
@@ -153,8 +182,8 @@ export class CartService {
 
   clearCart(): void {
     this.saveCart([]);
-    // Clear table info by default when cart is cleared for completed orders
-    // But keep table info when adding more items to active orders
+    // Auto-clear stale table sessions when cart is cleared
+    this.validateTableSession().subscribe();
   }
 
   getCartItemPrice(item: CartItem): number {

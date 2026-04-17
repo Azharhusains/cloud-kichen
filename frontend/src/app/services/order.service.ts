@@ -83,8 +83,8 @@ export class OrderService {
   }
 
   getOrders(): Observable<any[]> {
-    const url = this.cacheBuster.addCacheBuster(`${environment.apiUrl}/orders`);
-    console.log('OrderService: Fetching orders:', url);
+    const url = this.cacheBuster.addCacheBuster(`${environment.apiUrl}/orders?includeHistory=true`);
+    console.log('OrderService: Fetching orders (incl history):', url);
     return this.http.get<any[]>(url);
   }
 
@@ -94,7 +94,8 @@ export class OrderService {
   getRecentOrders(days: number = 30, limit: number = 50): Observable<any[]> {
     const params = new URLSearchParams({
       days: days.toString(),
-      limit: limit.toString()
+      limit: limit.toString(),
+      includeHistory: 'true'
     });
     const url = this.cacheBuster.addCacheBuster(`${environment.apiUrl}/orders?${params.toString()}`);
     return this.http.get<any[]>(url);

@@ -150,6 +150,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
           // If order is marked as completed, clear table info
           if (updatedOrder.orderStatus === 'completed' && updatedOrder.orderType === 'dine-in') {
             this.cartService.clearTableInfo();
+            this.cartService.reloadTableInfo();
             localStorage.removeItem('activeMasterOrderId');
             console.log('OrderTrackingComponent: Table info cleared as order is completed');
           }

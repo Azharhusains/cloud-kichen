@@ -7,6 +7,8 @@ import { FooterComponent } from './components/navigation/footer.component';
 import { NetworkService, HealthStatus } from './services/network.service';
 import { SocketService } from './services/socket.service';
 import { ToastService } from './services/toast.service';
+import { CartService } from './services/cart.service';
+import { OrderService } from './services/order.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -27,7 +29,9 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private networkService: NetworkService,
     private socketService: SocketService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private cartService: CartService,
+    private orderService: OrderService
   ) {}
 
   ngOnInit() {
@@ -75,6 +79,12 @@ export class AppComponent implements OnInit, OnDestroy {
         console.log('App: Socket health update:', healthData);
       })
     );
+
+    // App-wide table session validation on startup
+    this.cartService.validateTableSession().subscribe({
+      next: () => console.log('AppComponent: Table session validated on startup'),
+      error: (err) => console.error('AppComponent: Table session validation failed:', err)
+  });
   }
 
   ngOnDestroy() {

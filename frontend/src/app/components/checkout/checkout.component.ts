@@ -139,6 +139,7 @@ export class CheckoutComponent implements OnInit {
           if (!hasActive) {
             // No active order, clear invalid table info and redirect to table select
             this.cartService.clearTableInfo();
+            this.cartService.reloadTableInfo();
             localStorage.removeItem('activeMasterOrderId');
             this.toastService.show('Order session expired. Please start new order.', 'info');
             this.router.navigate(['/table-select']);

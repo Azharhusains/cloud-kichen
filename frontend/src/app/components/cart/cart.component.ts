@@ -113,14 +113,21 @@ constructor(
       return;
     }
     
-    // If table info is already present (adding more items), skip to checkout
-    console.log('this.cartService.getTableInfo()', this.cartService.getTableInfo());
-    if (this.cartService.getTableInfo()) {
-      this.router.navigate(['/checkout']);
-    } else {
-      // Navigate to table-select to choose between dine-in or delivery
-      this.router.navigate(['/table-select']);
-    }
+    // Validate table session before skipping
+    this.cartService.validateTableSession().subscribe({
+      next: () => {
+        if (this.cartService.getTableInfo()) {
+          this.router.navigate(['/checkout']);
+        } else {
+          this.router.navigate(['/table-select']);
+        }
+      },
+      error: (err) => {
+        console.error('Cart checkout validation failed:', err);
+        this.toastService.show('Checkout validation failed', 'error');
+        this.router.navigate(['/table-select']);
+      }
+    });
   }
 
   getImageUrl(imagePath: string | null): string {
