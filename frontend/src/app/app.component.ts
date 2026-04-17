@@ -17,10 +17,12 @@ import { Subscription } from 'rxjs';
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'cloud-kitchen';
-  isOnline = true;
+  isOnline = navigator.onLine;
   connectionQuality = 'good';
   showNetworkStatus = false;
   private subscriptions = new Subscription();
+  private hasInitialized = false;
+  private hideTimeout: any;
 
   constructor(
     private networkService: NetworkService,
@@ -29,15 +31,31 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Online status
+    // Initialize with current status without showing indicator
+    this.isOnline = this.networkService.isOnline();
+    
+    // Online status - only show indicator on actual changes, not initial load
     this.subscriptions.add(
       this.networkService.onlineStatus$.subscribe(status => {
-        this.isOnline = status;
-        this.showNetworkStatus = true;
-        if (!status) {
-          this.toastService.show('You are offline. Some features limited.', 'error');
-        } else {
-          this.toastService.show('Back online!', 'success');
+        // Skip first (initial) emission, only react to actual changes
+        if (this.hasInitialized && status !== this.isOnline) {
+          this.isOnline = status;
+          this.showNetworkStatus = true;
+          
+          // Auto hide after 3 seconds
+          clearTimeout(this.hideTimeout);
+          this.hideTimeout = setTimeout(() => {
+            this.showNetworkStatus = false;
+          }, 3000);
+          
+          if (!status) {
+            this.toastService.show('You are offline. Some features limited.', 'error');
+          } else {
+            this.toastService.show('Back online!', 'success');
+          }
+        } else if (!this.hasInitialized) {
+          this.isOnline = status;
+          this.hasInitialized = true;
         }
       })
     );
@@ -61,6 +79,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
+    clearTimeout(this.hideTimeout);
   }
 
   get networkIndicatorClass(): string {
