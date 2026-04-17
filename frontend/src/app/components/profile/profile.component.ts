@@ -185,6 +185,7 @@ export class ProfileComponent implements OnInit {
           this.orders = orders;
           this.filteredOrders = [...orders];
         }
+        console.log('✅ Loaded recent orders:', orders.length);
       },
       error: (error) => {
         console.error('Error loading recent orders:', error);
@@ -202,6 +203,7 @@ export class ProfileComponent implements OnInit {
           this.orders = orders;
           this.filteredOrders = [...orders];
         }
+        console.log('✅ Loaded history orders:', orders.length);
       },
       error: (error) => {
         console.error('Error loading history orders:', error);

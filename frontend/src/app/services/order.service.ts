@@ -91,11 +91,10 @@ export class OrderService {
   /**
    * Get recent/active orders (default: last 30 days, active statuses, max 50)
    */
-  getRecentOrders(days: number = 30, limit: number = 50): Observable<any[]> {
+  getRecentOrders(): Observable<any[]> {
     const params = new URLSearchParams({
-      days: days.toString(),
-      limit: limit.toString(),
-      includeHistory: 'true'
+      includeHistory: 'true',
+      statuses: 'received,preparing,ready,delivered,completed,cancelled'
     });
     const url = this.cacheBuster.addCacheBuster(`${environment.apiUrl}/orders?${params.toString()}`);
     return this.http.get<any[]>(url);
@@ -106,9 +105,8 @@ export class OrderService {
    */
   getAllOrders(): Observable<any[]> {
     const params = new URLSearchParams({
-      days: '365',
-      limit: '100',
-      includeHistory: 'true'
+      includeHistory: 'true',
+      statuses: 'received,preparing,ready,delivered,completed,cancelled'
     });
     return this.http.get<any[]>(`${environment.apiUrl}/orders?${params.toString()}`);
   }

@@ -16,10 +16,16 @@ const fs = require('fs').promises;
 const getOrders = async (req, res) => {
   try {
     // ========== PRODUCTION ORDER FILTERING ==========
-    const days = parseInt(req.query.days) || 30;
+const days = parseInt(req.query.days) || 30;
     const limit = parseInt(req.query.limit) || 50;
     const includeHistory = req.query.includeHistory === 'true';
-    const statusFilter = req.query.statuses ? req.query.statuses.split(',') : ['received','preparing','ready','delivered'];
+    
+    let statusFilter;
+    if (req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN') {
+      statusFilter = req.query.statuses ? req.query.statuses.split(',') : ['received','preparing','ready','delivered','completed'];
+    } else {
+      statusFilter = req.query.statuses ? req.query.statuses.split(',') : ['received','preparing','ready','delivered'];
+    }
     
     let query = {};
     if (req.user.role === 'CUSTOMER') {
@@ -33,8 +39,8 @@ const getOrders = async (req, res) => {
     // Default active statuses, exclude cancelled always
     query.orderStatus = { $in: statusFilter, $ne: 'cancelled' };
     
-    // Include completed only if explicitly requested
-    if (!includeHistory) {
+    // Include completed only if explicitly requested (skip for admin)
+    if (!includeHistory && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
       query.orderStatus.$ne = 'completed';
     }
     
@@ -43,6 +49,7 @@ const getOrders = async (req, res) => {
       query.orderType = req.query.orderType;
     }
     
+    console.log(`getOrders [${req.user.role}]: query=`, JSON.stringify(query, null, 2));
     let orders = await Order.find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
