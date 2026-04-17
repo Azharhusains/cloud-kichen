@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { SocketService } from './socket.service';
+import { HttpCacheBusterService } from './http-cache-buster.service';
 
 export interface Table {
   _id: string;
@@ -27,7 +28,8 @@ export class TableService {
 
   constructor(
     private http: HttpClient,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private cacheBuster: HttpCacheBusterService
   ) {
     // Listen for table status changes
     this.socketService.onTableStatusChanged().subscribe((table) => {
@@ -59,18 +61,22 @@ export class TableService {
     this.getTables().subscribe({
       next: (tables) => {
         this.tablesSubject.next(tables);
+        console.log('✅ TableService: Fresh tables loaded (cache-busted)');
       }
     });
   }
 
   // Get all tables (admin only)
   getTables(): Observable<Table[]> {
-    return this.http.get<Table[]>(this.apiUrl);
+    const url = this.cacheBuster.addCacheBuster(this.apiUrl);
+    console.log('TableService: Fetching tables:', url);
+    return this.http.get<Table[]>(url);
   }
 
   // Get table by number (public - for QR code scanning)
   getTableByNumber(tableNumber: string): Observable<Table> {
-    return this.http.get<Table>(`${this.apiUrl}/${tableNumber}`);
+    const url = this.cacheBuster.addCacheBuster(`${this.apiUrl}/${tableNumber}`);
+    return this.http.get<Table>(url);
   }
 
   // Create new table (admin only) - socket will handle real-time

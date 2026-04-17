@@ -15,18 +15,39 @@ const fs = require('fs').promises;
 
 const getOrders = async (req, res) => {
   try {
+    // ========== PRODUCTION ORDER FILTERING ==========
+    const days = parseInt(req.query.days) || 30;
+    const limit = parseInt(req.query.limit) || 50;
+    const includeHistory = req.query.includeHistory === 'true';
+    const statusFilter = req.query.statuses ? req.query.statuses.split(',') : ['received','preparing','ready','delivered'];
+    
     let query = {};
     if (req.user.role === 'CUSTOMER') {
       query.user = req.user._id;
     }
-    if (req.query.status) {
-      query.orderStatus = req.query.status;
+    
+    // Default date filter: last N days
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    query.createdAt = { $gte: cutoffDate };
+    
+    // Default active statuses, exclude cancelled always
+    query.orderStatus = { $in: statusFilter, $ne: 'cancelled' };
+    
+    // Include completed only if explicitly requested
+    if (!includeHistory) {
+      query.orderStatus.ne = 'completed';
     }
-    // Filter by order type (delivery or dine-in)
+    
+    // Existing filters
     if (req.query.orderType) {
       query.orderType = req.query.orderType;
     }
-    let orders = await Order.find(query).populate('user', 'name email').populate('items.menuItem').sort({ createdAt: -1 });
+    
+    let orders = await Order.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .populate('user', 'name email')
+      .populate('items.menuItem');
     
     // For customers: group dine-in orders by masterOrderId to avoid showing multiple entries for same table session
     if (req.user.role === 'CUSTOMER') {

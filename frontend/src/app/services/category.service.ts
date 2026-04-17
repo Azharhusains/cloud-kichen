@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { SocketService } from './socket.service';
+import { HttpCacheBusterService } from './http-cache-buster.service';
 
 export interface Category {
   _id?: string;
@@ -40,7 +41,8 @@ export class CategoryService {
 
   constructor(
     private http: HttpClient,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private cacheBuster: HttpCacheBusterService
   ) {
     // Listen for category updates
     this.socketService.onCategoryUpdated().subscribe((update: CategoryUpdate) => {
@@ -67,23 +69,28 @@ export class CategoryService {
     this.getCategories().subscribe({
       next: (categories) => {
         this.categoriesSubject.next(categories);
+        console.log('✅ CategoryService: Fresh categories loaded');
       }
     });
   }
 
   // Get all categories (admin only - requires auth)
   getCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(this.apiUrl);
+    const url = this.cacheBuster.addCacheBuster(this.apiUrl);
+    console.log('CategoryService: Fetching categories:', url);
+    return this.http.get<Category[]>(url);
   }
 
   // Get active categories (public - no auth required)
   getActiveCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(`${this.apiUrl}/active`);
+    const url = this.cacheBuster.addCacheBuster(`${this.apiUrl}/active`);
+    return this.http.get<Category[]>(url);
   }
 
   // Get single category by ID
   getCategoryById(id: string): Observable<Category> {
-    return this.http.get<Category>(`${this.apiUrl}/${id}`);
+    const url = this.cacheBuster.addCacheBuster(`${this.apiUrl}/${id}`);
+    return this.http.get<Category>(url);
   }
 
   // Create new category (admin only) - optimistic update handled by socket

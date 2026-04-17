@@ -129,7 +129,7 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUserProfile();
-    this.loadOrders();
+    this.loadRecentOrders(); // Default recent orders
     // Load kitchen status for admin
     this.kitchenService.getStatus().subscribe({
       next: status => {
@@ -142,6 +142,9 @@ export class ProfileComponent implements OnInit {
       this.kitchenStatus = status;
     });
   }
+
+  // Remove old loadOrders to fix duplicate
+  // loadOrders(): void { ... } // Removed
 
   toggleKitchen(status: 'open' | 'closed', note: string): void {
     if (!this.user || this.user.role !== 'ADMIN' && this.user.role !== 'SUPER_ADMIN') return;
@@ -168,16 +171,52 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-loadOrders(): void {
-    this.orderService.getOrders().subscribe({
+  currentTab: 'recent' | 'history' = 'recent';
+  recentOrders: Order[] = [];
+  historyOrders: Order[] = [];
+  loading = false;
+
+  loadRecentOrders(): void {
+    this.loading = true;
+    this.orderService.getRecentOrders().subscribe({
       next: (orders) => {
-        this.orders = orders;
-        this.filteredOrders = [...orders];
+        this.recentOrders = orders;
+        if (this.currentTab === 'recent') {
+          this.orders = orders;
+          this.filteredOrders = [...orders];
+        }
       },
       error: (error) => {
-        console.error('Error loading orders:', error);
-      }
+        console.error('Error loading recent orders:', error);
+      },
+      complete: () => this.loading = false
     });
+  }
+
+  loadHistoryOrders(): void {
+    this.loading = true;
+    this.orderService.getAllOrders().subscribe({
+      next: (orders) => {
+        this.historyOrders = orders;
+        if (this.currentTab === 'history') {
+          this.orders = orders;
+          this.filteredOrders = [...orders];
+        }
+      },
+      error: (error) => {
+        console.error('Error loading history orders:', error);
+      },
+      complete: () => this.loading = false
+    });
+  }
+
+  setTab(tab: 'recent' | 'history'): void {
+    this.currentTab = tab;
+    if (tab === 'recent') {
+      this.loadRecentOrders();
+    } else {
+      this.loadHistoryOrders();
+    }
   }
 
   searchOrders(): void {

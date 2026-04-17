@@ -4,6 +4,7 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { SocketService } from './socket.service';
 import { NetworkService } from './network.service';
+import { HttpCacheBusterService } from './http-cache-buster.service';
 
 declare global {
   interface Window {
@@ -32,7 +33,8 @@ export class OrderService {
   constructor(
     private http: HttpClient,
     private socketService: SocketService,
-    private networkService: NetworkService
+    private networkService: NetworkService,
+    private cacheBuster: HttpCacheBusterService
   ) {
     // Listen for new orders (admin)
     this.socketService.onNewOrder().subscribe((order) => {
@@ -60,6 +62,7 @@ export class OrderService {
       next: (orders) => {
         const recent = orders.slice(0, 10);
         this.recentOrdersSubject.next(recent);
+        console.log('✅ OrderService: Fresh orders loaded (cache-busted)');
       }
     });
   }
@@ -80,7 +83,33 @@ export class OrderService {
   }
 
   getOrders(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/orders`);
+    const url = this.cacheBuster.addCacheBuster(`${environment.apiUrl}/orders`);
+    console.log('OrderService: Fetching orders:', url);
+    return this.http.get<any[]>(url);
+  }
+
+  /**
+   * Get recent/active orders (default: last 30 days, active statuses, max 50)
+   */
+  getRecentOrders(days: number = 30, limit: number = 50): Observable<any[]> {
+    const params = new URLSearchParams({
+      days: days.toString(),
+      limit: limit.toString()
+    });
+    const url = this.cacheBuster.addCacheBuster(`${environment.apiUrl}/orders?${params.toString()}`);
+    return this.http.get<any[]>(url);
+  }
+
+  /**
+   * Get all order history (last 365 days, all statuses except cancelled, max 100)
+   */
+  getAllOrders(): Observable<any[]> {
+    const params = new URLSearchParams({
+      days: '365',
+      limit: '100',
+      includeHistory: 'true'
+    });
+    return this.http.get<any[]>(`${environment.apiUrl}/orders?${params.toString()}`);
   }
 
   getOrder(id: string): Observable<any> {

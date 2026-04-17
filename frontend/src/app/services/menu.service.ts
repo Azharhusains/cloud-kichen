@@ -4,6 +4,7 @@ import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { NetworkService } from './network.service';
 import { Category } from './category.service';
+import { HttpCacheBusterService } from './http-cache-buster.service';
 
 export interface MenuItem {
   _id: string;
@@ -38,25 +39,23 @@ export interface MenuResponse {
   providedIn: 'root'
 })
 export class MenuService {
-  private cachedMenu: MenuResponse | null = null;
   private menuSubject = new BehaviorSubject<MenuResponse | null>(null);
   public menu$ = this.menuSubject.asObservable();
 
   constructor(
     private http: HttpClient,
-    private networkService: NetworkService
+    private networkService: NetworkService,
+    private cacheBuster: HttpCacheBusterService
   ) {}
 
-  getMenuItems(forceRefresh: boolean = false): Observable<MenuResponse> {
-    // Premium offline caching
-    if (!forceRefresh && this.cachedMenu) {
-      return new Observable(observer => observer.next(this.cachedMenu!));
-    }
-
-    return this.http.get<MenuResponse>(`${environment.apiUrl}/menu`).pipe(
+  getMenuItems(forceRefresh: boolean = true): Observable<MenuResponse> {
+    const url = this.cacheBuster.addCacheBuster(`${environment.apiUrl}/menu`);
+    console.log('MenuService: Fetching fresh menu:', url);
+    
+    return this.http.get<MenuResponse>(url).pipe(
       tap(menuData => {
-        this.cachedMenu = menuData;
         this.menuSubject.next(menuData);
+        console.log('✅ MenuService: Fresh menu loaded (cache-busted)');
       })
     );
   }

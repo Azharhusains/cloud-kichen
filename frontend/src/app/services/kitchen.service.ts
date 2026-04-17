@@ -4,6 +4,7 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { SocketService } from './socket.service';
+import { HttpCacheBusterService } from './http-cache-buster.service';
 
 export interface KitchenStatus {
   status: 'open' | 'closed';
@@ -31,7 +32,8 @@ export class KitchenService {
 
   constructor(
     private http: HttpClient,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private cacheBuster: HttpCacheBusterService
   ) {
     // Listen for real-time status updates
     this.socketService.onKitchenStatusChanged().subscribe(status => {
@@ -40,7 +42,9 @@ export class KitchenService {
   }
 
   getStatus(): Observable<KitchenStatus> {
-    return this.http.get<any>(`${this.apiUrl}/status`).pipe(
+    const url = this.cacheBuster.addCacheBuster(`${this.apiUrl}/status`);
+    console.log('KitchenService: Fetching status:', url);
+    return this.http.get<any>(url).pipe(
       map(data => ({
         status: data.status,
         isManual: data.isManual,
@@ -48,7 +52,10 @@ export class KitchenService {
         note: data.note || '',
         updatedAt: data.updatedAt
       })),
-      tap(status => this.statusSubject.next(status))
+      tap(status => {
+        this.statusSubject.next(status);
+        console.log('✅ KitchenService: Fresh status loaded');
+      })
     );
   }
 
