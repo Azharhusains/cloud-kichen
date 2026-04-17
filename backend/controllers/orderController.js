@@ -35,7 +35,7 @@ const getOrders = async (req, res) => {
     
     // Include completed only if explicitly requested
     if (!includeHistory) {
-      query.orderStatus.ne = 'completed';
+      query.orderStatus.$ne = 'completed';
     }
     
     // Existing filters
