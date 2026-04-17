@@ -22,9 +22,9 @@ const days = parseInt(req.query.days) || 30;
     
     let statusFilter;
     if (req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN') {
-      statusFilter = req.query.statuses ? req.query.statuses.split(',') : ['received','preparing','ready','delivered','completed'];
+      statusFilter = req.query.statuses ? req.query.statuses.split(',') : ['received','preparing','ready','delivered','completed','cancelled'];
     } else {
-      statusFilter = req.query.statuses ? req.query.statuses.split(',') : ['received','preparing','ready','delivered'];
+      statusFilter = req.query.statuses ? req.query.statuses.split(',') : ['received','preparing','ready','delivered','completed','cancelled'];
     }
     
     let query = {};
@@ -36,8 +36,8 @@ const days = parseInt(req.query.days) || 30;
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     query.createdAt = { $gte: cutoffDate };
     
-    // Default active statuses, exclude cancelled always
-    query.orderStatus = { $in: statusFilter, $ne: 'cancelled' };
+    // Default active statuses (remove $ne: 'cancelled' for admin full history)
+    query.orderStatus = { $in: statusFilter };
     
     // Include completed only if explicitly requested (skip for admin)
     if (!includeHistory && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
