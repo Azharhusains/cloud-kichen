@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { Observable, Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { KitchenStatus } from './kitchen.service';
+import { MenuItem } from './menu.service';
 
 @Injectable({
   providedIn: 'root'
@@ -257,6 +258,111 @@ export class SocketService {
     return new Observable(observer => {
       this.socket.on('menuAvailabilityChanged', (data) => {
         console.log('SocketService: Received menuAvailabilityChanged:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // NEW: Menu list updates
+  onMenuListUpdated(): Observable<any> {
+    console.log('SocketService: Listening for menuListUpdated events');
+    return new Observable(observer => {
+      this.socket.on('menuListUpdated', (data) => {
+        console.log('SocketService: Received menuListUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // Menu item specific events
+  onMenuItemCreated(): Observable<any> {
+    console.log('SocketService: Listening for menuItemCreated events');
+    return new Observable(observer => {
+      this.socket.on('menuItemCreated', (data) => {
+        console.log('SocketService: Received menuItemCreated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  onMenuItemUpdated(): Observable<MenuItem> {
+    console.log('SocketService: Listening for menuItemUpdated events');
+    return new Observable(observer => {
+      this.socket.on('menuItemUpdated', (data) => {
+        console.log('SocketService: Received menuItemUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  onMenuItemDeleted(): Observable<{ id: string }> {
+    console.log('SocketService: Listening for menuItemDeleted events');
+    return new Observable(observer => {
+      this.socket.on('menuItemDeleted', (data) => {
+        console.log('SocketService: Received menuItemDeleted:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // Inventory list updates
+  onInventoryListUpdated(): Observable<any[]> {
+    console.log('SocketService: Listening for inventoryListUpdated events');
+    return new Observable(observer => {
+      this.socket.on('inventoryListUpdated', (data) => {
+        console.log('SocketService: Received inventoryListUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // Users list updates
+  onUsersListUpdated(): Observable<any[]> {
+    console.log('SocketService: Listening for usersListUpdated events');
+    return new Observable(observer => {
+      this.socket.on('usersListUpdated', (data) => {
+        console.log('SocketService: Received usersListUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  onUserUpdated(): Observable<any> {
+    console.log('SocketService: Listening for userUpdated events');
+    return new Observable(observer => {
+      this.socket.on('userUpdated', (data) => {
+        console.log('SocketService: Received userUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  // Coupons events
+  onCouponsListUpdated(): Observable<any[]> {
+    console.log('SocketService: Listening for couponsListUpdated events');
+    return new Observable(observer => {
+      this.socket.on('couponsListUpdated', (data) => {
+        console.log('SocketService: Received couponsListUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  onCouponCreated(): Observable<any> {
+    console.log('SocketService: Listening for couponCreated events');
+    return new Observable(observer => {
+      this.socket.on('couponCreated', (data) => {
+        console.log('SocketService: Received couponCreated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  onCouponDeleted(): Observable<any> {
+    console.log('SocketService: Listening for couponDeleted events');
+    return new Observable(observer => {
+      this.socket.on('couponDeleted', (data) => {
+        console.log('SocketService: Received couponDeleted:', data);
         observer.next(data);
       });
     });

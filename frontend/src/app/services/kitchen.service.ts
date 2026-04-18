@@ -40,7 +40,9 @@ export class KitchenService {
   }
 
   getStatus(): Observable<KitchenStatus> {
-    return this.http.get<any>(`${this.apiUrl}/status`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/status`, { 
+      headers: { 'Cache-Control': 'no-cache' }
+    }).pipe(
       map(data => ({
         status: data.status,
         isManual: data.isManual,

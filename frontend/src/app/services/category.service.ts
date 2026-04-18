@@ -71,14 +71,23 @@ export class CategoryService {
     });
   }
 
+  // Add optimistic updates for other operations
+  refreshCategories(): void {
+    this.loadCategories();
+  }
+
   // Get all categories (admin only - requires auth)
   getCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(this.apiUrl);
+    return this.http.get<Category[]>(this.apiUrl, { 
+      headers: { 'Cache-Control': 'no-cache' }
+    });
   }
 
   // Get active categories (public - no auth required)
   getActiveCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(`${this.apiUrl}/active`);
+    return this.http.get<Category[]>(`${this.apiUrl}/active`, { 
+      headers: { 'Cache-Control': 'no-cache' }
+    });
   }
 
   // Get single category by ID

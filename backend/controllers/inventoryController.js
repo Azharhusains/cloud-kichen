@@ -3,6 +3,12 @@ const Inventory = require('../models/Inventory');
 const getInventory = async (req, res) => {
   try {
     const inventory = await Inventory.find({}).populate('createdBy updatedBy', 'name');
+    
+    // Real-time: Emit full inventory list update
+    const io = req.app.get('io');
+    io.to('adminRoom').emit('inventoryListUpdated', inventory);
+    io.emit('inventoryListUpdated', inventory);
+    
     res.json(inventory);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -17,6 +23,13 @@ const deleteInventory = async (req, res) => {
     }
 
     await inventory.deleteOne();
+    
+    // Real-time: Emit list refresh after delete
+    const io = req.app.get('io');
+    const updatedInventory = await Inventory.find({}).populate('createdBy updatedBy', 'name');
+    io.to('adminRoom').emit('inventoryListUpdated', updatedInventory);
+    io.emit('inventoryListUpdated', updatedInventory);
+    
     res.json({ message: 'Inventory item removed successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -53,9 +66,14 @@ const updateInventory = async (req, res) => {
         }
         updatedItems.push(inventoryItem);
       }
-      // Emit socket events for each updated item
+      // Emit full list + individual updates
       const io = req.app.get('io');
+      const fullInventory = await Inventory.find({}).populate('createdBy updatedBy', 'name');
+      io.to('adminRoom').emit('inventoryListUpdated', fullInventory);
+      io.emit('inventoryListUpdated', fullInventory);
+      
       for (const item of updatedItems) {
+        io.to('adminRoom').emit('inventoryUpdated', item);
         io.emit('inventoryUpdated', item);
       }
       res.json(updatedItems);
@@ -82,8 +100,12 @@ const updateInventory = async (req, res) => {
         });
         await inventoryItem.save();
       }
-      // Emit socket event for inventory update
+      // Emit full list + individual update
       const io = req.app.get('io');
+      const fullInventory = await Inventory.find({}).populate('createdBy updatedBy', 'name');
+      io.to('adminRoom').emit('inventoryListUpdated', fullInventory);
+      io.emit('inventoryListUpdated', fullInventory);
+      io.to('adminRoom').emit('inventoryUpdated', inventoryItem);
       io.emit('inventoryUpdated', inventoryItem);
       res.json(inventoryItem);
     }

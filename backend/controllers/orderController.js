@@ -14,15 +14,9 @@ const fs = require('fs').promises;
 const getOrders = async (req, res) => {
   try {
     let query = {};
-    if (req.user.role === 'CUSTOMER') {
+    // Fix case sensitivity - convert to uppercase
+    if (req.user.role?.toUpperCase() === 'CUSTOMER') {
       query.user = req.user._id;
-    }
-    if (req.query.status) {
-      query.orderStatus = req.query.status;
-    }
-    // Filter by order type (delivery or dine-in)
-    if (req.query.orderType) {
-      query.orderType = req.query.orderType;
     }
     const orders = await Order.find(query).populate('user', 'name email').populate('items.menuItem').sort({ createdAt: -1 });
     res.json(orders);
@@ -37,7 +31,7 @@ const getOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
+    if (req.user.role?.toUpperCase() === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
     }
     res.json(order);
@@ -199,7 +193,7 @@ const createOrder = async (req, res) => {
       taxRate,
       taxAmount,
       totalAmount,
-      paymentMethod: 'cash',
+      paymentMethod: paymentMethod,
       deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
       profit,
     });
@@ -479,7 +473,7 @@ const cancelOrder = async (req, res) => {
     }
 
     // Check if user is admin or super admin
-    const isAdmin = req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN';
+    const isAdmin = req.user.role?.toUpperCase() === 'ADMIN' || req.user.role?.toUpperCase() === 'SUPER_ADMIN';
     
     // Check if order can be cancelled (only for customers)
     if (!isAdmin) {

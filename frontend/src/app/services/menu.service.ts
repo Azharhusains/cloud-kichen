@@ -4,6 +4,7 @@ import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { NetworkService } from './network.service';
 import { Category } from './category.service';
+import { SocketService } from './socket.service';
 
 export interface MenuItem {
   _id: string;
@@ -44,8 +45,60 @@ export class MenuService {
 
   constructor(
     private http: HttpClient,
-    private networkService: NetworkService
-  ) {}
+    private networkService: NetworkService,
+    private socketService: SocketService
+  ) {
+    // Listen for menu updates from backend sockets
+    this.socketService.onMenuListUpdated().subscribe((menuData: MenuResponse) => {
+      console.log('MenuService: Menu list updated via socket', menuData);
+      this.cachedMenu = menuData;
+      this.menuSubject.next(menuData);
+    });
+
+    this.socketService.onMenuAvailabilityChanged().subscribe((item: MenuItem) => {
+      console.log('MenuService: Menu item availability changed', item);
+      const currentMenu = this.menuSubject.value;
+      if (currentMenu) {
+        const menuItems = currentMenu.menuItems.map(m => 
+          m._id === item._id ? { ...m, ...item } : m
+        );
+        this.menuSubject.next({ ...currentMenu, menuItems });
+        this.cachedMenu = { ...currentMenu, menuItems };
+      }
+    });
+
+    this.socketService.onMenuItemCreated().subscribe((newItem: MenuItem) => {
+      console.log('MenuService: New menu item created', newItem);
+      const currentMenu = this.menuSubject.value;
+      if (currentMenu) {
+        const menuItems = [newItem, ...currentMenu.menuItems];
+        this.menuSubject.next({ ...currentMenu, menuItems });
+        this.cachedMenu = { ...currentMenu, menuItems };
+      }
+    });
+
+    this.socketService.onMenuItemUpdated().subscribe((updatedItem: MenuItem) => {
+      console.log('MenuService: Menu item updated', updatedItem);
+      const currentMenu = this.menuSubject.value;
+      if (currentMenu) {
+        const menuItems = currentMenu.menuItems.map(m => 
+          m._id === updatedItem._id ? updatedItem : m
+        );
+        this.menuSubject.next({ ...currentMenu, menuItems });
+        this.cachedMenu = { ...currentMenu, menuItems };
+      }
+    });
+
+    this.socketService.onMenuItemDeleted().subscribe((deletedItem: { id: string }) => {
+      console.log('MenuService: Menu item deleted', deletedItem);
+      const currentMenu = this.menuSubject.value;
+      if (currentMenu) {
+        const menuItems = currentMenu.menuItems.filter(m => m._id !== deletedItem.id);
+        this.menuSubject.next({ ...currentMenu, menuItems });
+        this.cachedMenu = { ...currentMenu, menuItems };
+      }
+    });
+  }
 
   getMenuItems(forceRefresh: boolean = false): Observable<MenuResponse> {
     // Premium offline caching
@@ -53,7 +106,9 @@ export class MenuService {
       return new Observable(observer => observer.next(this.cachedMenu!));
     }
 
-    return this.http.get<MenuResponse>(`${environment.apiUrl}/menu`).pipe(
+    return this.http.get<MenuResponse>(`${environment.apiUrl}/menu`, { 
+      headers: { 'Cache-Control': 'no-cache' }
+    }).pipe(
       tap(menuData => {
         this.cachedMenu = menuData;
         this.menuSubject.next(menuData);

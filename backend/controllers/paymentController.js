@@ -122,24 +122,55 @@ const verifyPayment = async (req, res) => {
     // Create DB order
     // Ensure items have costPrice and populate if missing
     const MenuItem = require('../models/MenuItem');
+    const mongoose = require('mongoose');
+    let totalCost = 0;
     for (let item of items) {
       if (!item.costPrice && item.menuItem) {
         const menuItemDoc = await MenuItem.findById(item.menuItem).select('costPrice');
         item.costPrice = menuItemDoc ? menuItemDoc.costPrice : 0;
       }
+      totalCost += item.costPrice * item.quantity;
+    }
+    
+    const profit = totalAmount - totalCost - deliveryCharge - taxAmount;
+
+    // Generate orderNumber using Counter - use same logic as createOrder
+    const Counter = require('../models/Counter');
+    const now = new Date();
+    const todayDate = now.toISOString().split('T')[0];
+    
+    let counter = await Counter.findOne({ name: 'orderNumber' });
+    let orderNumber;
+    
+    if (!counter) {
+      await Counter.findOneAndUpdate(
+        { name: 'orderNumber' },
+        { $set: { sequence: 1, lastResetDate: now } },
+        { upsert: true }
+      );
+      orderNumber = 1;
+    } else {
+      const lastResetDateStr = counter.lastResetDate ? new Date(counter.lastResetDate).toISOString().split('T')[0] : null;
+      
+      if (!lastResetDateStr || lastResetDateStr !== todayDate) {
+        await Counter.findOneAndUpdate(
+          { name: 'orderNumber' },
+          { $set: { sequence: 1, lastResetDate: now } }
+        );
+        orderNumber = 1;
+      } else {
+        const updatedCounter = await Counter.findOneAndUpdate(
+          { name: 'orderNumber' },
+          { $inc: { sequence: 1 } },
+          { new: true }
+        );
+        orderNumber = updatedCounter.sequence;
+      }
     }
 
-    // Generate orderNumber using Counter
-    const Counter = require('../models/Counter');
-    const counter = await Counter.findOneAndUpdate(
-      { name: 'orderNumber' },
-      { $inc: { sequence: 1 } },
-      { new: true, upsert: true }
-    );
-
     const dbOrder = new Order({
-      user: userId,
-      orderNumber: counter.sequence,
+      user: req.user._id, // Always use authenticated user ID (guaranteed ObjectId)
+      orderNumber,
       orderType: 'delivery',
       items,
       subtotal,
@@ -147,6 +178,7 @@ const verifyPayment = async (req, res) => {
       taxRate,
       taxAmount,
       totalAmount,
+      profit,
       deliveryAddress: deliveryAddress || notes.deliveryAddress,
       paymentStatus: 'succeeded',
       paymentMethod: 'online',

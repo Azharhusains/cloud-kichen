@@ -188,15 +188,20 @@ const getRevenue = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(20);
 
-    res.json({
+    // Real-time: Emit revenue update to admin room + broadcast  
+    const io = req.app.get('io');
+    const revenueData = {
       stats: revenueStats[0] || { totalRevenue: 0, totalProfit: 0, totalOrders: 0, avgOrderValue: 0, profitMargin: 0 },
       paymentStats: paymentStats[0] || { cash: 0, online: 0, cashAmount: 0, onlineAmount: 0, cashPercentage: 0, onlinePercentage: 0 },
       revenueTrend,
       topProducts,
       recentOrders,
       period: timeFilter
-    });
+    };
+    io.to('adminRoom').emit('revenueUpdated', revenueData);
+    io.emit('revenueUpdated', revenueData);
 
+    res.json(revenueData);
   } catch (error) {
     console.error('Revenue error:', error);
     res.status(500).json({ message: error.message });

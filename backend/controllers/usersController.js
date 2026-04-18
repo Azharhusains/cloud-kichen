@@ -15,6 +15,11 @@ const getUsers = async (req, res) => {
       };
     }));
 
+    // Real-time: Emit updated user list to admin room + broadcast
+    const io = req.app.get('io');
+    io.to('adminRoom').emit('usersListUpdated', usersWithStats);
+    io.emit('usersListUpdated', usersWithStats);
+
     res.json(usersWithStats);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -42,16 +47,35 @@ const promoteToAdmin = async (req, res) => {
     
     // Promote to ADMIN
     targetUser.role = 'ADMIN';
-    await targetUser.save();
+    const promotedUser = await targetUser.save();
     
+    // Real-time: Emit single user update + refresh list
+    const io = req.app.get('io');
+    io.to('adminRoom').emit('userUpdated', promotedUser);
+    io.emit('userUpdated', promotedUser);
+    io.to('adminRoom').emit('usersListUpdated', await getAllUsersWithStats());
+    io.emit('usersListUpdated', await getAllUsersWithStats());
+
     res.json({
       message: 'User promoted to Admin successfully',
-      user: targetUser
+      user: promotedUser
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+async function getAllUsersWithStats() {
+  const User = require('../models/User');
+  const users = await User.find({})
+    .select('-password')
+    .sort({ createdAt: -1 });
+  
+  return await Promise.all(users.map(async (user) => ({
+    ...user._doc,
+    orderCount: user.orderCount || 0
+  })));
+}
 
 module.exports = { getUsers, promoteToAdmin };
 

@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { SocketService } from './socket.service';
 
 export interface InventoryItem {
   _id?: string;
@@ -26,10 +27,35 @@ export interface InventoryItem {
   providedIn: 'root'
 })
 export class InventoryService {
-  constructor(private http: HttpClient) {}
+  private inventorySubject = new BehaviorSubject<InventoryItem[]>([]);
+  public inventory$ = this.inventorySubject.asObservable();
+
+  constructor(
+    private http: HttpClient,
+    private socketService: SocketService
+  ) {
+    // Listen for inventory updates
+    this.socketService.onInventoryListUpdated().subscribe((inventoryList) => {
+      console.log('InventoryService: Full inventory list updated via socket', inventoryList);
+      this.inventorySubject.next(inventoryList);
+    });
+
+    // Note: Backend emits inventoryListUpdated which handles all cases
+    // Individual item updates covered by full list refresh
+  }
+
+  loadInventory(): void {
+    this.getInventory().subscribe({
+      next: (inventory) => {
+        this.inventorySubject.next(inventory);
+      }
+    });
+  }
 
   getInventory(): Observable<InventoryItem[]> {
-    return this.http.get<InventoryItem[]>(`${environment.apiUrl}/inventory`);
+    return this.http.get<InventoryItem[]>(`${environment.apiUrl}/inventory`, { 
+      headers: { 'Cache-Control': 'no-cache' }
+    });
   }
 
   updateInventory(inventoryData: InventoryItem[]): Observable<InventoryItem[]> {

@@ -53,11 +53,17 @@ const getMenuItems = async (req, res) => {
     // Get all unique categories from the database (from Category collection)
     const categories = await Category.find({ isActive: true }).sort({ sortOrder: 1 });
     
-    // Return both menu items and categories
-    res.json({
+    const responseData = {
       menuItems,
       categories
-    });
+    };
+    
+    // Real-time: Emit menu list update
+    const io = req.app.get('io');
+    io.to('adminRoom').emit('menuListUpdated', responseData);
+    io.emit('menuListUpdated', responseData);
+    
+    res.json(responseData);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -190,10 +196,17 @@ const createMenuItem = async (req, res) => {
     const menuItem = new MenuItem(menuItemData);
     const createdItem = await menuItem.save();
     
-    // Emit socket event for real-time updates
+    // Emit comprehensive real-time updates
     const io = req.app.get('io');
+    const fullMenu = await MenuItem.find({}).populate('createdBy updatedBy', 'name').sort({ createdAt: -1 });
+    const activeCategories = await Category.find({ isActive: true }).sort({ sortOrder: 1 });
+    
+    io.to('adminRoom').emit('menuListUpdated', { menuItems: fullMenu, categories: activeCategories });
+    io.emit('menuListUpdated', { menuItems: fullMenu, categories: activeCategories });
+    io.to('adminRoom').emit('menuItemCreated', createdItem);
+    io.emit('menuItemCreated', createdItem);
+    io.to('adminRoom').emit('menuAvailabilityChanged', createdItem);
     io.emit('menuAvailabilityChanged', createdItem);
-    io.to('adminRoom').emit('menuItemUpdated', createdItem);
     
     res.status(201).json(createdItem);
   } catch (error) {
@@ -254,10 +267,17 @@ const updateMenuItem = async (req, res) => {
     menuItem.updatedBy = req.user._id;
     const updatedItem = await menuItem.save();
     
-    // Emit socket event for real-time updates
+    // Emit comprehensive real-time updates
     const io = req.app.get('io');
-    io.emit('menuAvailabilityChanged', updatedItem);
+    const fullMenu = await MenuItem.find({}).populate('createdBy updatedBy', 'name').sort({ createdAt: -1 });
+    const activeCategories = await Category.find({ isActive: true }).sort({ sortOrder: 1 });
+    
+    io.to('adminRoom').emit('menuListUpdated', { menuItems: fullMenu, categories: activeCategories });
+    io.emit('menuListUpdated', { menuItems: fullMenu, categories: activeCategories });
     io.to('adminRoom').emit('menuItemUpdated', updatedItem);
+    io.emit('menuItemUpdated', updatedItem);
+    io.to('adminRoom').emit('menuAvailabilityChanged', updatedItem);
+    io.emit('menuAvailabilityChanged', updatedItem);
     
     res.json(updatedItem);
   } catch (error) {
@@ -281,6 +301,16 @@ const deleteMenuItem = async (req, res) => {
     }
     
     await menuItem.deleteOne();
+    
+    // Real-time: Emit list refresh after delete
+    const io = req.app.get('io');
+    const fullMenu = await MenuItem.find({}).populate('createdBy updatedBy', 'name').sort({ createdAt: -1 });
+    const activeCategories = await Category.find({ isActive: true }).sort({ sortOrder: 1 });
+    io.to('adminRoom').emit('menuListUpdated', { menuItems: fullMenu, categories: activeCategories });
+    io.emit('menuListUpdated', { menuItems: fullMenu, categories: activeCategories });
+    io.to('adminRoom').emit('menuItemDeleted', { id: req.params.id });
+    io.emit('menuItemDeleted', { id: req.params.id });
+    
     res.json({ message: 'Menu item removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });
