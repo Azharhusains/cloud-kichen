@@ -638,13 +638,16 @@ const updateOrderStatus = async (req, res) => {
     const io = req.app.get('io');
     
 // 1. Emit to admin room
+console.log(`🔵 updateOrderStatus: Emitting orderUpdated to adminRoom for order ${populatedOrder._id} (${populatedOrder.orderNumber}) status: ${req.body.status}`);
 io.to('adminRoom').emit('orderUpdated', populatedOrder);
 io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     
-    // 2. Emit to specific order room
+// 2. Emit to specific order room
+    console.log(`🔵 updateOrderStatus: Emitting orderStatusChanged to ${orderRoom} for order ${populatedOrder._id}`);
     io.to(orderRoom).emit('orderStatusChanged', populatedOrder);
     
-    // 3. BROADCAST to all clients as fallback (for debugging)
+// 3. BROADCAST to all clients as fallback (for debugging)
+    console.log(`🔵 updateOrderStatus: Broadcasting orderStatusBroadcast for ${populatedOrder._id}`);
     io.emit('orderStatusBroadcast', populatedOrder);
     
     res.json(updatedOrder);
@@ -912,7 +915,9 @@ const cancelOrder = async (req, res) => {
 
     // If this is a dine-in suborder, emit master order updated event to refresh all tracking pages
     if (order.masterOrderId && order.orderType === 'dine-in') {
-      io.to(`user_${order.masterOrderId}`).emit('master_order_updated', {
+      const userRoom = `user_${order.masterOrderId}`;
+      console.log(`🔵 updateOrderStatus: Emitting master_order_updated to ${userRoom} for masterOrderId ${order.masterOrderId}`);
+      io.to(userRoom).emit('master_order_updated', {
         masterOrderId: order.masterOrderId,
         tableId: order.tableNumber
       });

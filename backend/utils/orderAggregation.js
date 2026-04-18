@@ -14,6 +14,17 @@ async function getAggregatedOrder(masterOrderId) {
       throw new Error('MasterOrder not found');
     }
 
+    // Prevent aggregation for non-ACTIVE MasterOrders
+    if (masterOrder.status !== 'ACTIVE') {
+      return {
+        valid: false,
+        message: `MasterOrder is ${masterOrder.status.toLowerCase()}. Aggregation not allowed.`,
+        status: masterOrder.status,
+        masterOrderId: masterOrder._id,
+        tableId: masterOrder.tableId
+      };
+    }
+
     // Fetch all SubOrders linked to this MasterOrder
     const subOrders = await Order.find({ 
       masterOrderId: masterOrder._id, 
@@ -124,4 +135,3 @@ module.exports = {
   getAggregatedOrder,
   getOrCreateMasterOrder
 };
-

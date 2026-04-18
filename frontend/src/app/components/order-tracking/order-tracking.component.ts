@@ -1,4 +1,6 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
+import { interval } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -76,7 +78,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private toastService: ToastService,
     private dialog: MatDialog,
-    private cartService: CartService
+    private cartService: CartService,
+    private destroyRef: DestroyRef = inject(DestroyRef)
   ) {}
 
   ngOnInit(): void {
@@ -90,6 +93,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       const orderId = params.get('id');
       if (orderId !== null) {
         this.orderId = orderId;
+        // JOIN ROOMS IMMEDIATELY before loading order
+        this.socketService.joinTrackingRooms(orderId);
         this.loadOrder(orderId);
         this.setupSocketListeners();
       }
@@ -105,12 +110,28 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         }
       }
     });
+
+    // POLLING FALLBACK: Refresh every 15s (without auto-unsubscribe for compatibility)
+    // interval(15000).subscribe(() => {
+    //   if (this.orderId) {
+    //     console.log('OrderTrackingComponent: Polling refresh');
+    //     this.loadOrder(this.orderId);
+    //   }
+    // });
+
+    // VISIBILITY CHANGE: Immediate refresh when tab visible
+    this.socketService.visibilityChange$.subscribe(() => {
+      if (this.orderId) {
+        console.log('OrderTrackingComponent: Visibility refresh');
+        this.loadOrder(this.orderId);
+      }
+    });
   }
 
   ngOnDestroy(): void {
-    // Don't disconnect socket here as it's a singleton service
-    // Just leave the order room
-    console.log('OrderTrackingComponent: ngOnDestroy called, leaving order room');
+    // Clear tracking rooms
+    this.socketService.leaveTrackingRooms();
+    console.log('OrderTrackingComponent: ngOnDestroy - cleared tracking rooms');
   }
 
   setupSocketListeners(): void {
@@ -119,22 +140,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     console.log('OrderTrackingComponent: Setting up socket listeners for order:', orderId);
     
-    // Join specific order room for real-time status updates
-    this.socketService.joinOrderRoom(orderId);
-    
-    // If this is a dine-in order, also join the master order user room
-    if (this.order?.masterOrderId) {
-      this.socketService.joinUserRoom(this.order.masterOrderId);
-      console.log('OrderTrackingComponent: Joined master order room:', this.order.masterOrderId);
-    } else {
-      // After order loads, if it's a dine-in order, join master room
-      setTimeout(() => {
-        if (this.order?.masterOrderId) {
-          this.socketService.joinUserRoom(this.order.masterOrderId);
-          console.log('OrderTrackingComponent: Joined master order room after load:', this.order.masterOrderId);
-        }
-      }, 500);
-    }
+    // Rooms already joined in ngOnInit - setup listeners only
 
     // Listen for order status changes via room
     this.socketService.onOrderStatusChanged().subscribe({

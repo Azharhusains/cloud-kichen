@@ -334,10 +334,10 @@ export class CheckoutComponent implements OnInit {
           // Don't clear table info when adding more items - only clear on completion
           // We'll let the master order completion clear it
           
-          if (activeMasterOrderId !== null) {
+          if (activeMasterOrderId && activeMasterOrderId.trim()) {
             // If adding to existing order, redirect back to original order tracking
             // Add timestamp query param to force component refresh
-            this.router.navigate(['/order-tracking', activeMasterOrderId], { 
+            this.router.navigate(['/order-tracking', activeMasterOrderId.trim()], { 
               queryParams: { refresh: Date.now() } 
             });
             localStorage.removeItem('activeMasterOrderId');
@@ -345,6 +345,7 @@ export class CheckoutComponent implements OnInit {
             this.router.navigate(['/order-confirmation', order.subOrder._id]);
           } else {
             console.error('Order created but missing subOrder._id:', order);
+            this.router.navigate(['/order-confirmation']);
             this.toastService.show('Order created but subOrder ID missing. Contact support.', 'error');
           }
         },
@@ -446,10 +447,11 @@ export class CheckoutComponent implements OnInit {
         this.cartService.clearCart();
         this.toastService.show(`Payment Success! Order ${result?.orderNumber || 'Unknown'}`, 'success');
         const orderId = result?.subOrderId || result?._id || result?.orderId;
-        if (orderId) {
-          this.router.navigate(['/order-confirmation', orderId]);
+        if (orderId && orderId.trim()) {
+          this.router.navigate(['/order-confirmation', orderId.trim()]);
         } else {
           console.error('Payment verified but missing orderId:', result);
+          this.router.navigate(['/order-confirmation']);
           this.toastService.show('Payment success but order ID missing. Contact support.', 'error');
         }
       },

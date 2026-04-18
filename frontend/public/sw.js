@@ -51,7 +51,10 @@ async function handleStaticRequest(request) {
   try {
     const networkResponse = await fetch(request);
     const cache = await caches.open(CACHE_NAME);
-    cache.put(request, networkResponse.clone());
+    // Only cache GET requests (POST/PUT/DELETE unsupported)
+    if (request.method === 'GET') {
+      cache.put(request, networkResponse.clone());
+    }
     return networkResponse;
   } catch (error) {
     console.error('Static fetch failed:', error);

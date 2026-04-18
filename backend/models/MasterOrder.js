@@ -12,7 +12,7 @@ const masterOrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['ACTIVE', 'COMPLETED'],
+enum: ['ACTIVE', 'COMPLETED', 'CANCELLED'],
     default: 'ACTIVE'
   },
   createdAt: {

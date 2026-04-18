@@ -23,16 +23,42 @@ export class LoaderComponent {
     "Final touches in progress ✨"
   ];
   
+  currentMessageIndex = 0;
   currentMessage = signal(this.messages[0]);
+  private messageInterval: any;
   
   constructor() {
+    // Cycle messages safely when loading starts/ends
     effect(() => {
       if (this.isLoading()) {
-        // Pick new random message only when loading starts
-        const randomIndex = Math.floor(Math.random() * this.messages.length);
-        this.currentMessage.set(this.messages[randomIndex]);
+        this.startMessageCycle();
+      } else {
+        this.stopMessageCycle();
+        // Reset to first message when hiding
+        this.currentMessageIndex = 0;
+        this.currentMessage.set(this.messages[0]);
       }
     });
+  }
+
+  private startMessageCycle() {
+    if (this.messageInterval) return;
+    
+    this.messageInterval = setInterval(() => {
+      this.currentMessageIndex = (this.currentMessageIndex + 1) % this.messages.length;
+      this.currentMessage.set(this.messages[this.currentMessageIndex]);
+    }, 2000);
+  }
+
+  private stopMessageCycle() {
+    if (this.messageInterval) {
+      clearInterval(this.messageInterval);
+      this.messageInterval = null;
+    }
+  }
+
+  ngOnDestroy() {
+    this.stopMessageCycle();
   }
 
   getRandomMessage = () => this.currentMessage();

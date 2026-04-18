@@ -97,10 +97,47 @@ export class SocketService {
     this.socket.emit('joinAdmin');
   }
 
-  // Join specific order room to receive status updates
+  // Join specific order room to receive status updates (idempotent)
+  private joinedOrderRooms = new Set<string>();
+  private joinedUserRooms = new Set<string>();
+
   joinOrderRoom(orderId: string): void {
-    console.log('SocketService: Joining order room:', orderId);
+    const room = `order_${orderId}`;
+    if (this.joinedOrderRooms.has(room)) {
+      console.log('SocketService: Already in order room', room, '- skipping');
+      return;
+    }
+    console.log('SocketService: Joining order room:', room);
     this.socket.emit('joinOrder', orderId);
+    this.joinedOrderRooms.add(room);
+  }
+
+  // Join user room for master order updates (idempotent)
+  joinUserRoom(masterOrderId: string): void {
+    const room = `user_${masterOrderId}`;
+    if (this.joinedUserRooms.has(room)) {
+      console.log('SocketService: Already in user room', room, '- skipping');
+      return;
+    }
+    console.log('SocketService: Joining user room:', room);
+    this.socket.emit('joinUserRoom', masterOrderId);
+    this.joinedUserRooms.add(room);
+  }
+
+  // NEW: Join all tracking rooms for order tracking page
+  joinTrackingRooms(orderId: string, masterOrderId?: string): void {
+    console.log('SocketService: Joining tracking rooms for order', orderId, masterOrderId);
+    this.joinOrderRoom(orderId);
+    if (masterOrderId) {
+      this.joinUserRoom(masterOrderId);
+    }
+  }
+
+  // Clear tracking rooms (on destroy/navigate away)
+  leaveTrackingRooms(): void {
+    this.joinedOrderRooms.clear();
+    this.joinedUserRooms.clear();
+    console.log('SocketService: Cleared tracking room subscriptions');
   }
 
   // Listen for new orders (admin)
@@ -306,11 +343,7 @@ export class SocketService {
     });
   }
 
-  // Join user room for master order updates
-  joinUserRoom(masterOrderId: string): void {
-    console.log('SocketService: Joining user room for master order:', masterOrderId);
-    this.socket.emit('joinUserRoom', masterOrderId);
-  }
+
   
   // Listen for master order completion
   onMasterOrderCompleted(): Observable<any> {
