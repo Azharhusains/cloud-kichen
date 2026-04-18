@@ -589,6 +589,69 @@ const getOrderInvoicePDF = async (req, res) => {
 
 const cancelOrder = async (req, res) => {
   try {
+    // First check if this is a sub order
+    const subOrder = await SubOrder.findById(req.params.id);
+    
+    if (subOrder) {
+      // Forward to cancelSubOrder logic
+      const { reason, reasonUser, reasonAdmin } = req.body;
+      
+      // Check if already cancelled
+      if (subOrder.isCancelled) {
+        return res.status(400).json({ message: 'Sub order is already cancelled' });
+      }
+
+      // Check permissions
+      const isAdmin = req.user.role?.toUpperCase() === 'ADMIN' || req.user.role?.toUpperCase() === 'SUPER_ADMIN';
+      const mainOrder = await Order.findById(subOrder.mainOrderId);
+      
+      if (!isAdmin) {
+        // Customer can only cancel own orders
+        if (!mainOrder || !mainOrder.user || mainOrder.user.toString() !== req.user._id.toString()) {
+          return res.status(403).json({ message: 'Not authorized' });
+        }
+        
+        // Customer can only cancel received/preparing
+        const cancellableStatuses = ['received', 'preparing'];
+        if (!cancellableStatuses.includes(subOrder.status)) {
+          return res.status(400).json({ message: 'Cannot cancel sub order at this stage' });
+        }
+      }
+
+      // Update sub order
+      subOrder.status = 'cancelled';
+      subOrder.isCancelled = true;
+      subOrder.cancelReason = reason || (isAdmin ? 'Cancelled by admin' : 'Cancelled by customer');
+      subOrder.cancelledBy = req.user._id;
+      subOrder.cancelledAt = new Date();
+
+      if (isAdmin) {
+        subOrder.cancellationReasonUser = reasonUser || reason || 'Cancelled by admin';
+        subOrder.cancellationReasonAdmin = reasonAdmin || null;
+      } else {
+        subOrder.cancellationReasonUser = reason || 'Cancelled by customer';
+      }
+
+      await subOrder.save();
+
+      // Restore stock
+      await restoreStock(subOrder.items);
+
+      // Populate for response
+      const populatedSubOrder = await SubOrder.findById(req.params.id)
+        .populate('items.menuItem');
+
+      // Emit real-time events
+      const io = req.app.get('io');
+      io.to('adminRoom').emit('subOrderCancelled', populatedSubOrder);
+      io.to(`order_${mainOrder._id.toString()}`).emit('subOrderCancelled', populatedSubOrder);
+      io.emit('subOrderCancelledBroadcast', populatedSubOrder);
+
+      res.json(populatedSubOrder);
+      return;
+    }
+    
+    // If not a sub order, check for main order
     const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });

@@ -23,13 +23,13 @@
             <span class="order-id">#{{ order.orderNumber }}</span>
           </div>
         </div>
-        <div
-          class="order-status-badge"
-          [ngClass]="getStatusClass(order.orderStatus)"
-        >
-          <mat-icon>{{ getStatusIcon(order.orderStatus) }}</mat-icon>
-          <span>{{ order.orderStatus | titlecase }}</span>
-        </div>
+         <div
+           class="order-status-badge"
+           [ngClass]="getStatusClass(effectiveOrderStatus)"
+         >
+           <mat-icon>{{ getStatusIcon(effectiveOrderStatus) }}</mat-icon>
+           <span>{{ effectiveOrderStatus | titlecase }}</span>
+         </div>
       </div>
 
       <!-- Cancellation Reason Alert -->
@@ -47,9 +47,9 @@
       <mat-card-header>
         <mat-card-title
           *ngIf="
-            order.orderStatus != 'preparing' &&
-            order.orderStatus != 'ready' &&
-            order.orderStatus != 'cancelled'
+            effectiveOrderStatus != 'preparing' &&
+            effectiveOrderStatus != 'ready' &&
+            effectiveOrderStatus != 'cancelled'
           "
         >
           <mat-icon>timeline</mat-icon>
@@ -59,7 +59,7 @@
         <mat-card
           class="delivery-animation-card"
           *ngIf="
-            order.orderStatus === 'preparing' || order.orderStatus === 'ready'
+            effectiveOrderStatus === 'preparing' || effectiveOrderStatus === 'ready'
           "
         >
           <mat-card-content>
@@ -77,12 +77,12 @@
                 <mat-icon>home</mat-icon>
               </div>
             </div>
-            <p class="delivery-text" *ngIf="order.orderStatus === 'preparing'">
-              Your order is being prepared with care...
-            </p>
-            <p class="delivery-text" *ngIf="order.orderStatus === 'ready'">
-              Your order is on its way!
-            </p>
+             <p class="delivery-text" *ngIf="effectiveOrderStatus === 'preparing'">
+               Your order is being prepared with care...
+             </p>
+             <p class="delivery-text" *ngIf="effectiveOrderStatus === 'ready'">
+               Your order is on its way!
+             </p>
           </mat-card-content>
         </mat-card>
       </mat-card-header>
@@ -99,15 +99,15 @@
 
           <!-- Timeline Steps -->
           <div class="timeline-steps">
-            <div
-              class="timeline-step"
-              *ngFor="let step of statusSteps; let i = index"
-              [class.completed]="isStepCompleted(step)"
-              [class.active]="step === order.orderStatus"
-              [class.pending]="
-                !isStepCompleted(step) && step !== order.orderStatus
-              "
-            >
+             <div
+               class="timeline-step"
+               *ngFor="let step of statusSteps; let i = index"
+               [class.completed]="isStepCompleted(step)"
+               [class.active]="step === effectiveOrderStatus"
+               [class.pending]="
+                 !isStepCompleted(step) && step !== effectiveOrderStatus
+               "
+             >
               <div class="step-circle">
                 <mat-icon *ngIf="isStepCompleted(step)">check</mat-icon>
                 <mat-icon
@@ -128,10 +128,10 @@
         </div>
 
         <!-- Current Status Message -->
-        <div class="status-message" [ngClass]="order.orderStatus">
-          <mat-icon>{{ getStatusMessageIcon(order.orderStatus) }}</mat-icon>
-          <span>{{ getStatusMessage(order.orderStatus) }}</span>
-        </div>
+         <div class="status-message" [ngClass]="effectiveOrderStatus">
+           <mat-icon>{{ getStatusMessageIcon(effectiveOrderStatus) }}</mat-icon>
+           <span>{{ getStatusMessage(effectiveOrderStatus) }}</span>
+         </div>
       </mat-card-content>
     </mat-card>
 
@@ -292,15 +292,15 @@
         Back to Profile
       </button>
       <!-- Cancel Order Button for Users -->
-      <button
-        *ngIf="
-          order.orderStatus === 'received' || order.orderStatus === 'preparing'
-        "
-        mat-raised-button
-        color="warn"
-        (click)="cancelOrder()"
-        class="cancel-btn"
-      >
+       <button
+         *ngIf="
+           effectiveOrderStatus === 'received' || effectiveOrderStatus === 'preparing'
+         "
+         mat-raised-button
+         color="warn"
+         (click)="cancelOrder()"
+         class="cancel-btn"
+       >
         <mat-icon>cancel</mat-icon>
         Cancel Order
       </button>

@@ -67,6 +67,41 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     return this.order.orderType === 'dine-in' ? this.dineInStatusSteps : this.deliveryStatusSteps;
   }
 
+  // Calculate effective order status from suborders
+  get effectiveOrderStatus(): string {
+    if (!this.order) return 'received';
+    
+    // If main order is cancelled or completed, use that
+    if (this.order.orderStatus === 'cancelled' || this.order.orderStatus === 'completed') {
+      return this.order.orderStatus;
+    }
+    
+    // If no suborders, use main order status
+    if (!this.order.subOrders || this.order.subOrders.length === 0) {
+      return this.order.orderStatus;
+    }
+
+    // Get all non-cancelled suborders
+    const activeSubOrders = this.order.subOrders.filter((sub: any) => !sub.isCancelled);
+    
+    if (activeSubOrders.length === 0) {
+      return 'cancelled';
+    }
+
+    // Get the most advanced status from active suborders
+    const statusPriority = ['received', 'preparing', 'ready', 'delivered', 'completed'];
+    let maxStatusIndex = 0;
+    
+    for (const subOrder of activeSubOrders) {
+      const index = statusPriority.indexOf(subOrder.status);
+      if (index > maxStatusIndex) {
+        maxStatusIndex = index;
+      }
+    }
+
+    return statusPriority[maxStatusIndex];
+  }
+
   constructor(
     private route: ActivatedRoute,
     private orderService: OrderService,
@@ -213,7 +248,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     if (!this.order) return;
     
     // Check if cancellation is allowed
-    if (this.order.orderStatus !== 'received' && this.order.orderStatus !== 'preparing') {
+    if (this.effectiveOrderStatus !== 'received' && this.effectiveOrderStatus !== 'preparing') {
       this.toastService.error('Order cannot be cancelled at this stage');
       return;
     }
@@ -248,14 +283,14 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   isStepCompleted(step: string): boolean {
     if (!this.order) return false;
-    const currentIndex = this.statusSteps.indexOf(this.order.orderStatus);
+    const currentIndex = this.statusSteps.indexOf(this.effectiveOrderStatus);
     const stepIndex = this.statusSteps.indexOf(step);
     return stepIndex < currentIndex;
   }
 
   getCurrentStepIndex(): number {
     if (!this.order) return 0;
-    return this.statusSteps.indexOf(this.order.orderStatus);
+    return this.statusSteps.indexOf(this.effectiveOrderStatus);
   }
 
   getStatusClass(status: string): string {
@@ -295,13 +330,13 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   getProgressPercentage(): number {
     if (!this.order) return 0;
-    const currentIndex = this.statusSteps.indexOf(this.order.orderStatus);
+    const currentIndex = this.statusSteps.indexOf(this.effectiveOrderStatus);
     return ((currentIndex + 1) / this.statusSteps.length) * 100;
   }
 
   getEstimatedTime(step: string): string {
     if (!this.order) return '';
-    const currentIndex = this.statusSteps.indexOf(this.order.orderStatus);
+    const currentIndex = this.statusSteps.indexOf(this.effectiveOrderStatus);
     const stepIndex = this.statusSteps.indexOf(step);
     
     if (stepIndex <= currentIndex) {
