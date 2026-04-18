@@ -409,12 +409,20 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
 
   updateOrderStatus(orderId: string, newStatus: string): void {
     this.orderService.updateOrderStatus(orderId, newStatus).subscribe({
-      next: () => {
-        this.loadOrders();
+      next: (updatedOrder) => {
+        // Find and update the order locally immediately
+        const index = this.orders.findIndex(o => o._id === orderId);
+        if (index !== -1) {
+          this.orders[index] = { ...this.orders[index], ...updatedOrder, orderStatus: newStatus, status: newStatus };
+          this.calculateStatistics();
+          this.applyFilters();
+          this.cdr.detectChanges();
+        }
+        this.toastService.success('Order status updated successfully');
       },
       error: (error: any) => {
         console.error('Error updating order status:', error);
-        this.toastService.error('Error updating order status');
+        this.toastService.error(error.error?.message || 'Error updating order status');
       }
     });
   }

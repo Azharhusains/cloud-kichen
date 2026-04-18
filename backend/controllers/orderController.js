@@ -425,8 +425,8 @@ const updateOrderStatus = async (req, res) => {
       io.to(`order_${subOrder.mainOrderId.toString()}`).emit('subOrderUpdated', populatedSubOrder);
       io.emit('subOrderUpdatedBroadcast', populatedSubOrder);
       
-      res.json(updatedSubOrder);
-      return;
+       res.json(populatedSubOrder);
+       return;
     }
     
     // Regular main order update
@@ -473,10 +473,10 @@ const updateOrderStatus = async (req, res) => {
     // 2. Emit to specific order room
     io.to(orderRoom).emit('orderStatusChanged', populatedOrder);
     
-    // 3. BROADCAST to all clients as fallback (for debugging)
-    io.emit('orderStatusBroadcast', populatedOrder);
-    
-    res.json(updatedOrder);
+     // 3. BROADCAST to all clients as fallback (for debugging)
+     io.emit('orderStatusBroadcast', populatedOrder);
+     
+     res.json(populatedOrder);
   } catch (error) {
     console.error('Error updating order status:', error);
     res.status(500).json({ message: error.message });
