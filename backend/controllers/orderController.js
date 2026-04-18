@@ -1,4 +1,5 @@
-const Order = require('../models/Order');
+const mongoose = require('mongoose');
+const { Order, SubOrder } = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
 const User = require('../models/User');
 const Counter = require('../models/Counter');
@@ -18,8 +19,61 @@ const getOrders = async (req, res) => {
     if (req.user.role?.toUpperCase() === 'CUSTOMER') {
       query.user = req.user._id;
     }
-    const orders = await Order.find(query).populate('user', 'name email').populate('items.menuItem').sort({ createdAt: -1 });
-    res.json(orders);
+    
+    const isAdmin = req.user.role?.toUpperCase() === 'ADMIN' || req.user.role?.toUpperCase() === 'SUPER_ADMIN';
+    
+    if (isAdmin) {
+      // For admin, get all sub orders as separate kitchen tickets
+      const subOrders = await SubOrder.find({})
+        .populate({
+          path: 'mainOrderId',
+          select: 'orderNumber tableNumber user orderType subOrders',
+          populate: { path: 'user', select: 'name email' }
+        })
+        .populate('items.menuItem')
+        .sort({ createdAt: -1 });
+      
+      // Format sub orders to look like standard orders for backward compatibility
+      const mainOrderSubOrderCounts = new Map();
+      
+       const formattedOrders = subOrders
+         .filter(subOrder => subOrder.mainOrderId != null) // Filter out suborders with missing main order
+         .map(subOrder => {
+           const mainOrderId = subOrder.mainOrderId._id.toString();
+           
+           // Maintain counter per main order for consistent numbering
+           if (!mainOrderSubOrderCounts.has(mainOrderId)) {
+             mainOrderSubOrderCounts.set(mainOrderId, 0);
+           }
+           
+           const counter = mainOrderSubOrderCounts.get(mainOrderId) + 1;
+           mainOrderSubOrderCounts.set(mainOrderId, counter);
+           
+           return {
+             ...subOrder.toObject(),
+             _id: subOrder._id,
+             orderNumber: `${subOrder.mainOrderId.orderNumber}-${counter}`,
+             user: subOrder.mainOrderId.user,
+             tableNumber: subOrder.mainOrderId.tableNumber,
+             orderType: subOrder.mainOrderId.orderType,
+             orderStatus: subOrder.status,
+             isSubOrder: true,
+             mainOrderId: subOrder.mainOrderId._id
+           };
+         });
+      
+      res.json(formattedOrders);
+    } else {
+      // For customers, get main orders with sub orders
+      const orders = await Order.find(query)
+        .populate('user', 'name email')
+        .populate({
+          path: 'subOrders',
+          populate: { path: 'items.menuItem' }
+        })
+        .sort({ createdAt: -1 });
+      res.json(orders);
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -31,9 +85,9 @@ const getOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    if (req.user.role?.toUpperCase() === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
+     if (req.user.role?.toUpperCase() === 'CUSTOMER' && (!order.user || order.user._id.toString() !== req.user._id.toString())) {
+       return res.status(403).json({ message: 'Not authorized' });
+     }
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -187,18 +241,36 @@ const createOrder = async (req, res) => {
       orderNumber,
       orderType: orderType || 'delivery',
       tableNumber: orderType === 'dine-in' ? tableNumber : null,
-      items,
+      items, // Legacy field for backward compatibility
       subtotal,
       deliveryCharge,
       taxRate,
       taxAmount,
       totalAmount,
-      paymentMethod: paymentMethod,
+      paymentMethod,
       deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
       profit,
+      status: 'active',
     });
 
     const createdOrder = await order.save();
+
+    // Create initial sub order
+    const initialSubOrder = new SubOrder({
+      mainOrderId: createdOrder._id,
+      items,
+      subtotal,
+      taxRate,
+      taxAmount,
+      totalAmount: subtotal + taxAmount,
+      status: 'received',
+    });
+
+    await initialSubOrder.save();
+    
+    // Add sub order to main order
+    createdOrder.subOrders.push(initialSubOrder._id);
+    await createdOrder.save();
 
     // ===== NEW: Generate PDF Invoice and Send Confirmation Email =====
     try {
@@ -292,12 +364,34 @@ const createOrder = async (req, res) => {
       .populate('user', 'name email')
       .populate('items.menuItem');
 
-    console.log('Emitting newOrder event to adminRoom');
+    // Populate initial sub order
+    const populatedSubOrder = await SubOrder.findById(initialSubOrder._id)
+      .populate({
+        path: 'mainOrderId',
+        select: 'orderNumber tableNumber user orderType',
+        populate: { path: 'user', select: 'name email' }
+      })
+      .populate('items.menuItem');
+
+    // Format sub order for admin
+    const formattedSubOrder = {
+      ...populatedSubOrder.toObject(),
+      orderNumber: `${populatedOrder.orderNumber}-1`,
+      user: populatedSubOrder.mainOrderId.user,
+      tableNumber: populatedSubOrder.mainOrderId.tableNumber,
+      orderType: populatedSubOrder.mainOrderId.orderType,
+      orderStatus: populatedSubOrder.status,
+      isSubOrder: true,
+      mainOrderId: populatedSubOrder.mainOrderId._id
+    };
+
+    console.log('Emitting newOrder and subOrderCreated events to adminRoom');
     
     // Emit real-time event to admin
     const io = req.app.get('io');
-io.to('adminRoom').emit('newOrder', populatedOrder);
-io.to('adminRoom').emit('revenueUpdated', populatedOrder);
+    io.to('adminRoom').emit('newOrder', populatedOrder);
+    io.to('adminRoom').emit('subOrderCreated', formattedSubOrder);
+    io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     
     res.status(201).json(createdOrder);
   } catch (error) {
@@ -308,6 +402,34 @@ io.to('adminRoom').emit('revenueUpdated', populatedOrder);
 
 const updateOrderStatus = async (req, res) => {
   try {
+    // Check if this is a sub order
+    const subOrder = await SubOrder.findById(req.params.id);
+    
+    if (subOrder) {
+      // Update sub order status
+      subOrder.status = req.body.status;
+      const updatedSubOrder = await subOrder.save();
+      
+      // Populate sub order
+      const populatedSubOrder = await SubOrder.findById(updatedSubOrder._id)
+        .populate({
+          path: 'mainOrderId',
+          select: 'orderNumber tableNumber user orderType',
+          populate: { path: 'user', select: 'name email' }
+        })
+        .populate('items.menuItem');
+      
+      // Emit events
+      const io = req.app.get('io');
+      io.to('adminRoom').emit('subOrderUpdated', populatedSubOrder);
+      io.to(`order_${subOrder.mainOrderId.toString()}`).emit('subOrderUpdated', populatedSubOrder);
+      io.emit('subOrderUpdatedBroadcast', populatedSubOrder);
+      
+      res.json(updatedSubOrder);
+      return;
+    }
+    
+    // Regular main order update
     const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
@@ -344,9 +466,9 @@ const updateOrderStatus = async (req, res) => {
     // Emit real-time events
     const io = req.app.get('io');
     
-// 1. Emit to admin room
-io.to('adminRoom').emit('orderUpdated', populatedOrder);
-io.to('adminRoom').emit('revenueUpdated', populatedOrder);
+    // 1. Emit to admin room
+    io.to('adminRoom').emit('orderUpdated', populatedOrder);
+    io.to('adminRoom').emit('revenueUpdated', populatedOrder);
     
     // 2. Emit to specific order room
     io.to(orderRoom).emit('orderStatusChanged', populatedOrder);
@@ -371,10 +493,10 @@ const getInvoice = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
     
-    // Authorization check
-    if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to view this invoice' });
-    }
+     // Authorization check
+     if (req.user.role === 'CUSTOMER' && (!order.user || order.user._id.toString() !== req.user._id.toString())) {
+       return res.status(403).json({ message: 'Not authorized to view this invoice' });
+     }
     
     // Format invoice data
     const invoiceData = {
@@ -434,10 +556,10 @@ const getOrderInvoicePDF = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
     
-    // Authorization: any auth user can download if order exists (admin/customer)
-    if (req.user.role === 'CUSTOMER' && order.user._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
+     // Authorization: any auth user can download if order exists (admin/customer)
+     if (req.user.role === 'CUSTOMER' && (!order.user || order.user._id.toString() !== req.user._id.toString())) {
+       return res.status(403).json({ message: 'Not authorized' });
+     }
     
     const fileName = `Invoice_#${orderNumber}.pdf`;
     const filePath = path.join(__dirname, '../../uploads/invoices/', fileName);
@@ -484,10 +606,10 @@ const cancelOrder = async (req, res) => {
         });
       }
       
-      // For customers, verify they own the order
-      if (order.user.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ message: 'Not authorized to cancel this order' });
-      }
+       // For customers, verify they own the order
+       if (!order.user || order.user.toString() !== req.user._id.toString()) {
+         return res.status(403).json({ message: 'Not authorized to cancel this order' });
+       }
     }
 
     // Admin can cancel orders at any stage, customers only at received/preparing
@@ -577,4 +699,293 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getOrder, createOrder, getInvoice, getOrderInvoicePDF, updateOrderStatus, cancelOrder };
+// Add more items to existing main order
+const addMoreToOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { mainOrderId } = req.params;
+    const { items } = req.body;
+
+    // Validate items
+    if (!items || items.length === 0) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'No items in order' });
+    }
+
+    // Find main order
+    const mainOrder = await Order.findById(mainOrderId).session(session);
+    if (!mainOrder) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'Main order not found' });
+    }
+
+    // Check if main order is active
+    if (mainOrder.status === 'completed') {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Cannot add items to completed order' });
+    }
+
+    // Verify user ownership (only for non-admin)
+    const isAdmin = req.user.role?.toUpperCase() === 'ADMIN' || req.user.role?.toUpperCase() === 'SUPER_ADMIN';
+    if (!isAdmin && mainOrder.user.toString() !== req.user._id.toString()) {
+      await session.abortTransaction();
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    // Kitchen status check
+    const kitchenStatus = await KitchenStatus.findOne().sort({ updatedAt: -1 });
+    if (kitchenStatus && kitchenStatus.status === 'closed') {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Kitchen is currently closed' });
+    }
+
+    // Check stock availability
+    const stockAvailable = await checkStockAvailability(items);
+    if (!stockAvailable) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Insufficient stock for some items' });
+    }
+
+    // Calculate subtotal and cost
+    let subtotal = 0;
+    let totalCost = 0;
+    for (const item of items) {
+      const menuItem = await MenuItem.findById(item.menuItem);
+      if (!menuItem || !menuItem.isAvailable) {
+        await session.abortTransaction();
+        return res.status(400).json({ message: `Item ${menuItem ? menuItem.name : 'unknown'} is not available` });
+      }
+      item.price = item.quantityType === 'HALF' && menuItem.halfPrice ? menuItem.halfPrice : menuItem.price;
+      item.costPrice = menuItem.costPrice;
+      subtotal += item.price * item.quantity;
+      totalCost += item.costPrice * item.quantity;
+    }
+
+    const taxRate = mainOrder.taxRate || 0.05;
+    const taxAmount = subtotal * taxRate;
+    const totalAmount = subtotal + taxAmount;
+
+    // Create sub order
+    const subOrder = new SubOrder({
+      mainOrderId: mainOrder._id,
+      items,
+      subtotal,
+      taxRate,
+      taxAmount,
+      totalAmount: subtotal + taxAmount,
+      status: 'received',
+    });
+
+    await subOrder.save({ session });
+
+    // Add sub order to main order
+    mainOrder.subOrders.push(subOrder._id);
+    await mainOrder.save({ session });
+
+    // Deduct stock
+    await deductStock(items);
+
+    await session.commitTransaction();
+
+    // Populate sub order for response
+    const populatedSubOrder = await SubOrder.findById(subOrder._id)
+      .populate('items.menuItem');
+
+    // Emit real-time events
+    const io = req.app.get('io');
+    io.to('adminRoom').emit('subOrderCreated', populatedSubOrder);
+    io.to(`order_${mainOrder._id.toString()}`).emit('subOrderCreated', populatedSubOrder);
+    io.emit('subOrderCreatedBroadcast', populatedSubOrder);
+
+    res.status(201).json(populatedSubOrder);
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Error adding more to order:', error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    session.endSession();
+  }
+};
+
+// Get main order with all sub orders
+const getMainOrderWithSubOrders = async (req, res) => {
+  try {
+    const { mainOrderId } = req.params;
+    
+    const mainOrder = await Order.findById(mainOrderId)
+      .populate('user', 'name email')
+      .populate({
+        path: 'subOrders',
+        populate: { path: 'items.menuItem' }
+      });
+
+    if (!mainOrder) {
+      return res.status(404).json({ message: 'Main order not found' });
+    }
+
+     // Verify user ownership
+     const isAdmin = req.user.role?.toUpperCase() === 'ADMIN' || req.user.role?.toUpperCase() === 'SUPER_ADMIN';
+     if (!isAdmin && (!mainOrder.user || mainOrder.user._id.toString() !== req.user._id.toString())) {
+       return res.status(403).json({ message: 'Not authorized' });
+     }
+
+    res.json(mainOrder);
+  } catch (error) {
+    console.error('Error getting main order:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Cancel sub order
+const cancelSubOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason, reasonUser, reasonAdmin } = req.body;
+
+    const subOrder = await SubOrder.findById(id);
+    if (!subOrder) {
+      return res.status(404).json({ message: 'Sub order not found' });
+    }
+
+    // Check if already cancelled
+    if (subOrder.isCancelled) {
+      return res.status(400).json({ message: 'Sub order is already cancelled' });
+    }
+
+    // Check permissions
+    const isAdmin = req.user.role?.toUpperCase() === 'ADMIN' || req.user.role?.toUpperCase() === 'SUPER_ADMIN';
+    const mainOrder = await Order.findById(subOrder.mainOrderId);
+    
+    if (!isAdmin) {
+       // Customer can only cancel own orders
+       if (!mainOrder.user || mainOrder.user.toString() !== req.user._id.toString()) {
+         return res.status(403).json({ message: 'Not authorized' });
+       }
+      
+      // Customer can only cancel received/preparing
+      const cancellableStatuses = ['received', 'preparing'];
+      if (!cancellableStatuses.includes(subOrder.status)) {
+        return res.status(400).json({ message: 'Cannot cancel sub order at this stage' });
+      }
+    }
+
+    // Update sub order
+    subOrder.status = 'cancelled';
+    subOrder.isCancelled = true;
+    subOrder.cancelReason = reason || (isAdmin ? 'Cancelled by admin' : 'Cancelled by customer');
+    subOrder.cancelledBy = req.user._id;
+    subOrder.cancelledAt = new Date();
+
+    if (isAdmin) {
+      subOrder.cancellationReasonUser = reasonUser || reason || 'Cancelled by admin';
+      subOrder.cancellationReasonAdmin = reasonAdmin || null;
+    } else {
+      subOrder.cancellationReasonUser = reason || 'Cancelled by customer';
+    }
+
+    await subOrder.save();
+
+    // Restore stock
+    await restoreStock(subOrder.items);
+
+    // Populate for response
+    const populatedSubOrder = await SubOrder.findById(id)
+      .populate('items.menuItem');
+
+    // Emit real-time events
+    const io = req.app.get('io');
+    io.to('adminRoom').emit('subOrderCancelled', populatedSubOrder);
+    io.to(`order_${mainOrder._id.toString()}`).emit('subOrderCancelled', populatedSubOrder);
+    io.emit('subOrderCancelledBroadcast', populatedSubOrder);
+
+    res.json(populatedSubOrder);
+  } catch (error) {
+    console.error('Error cancelling sub order:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Complete main order (cascade to non-cancelled sub orders)
+const completeMainOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { id } = req.params;
+
+    const mainOrder = await Order.findById(id).session(session);
+    if (!mainOrder) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'Main order not found' });
+    }
+
+    // Check if already completed
+    if (mainOrder.status === 'completed') {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Main order is already completed' });
+    }
+
+    // Mark main order as completed
+    mainOrder.status = 'completed';
+    await mainOrder.save({ session });
+
+    // Mark all non-cancelled sub orders as completed
+    await SubOrder.updateMany(
+      { 
+        mainOrderId: mainOrder._id,
+        isCancelled: false 
+      },
+      { $set: { status: 'completed' } },
+      { session }
+    );
+
+    // For dine-in orders, set table back to available
+    if (mainOrder.orderType === 'dine-in' && mainOrder.tableNumber) {
+      await Table.findOneAndUpdate(
+        { tableNumber: mainOrder.tableNumber },
+        { status: 'available' },
+        { session }
+      );
+    }
+
+    await session.commitTransaction();
+
+    // Get updated main order with sub orders
+    const updatedMainOrder = await Order.findById(id)
+      .populate('user', 'name email')
+      .populate({
+        path: 'subOrders',
+        populate: { path: 'items.menuItem' }
+      });
+
+    // Emit real-time events
+    const io = req.app.get('io');
+    io.to('adminRoom').emit('mainOrderCompleted', updatedMainOrder);
+    io.to(`order_${mainOrder._id.toString()}`).emit('mainOrderCompleted', updatedMainOrder);
+    io.emit('mainOrderCompletedBroadcast', updatedMainOrder);
+
+    res.json(updatedMainOrder);
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Error completing main order:', error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    session.endSession();
+  }
+};
+
+module.exports = { 
+  getOrders, 
+  getOrder, 
+  createOrder, 
+  getInvoice, 
+  getOrderInvoicePDF, 
+  updateOrderStatus, 
+  cancelOrder,
+  addMoreToOrder,
+  getMainOrderWithSubOrders,
+  cancelSubOrder,
+  completeMainOrder
+};

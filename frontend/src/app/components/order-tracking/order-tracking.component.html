@@ -135,6 +135,14 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- Add More Button -->
+    <div class="add-more-container" *ngIf="canAddMore()">
+      <button mat-raised-button color="primary" class="add-more-btn" (click)="addMoreItems()">
+        <mat-icon>add_shopping_cart</mat-icon>
+        Add More Items
+      </button>
+    </div>
+
     <!-- Order Details -->
     <mat-card class="details-card">
       <mat-card-header>
@@ -145,7 +153,53 @@
       </mat-card-header>
 
       <mat-card-content>
-        <div class="order-items">
+        <!-- Sub Orders Section -->
+        <div class="sub-orders-container" *ngIf="order.subOrders && order.subOrders.length > 0">
+          <div class="sub-order-card" *ngFor="let subOrder of order.subOrders; let i = index" [@slideIn]>
+            <div class="sub-order-header">
+              <span class="sub-order-title">Order #{{ i + 1 }}</span>
+              <div class="sub-order-status" [ngClass]="subOrder.status">
+                <mat-icon>{{ getStatusIcon(subOrder.status) }}</mat-icon>
+                <span>{{ getSubOrderStatusText(subOrder.status) }}</span>
+              </div>
+            </div>
+            
+            <!-- Cancellation Reason -->
+            <div *ngIf="subOrder.isCancelled" class="sub-order-cancelled">
+              <mat-icon>info</mat-icon>
+              <span>Cancelled: {{ subOrder.cancelReason || "Reason not specified" }}</span>
+            </div>
+
+            <!-- Sub Order Items -->
+            <div class="sub-order-items">
+              <div *ngFor="let item of subOrder.items" class="order-item">
+                <div class="item-image">
+                  <mat-icon>restaurant</mat-icon>
+                </div>
+                <div class="item-info">
+                  <span class="item-name">{{ item.menuItem.name }}{{ getPortionLabel(item) }}</span>
+                  <span class="item-qty">Qty: {{ item.quantity }}</span>
+                </div>
+                <span class="item-price"
+                  >₹{{ (getItemDisplayPrice(item) * item.quantity) | number : '1.2-2' }}</span
+                >
+              </div>
+            </div>
+
+            <!-- Sub Order Actions -->
+            <div class="sub-order-actions" *ngIf="!subOrder.isCancelled && (subOrder.status === 'received' || subOrder.status === 'preparing')">
+              <button mat-stroked-button color="warn" (click)="cancelSubOrder(subOrder)" class="cancel-sub-btn">
+                <mat-icon>cancel</mat-icon>
+                Cancel These Items
+              </button>
+            </div>
+
+            <mat-divider class="sub-order-divider"></mat-divider>
+          </div>
+        </div>
+
+        <!-- Legacy items for backward compatibility -->
+        <div *ngIf="!order.subOrders || order.subOrders.length === 0" class="order-items">
           <div *ngFor="let item of order.items" class="order-item">
             <div class="item-image">
               <mat-icon>restaurant</mat-icon>

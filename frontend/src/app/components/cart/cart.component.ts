@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 // Angular Material Modules
@@ -57,8 +57,13 @@ export class CartComponent implements OnInit, OnDestroy {
   taxRate: number = 0.05;
   private cartSubscription!: Subscription;
 
+  mainOrderId: string | null = null;
+  isAddMoreMode: boolean = false;
+  tableNumber: string | null = null;
+
 constructor(
   private router: Router, 
+  private route: ActivatedRoute,
   public cartService: CartService,
   private networkService: NetworkService,
   private toastService: ToastService
@@ -68,6 +73,15 @@ constructor(
     // Subscribe to cart changes from CartService for real-time updates
     this.cartSubscription = this.cartService.cart$.subscribe((cart: CartItem[]) => {
       this.cart = cart;
+    });
+
+    // Check for add more mode query params
+    this.route.queryParams.subscribe(params => {
+      if (params['addMore'] === 'true' && params['mainOrderId']) {
+        this.isAddMoreMode = true;
+        this.mainOrderId = params['mainOrderId'];
+        this.tableNumber = params['tableNumber'];
+      }
     });
   }
 
@@ -110,8 +124,20 @@ constructor(
       this.toastService.show('Cannot checkout while offline. Please connect to internet.', 'error');
       return;
     }
-    // Navigate to table-select to choose between dine-in or delivery
-    this.router.navigate(['/table-select']);
+
+    // Always pass through all query params
+    const queryParams: any = {};
+    if (this.isAddMoreMode && this.mainOrderId) {
+      queryParams['addMore'] = 'true';
+      queryParams['mainOrderId'] = this.mainOrderId;
+      queryParams['tableNumber'] = this.tableNumber;
+      
+      // Skip table selection for add more mode, go directly to checkout
+      this.router.navigate(['/checkout'], { queryParams });
+    } else {
+      // Navigate to table-select to choose between dine-in or delivery
+      this.router.navigate(['/table-select'], { queryParams });
+    }
   }
 
   getImageUrl(imagePath: string | null): string {

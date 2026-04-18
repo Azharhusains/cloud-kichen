@@ -147,16 +147,60 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => console.error('OrderTrackingComponent: Cancellation Socket error:', err)
     });
+
+    // Listen for new sub orders
+    this.socketService.onSubOrderCreated().subscribe({
+      next: (subOrder) => {
+        console.log('OrderTrackingComponent: Received subOrderCreated:', subOrder);
+        if (this.order && subOrder.mainOrderId === this.order._id) {
+          this.loadOrder(this.orderId!);
+          this.toastService.success('New items added to your order');
+        }
+      },
+      error: (err: any) => console.error('OrderTrackingComponent: Sub order socket error:', err)
+    });
+
+    // Listen for sub order cancellation
+    this.socketService.onSubOrderCancelled().subscribe({
+      next: (subOrder) => {
+        console.log('OrderTrackingComponent: Received subOrderCancelled:', subOrder);
+        if (this.order && subOrder.mainOrderId === this.order._id) {
+          this.loadOrder(this.orderId!);
+          this.toastService.warning('A sub order has been cancelled');
+        }
+      },
+      error: (err: any) => console.error('OrderTrackingComponent: Sub order cancel socket error:', err)
+    });
+
+    // Listen for main order completion
+    this.socketService.onMainOrderCompleted().subscribe({
+      next: (mainOrder) => {
+        console.log('OrderTrackingComponent: Received mainOrderCompleted:', mainOrder);
+        if (mainOrder._id === this.orderId || mainOrder._id === this.orderId?.toString()) {
+          this.order = { ...mainOrder };
+          this.cdr.detectChanges();
+          this.toastService.success('Your order has been completed');
+        }
+      },
+      error: (err: any) => console.error('OrderTrackingComponent: Main order complete socket error:', err)
+    });
   }
 
   loadOrder(orderId: string): void {
-    this.orderService.getOrder(orderId).subscribe({
+    this.orderService.getMainOrderWithSubOrders(orderId).subscribe({
       next: (order: any) => {
         this.order = order;
-        console.log('OrderTrackingComponent: Loaded order:', order);
+        console.log('OrderTrackingComponent: Loaded order with sub orders:', order);
       },
       error: (error: any) => {
         console.error('OrderTrackingComponent: Error loading order:', error);
+        // Fallback to original endpoint for backward compatibility
+        this.orderService.getOrder(orderId).subscribe({
+          next: (order: any) => {
+            this.order = order;
+            console.log('OrderTrackingComponent: Loaded order (fallback):', order);
+          }
+        });
       }
     });
   }
@@ -358,6 +402,15 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   // Helper methods for price breakdown
   getSubtotal(): number {
     if (!this.order) return 0;
+    
+    // If we have sub orders, sum all non-cancelled sub order subtotals
+    if (this.order.subOrders && this.order.subOrders.length > 0) {
+      return this.order.subOrders
+        .filter((subOrder: any) => !subOrder.isCancelled)
+        .reduce((sum: number, subOrder: any) => sum + (subOrder.subtotal || 0), 0);
+    }
+    
+    // Fallback to legacy field
     return typeof this.order.subtotal === 'number' ? this.order.subtotal : 0;
   }
 
@@ -368,17 +421,42 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   getTaxAmount(): number {
     if (!this.order) return 0;
+    
+    // If we have sub orders, sum all non-cancelled sub order tax amounts
+    if (this.order.subOrders && this.order.subOrders.length > 0) {
+      return this.order.subOrders
+        .filter((subOrder: any) => !subOrder.isCancelled)
+        .reduce((sum: number, subOrder: any) => sum + (subOrder.taxAmount || 0), 0);
+    }
+    
+    // Fallback to legacy field
     return typeof this.order.taxAmount === 'number' ? this.order.taxAmount : 0;
   }
 
   getTaxRate(): number {
     if (!this.order) return 0;
     const taxRate = this.order.taxRate;
-    return typeof taxRate === 'number' ? (taxRate * 100) : 18; // Default to 18% if not set
+    return typeof taxRate === 'number' ? (taxRate * 100) : 5; // Default to 5% if not set
   }
 
   getTotalAmount(): number {
     if (!this.order) return 0;
+    
+    // If we have sub orders, sum all non-cancelled sub order totals plus delivery charge
+    if (this.order.subOrders && this.order.subOrders.length > 0) {
+      const subOrdersTotal = this.order.subOrders
+        .filter((subOrder: any) => !subOrder.isCancelled)
+        .reduce((sum: number, subOrder: any) => sum + (subOrder.totalAmount || 0), 0);
+      
+      // For dine-in orders, delivery charge is already included in main order total
+      if (this.order.orderType === 'dine-in') {
+        return subOrdersTotal;
+      }
+      
+      return subOrdersTotal + this.getDeliveryCharge();
+    }
+    
+    // Fallback to legacy field
     return typeof this.order.totalAmount === 'number' ? this.order.totalAmount : 0;
   }
 
@@ -397,5 +475,84 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       typeof totalAmount === 'number' &&
       subtotal > 0
     );
+  }
+
+  /**
+   * Check if "Add More" button should be shown
+   */
+  canAddMore(): boolean {
+    if (!this.order) return false;
+    return this.order.status !== 'completed' && this.order.orderType === 'dine-in';
+  }
+
+  /**
+   * Add more items to order - navigate to menu to select items
+   */
+  addMoreItems(): void {
+    if (!this.canAddMore()) return;
+    
+    // Navigate to menu page with table number and main order ID
+    this.router.navigate(['/menu'], { 
+      queryParams: { 
+        tableNumber: this.order.tableNumber,
+        mainOrderId: this.order._id,
+        addMore: 'true'
+      }
+    });
+  }
+
+  /**
+   * Cancel a specific sub order
+   */
+  cancelSubOrder(subOrder: any): void {
+    if (!subOrder || subOrder.isCancelled) return;
+    
+    // Check if cancellation is allowed
+    const cancellableStatuses = ['received', 'preparing'];
+    if (!cancellableStatuses.includes(subOrder.status)) {
+      this.toastService.error('Sub order cannot be cancelled at this stage');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(CancelOrderDialogComponent, {
+      width: '450px',
+      data: {
+        orderNumber: this.order.orderNumber,
+        title: 'Cancel Items',
+        message: 'Are you sure you want to cancel these items? Please provide a reason.',
+        userType: 'customer'
+      },
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe((reason: string | null) => {
+      if (reason && reason.trim() !== '') {
+        this.orderService.cancelSubOrder(subOrder._id, reason.trim()).subscribe({
+          next: () => {
+            this.loadOrder(this.orderId!);
+            this.toastService.success('Items cancelled successfully');
+          },
+          error: (error: any) => {
+            console.error('Error cancelling sub order:', error);
+            this.toastService.error(error.error?.message || 'Error cancelling items');
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * Get sub order status display text
+   */
+  getSubOrderStatusText(status: string): string {
+    switch (status) {
+      case 'received': return 'Received';
+      case 'preparing': return 'Preparing';
+      case 'ready': return 'Ready';
+      case 'delivered': return 'Delivered';
+      case 'completed': return 'Completed';
+      case 'cancelled': return 'Cancelled';
+      default: return status;
+    }
   }
 }

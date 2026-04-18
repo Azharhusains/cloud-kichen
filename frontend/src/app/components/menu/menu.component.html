@@ -126,7 +126,7 @@
   <!-- Floating Cart Summary -->
   <div class="cart-fab" *ngIf="cart.length > 0" @slideIn>
     <mat-card class="cart-summary-card">
-      <div class="cart-info" (click)="router.navigate(['/cart'])">
+      <div class="cart-info">
         <mat-icon>shopping_cart</mat-icon>
         <span class="cart-count">{{ cartItemCount }} items</span>
         <span class="cart-total">₹{{ getTotalPrice().toFixed(2) }}</span>

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -91,6 +91,10 @@ export class MenuComponent implements OnInit, OnDestroy {
   private kitchenSub!: Subscription;
   private menuSocketSub!: Subscription;
 
+  mainOrderId: string | null = null;
+  isAddMoreMode: boolean = false;
+  tableNumber: string | null = null;
+
   constructor(
     private menuService: MenuService,
     private categoryService: CategoryService,
@@ -98,6 +102,7 @@ export class MenuComponent implements OnInit, OnDestroy {
     private kitchenService: KitchenService,
     private socketService: SocketService,
     public router: Router,
+    private route: ActivatedRoute,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     public cartService: CartService
@@ -108,6 +113,20 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.loadMenuItems();
     this.loadCart();
     this.isLoggedIn = this.authService.isAuthenticated();
+
+    // Check for add more mode query params
+    this.route.queryParams.subscribe(params => {
+      if (params['addMore'] === 'true' && params['mainOrderId']) {
+        this.isAddMoreMode = true;
+        this.mainOrderId = params['mainOrderId'];
+        this.tableNumber = params['tableNumber'];
+        
+        // Set table info in cart service for checkout
+        if (this.tableNumber) {
+          this.cartService.setTableInfo({ tableNumber: this.tableNumber, capacity: 0 });
+        }
+      }
+    });
 
     // Kitchen status for UI disable
     this.kitchenService.getStatus().subscribe(status => {
@@ -320,7 +339,16 @@ export class MenuComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login']);
       return;
     }
-    this.router.navigate(['/cart']);
+    
+    // Pass add more mode parameters to cart
+    const queryParams: any = {};
+    if (this.isAddMoreMode && this.mainOrderId) {
+      queryParams['addMore'] = 'true';
+      queryParams['mainOrderId'] = this.mainOrderId;
+      queryParams['tableNumber'] = this.tableNumber;
+    }
+    
+    this.router.navigate(['/cart'], { queryParams });
   }
 
   openItemDetails(item: MenuItem): void {
