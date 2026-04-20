@@ -527,57 +527,139 @@ const updateOrderStatus = async (req, res) => {
 
 const getInvoice = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate('user', 'name phone')
-      .populate('items.menuItem', 'name price image description');
-    
-    if (!order) {
+    const mainOrder = await Order.findById(req.params.id)
+      .populate('user', 'name phone email')
+      .populate({
+        path: 'subOrders',
+        populate: {
+          path: 'items.menuItem',
+          select: 'name fullPrice halfPrice'
+        }
+      });
+
+    if (!mainOrder) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
-     // Authorization check
-     if (req.user.role === 'CUSTOMER' && (!order.user || order.user._id.toString() !== req.user._id.toString())) {
-       return res.status(403).json({ message: 'Not authorized to view this invoice' });
-     }
-    
-    // Format invoice data
+
+    // Authorization check
+    if (req.user.role?.toUpperCase() === 'CUSTOMER' && (!mainOrder.user || mainOrder.user._id.toString() !== req.user._id.toString())) {
+      return res.status(403).json({ message: 'Not authorized to view this invoice' });
+    }
+
+    // Filter non-cancelled suborders for calculations only
+    const activeSubOrders = mainOrder.subOrders.filter(function(subOrder) { return !subOrder.isCancelled; });
+
+    // Aggregate items from all active suborders (flat list for table, but include suborder info)
+    const allItems = [];
+    let subtotal = 0;
+    let taxAmount = 0;
+
+    activeSubOrders.forEach(function(subOrder, subIndex) {
+      subOrder.items.forEach(function(item) {
+        const displayPrice = item.quantityType === 'HALF' && item.menuItem && item.menuItem.halfPrice 
+          ? item.menuItem.halfPrice 
+          : item.menuItem && item.menuItem.fullPrice || item.menuItem && item.menuItem.price || item.price;
+        const itemTotal = displayPrice * item.quantity;
+        
+        allItems.push({
+          subOrderIndex: subIndex + 1,
+          name: item.menuItem ? item.menuItem.name : item.name,
+          quantity: item.quantity,
+          quantityType: item.quantityType,
+          price: displayPrice,
+          total: itemTotal,
+          menuItem: item.menuItem
+        });
+        
+        subtotal += itemTotal;
+        taxAmount += (itemTotal * subOrder.taxRate);
+      });
+    });
+
+    // Fallback to legacy items if no suborders
+    if (activeSubOrders.length === 0 && mainOrder.items && mainOrder.items.length > 0) {
+      mainOrder.items.forEach(function(item) {
+        const displayPrice = item.quantityType === 'HALF' && item.menuItem && item.menuItem.halfPrice 
+          ? item.menuItem.halfPrice 
+          : item.menuItem && item.menuItem.fullPrice || item.menuItem && item.menuItem.price || item.price;
+        const itemTotal = displayPrice * item.quantity;
+        
+        allItems.push({
+          name: item.menuItem ? item.menuItem.name : item.name,
+          quantity: item.quantity,
+          quantityType: item.quantityType,
+          price: displayPrice,
+          total: itemTotal,
+          menuItem: item.menuItem
+        });
+        
+        subtotal += itemTotal;
+      });
+      taxAmount = subtotal * (mainOrder.taxRate || 0.05);
+    }
+
+    const deliveryCharge = mainOrder.deliveryCharge || 0;
+    const totalAmount = subtotal + taxAmount + deliveryCharge;
+
+    // Format date
+    const orderDate = new Date(mainOrder.createdAt).toLocaleDateString('en-IN', { 
+      day: '2-digit', month: '2-digit', year: 'numeric', 
+      hour: '2-digit', minute: '2-digit' 
+    });
+
     const invoiceData = {
-      orderId: order._id,
-      orderNumber: order.orderNumber,
-      orderDate: new Date(order.createdAt).toLocaleDateString('en-IN', { 
-        day: '2-digit', month: '2-digit', year: 'numeric', 
-        hour: '2-digit', minute: '2-digit' 
+      orderId: mainOrder._id,
+      orderNumber: mainOrder.orderNumber,
+      orderDate,
+      customerName: mainOrder.user?.name || 'Customer',
+      customerPhone: mainOrder.user?.phone || '',
+      customerEmail: mainOrder.user?.email || '',
+      subOrders: mainOrder.subOrders.map(function(subOrder, index) {
+        return {
+          subOrderNumber: index + 1,
+          status: subOrder.status,
+          items: subOrder.items.map(function(item) {
+            return {
+              name: item.menuItem ? item.menuItem.name : item.name,
+              quantityType: item.quantityType,
+              quantity: item.quantity,
+              price: item.quantityType === 'HALF' && item.menuItem && item.menuItem.halfPrice 
+                ? item.menuItem.halfPrice 
+                : item.menuItem && item.menuItem.fullPrice || item.menuItem && item.menuItem.price || item.price,
+              total: (item.quantityType === 'HALF' && item.menuItem && item.menuItem.halfPrice 
+                ? item.menuItem.halfPrice 
+                : item.menuItem && item.menuItem.fullPrice || item.menuItem && item.menuItem.price || item.price) * item.quantity,
+              menuItem: item.menuItem
+            };
+          }),
+          subtotal: subOrder.subtotal,
+          isCancelled: subOrder.isCancelled,
+          cancelReason: subOrder.cancelReason || subOrder.cancellationReasonUser
+        };
       }),
-      customerName: order.user.name,
-      customerPhone: order.user.phone || '',
-      customerEmail: order.user.email || '',
-      items: order.items.map((item) => ({
-        name: item.menuItem.name,
-        quantity: item.quantity,
-        price: item.price,
-        total: item.price * item.quantity
-      })),
-      subtotal: order.subtotal,
-      deliveryCharge: order.deliveryCharge || 0,
-      taxRate: (order.taxRate * 100).toFixed(0) + '% GST',
-      taxAmount: order.taxAmount,
-      totalAmount: order.totalAmount,
-      orderType: order.orderType,
-      tableNumber: order.tableNumber,
-      deliveryAddress: order.deliveryAddress,
-      paymentMethod: order.paymentMethod,
-      paymentStatus: order.paymentStatus,
-      status: order.orderStatus,
-      // Restaurant details (customizable)
+      // Flat items for legacy table view (optional)
+      items: allItems,
+      subtotal,
+      taxRate: ((mainOrder.taxRate || 0.05) * 100).toFixed(0) + '% GST',
+      taxAmount: taxAmount.toFixed(2),
+      deliveryCharge,
+      totalAmount: totalAmount.toFixed(2),
+      orderType: mainOrder.orderType,
+      tableNumber: mainOrder.tableNumber,
+      deliveryAddress: mainOrder.deliveryAddress,
+      paymentMethod: mainOrder.paymentMethod,
+      paymentStatus: mainOrder.paymentStatus,
+      orderStatus: mainOrder.orderStatus || 'received',
+      cancellationReason: mainOrder.cancellationReason || mainOrder.cancellationReasonUser,
       restaurant: {
         name: 'Cloud Kitchen',
         address: '123 Gourmet Street, Food City, FC 400001',
         phone: '+91 98765 43210',
-        gstin: '27ABCDE1234F1Z5', // Custom GSTIN as requested
-        logo: `${req.protocol}://${req.get('host')}/assets/logo.png` // Assume logo in frontend/public/assets
+        gstin: '27ABCDE1234F1Z5',
+        logo: `${req.protocol}://${req.get('host')}/assets/logo.png`
       }
     };
-    
+
     res.json(invoiceData);
   } catch (error) {
     console.error('Invoice generation error:', error);
