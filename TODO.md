@@ -1,50 +1,20 @@
-# Fix Order History - Completed Orders Not Showing in Profile
+# Fix Order Creation 500 Error (paymentMethod: cod enum validation)
 
-## Plan Status: ✅ Approved
+## Plan Summary
+- Add 'cod' to backend/models/Order.js paymentMethod enum
+- Add COD→cash mapping + logic update in backend/controllers/orderController.js createOrder
+- Test POST /api/orders with COD payload
 
-**Issue**: User not seeing completed orders in profile history despite API 200 OK.
+Status: [ ] Not started | [x] In progress | [ ] Completed
 
-**Root Cause Analysis Complete**:
-- Backend `getOrders()` returns ALL orders (NO status filter)
-- Frontend displays ALL received orders (NO filter hiding 'completed')
-- Likely: No completed orders exist OR data flow issue
+## Step-by-Step Tasks
+### 1. [✅] Edit backend/models/Order.js - Add 'cod' to enum
+### 2. [✅] Edit backend/controllers/orderController.js - Add mapping and update validation/messages
+### 3. [ ] Test endpoint locally (POST /api/orders with provided payload)
+### 4. [ ] Verify order creation, stock deduction, table lock, invoice/email
+### 5. [ ] Mark complete & cleanup TODO.md
+### 6. [ ] (Optional) Frontend consistency check
 
-## TODO Steps (Breakdown):
+Next step: Edit model → controller → test
 
-### 1. ✅ Add Diagnostic Logging **COMPLETE**
-   - Backend: Log query & completed order count in `getOrders()` → ✅ edited
-   - Frontend: Log raw API response in `profile.component.ts` → ✅ edited
-
-### 2. ✅ Test & Verify Data Flow **COMPLETE**
-   - Logs received:
-     ```
-     [PROFILE-ORDERS] Raw API response - Total: 0, Completed: 0  
-     [PROFILE-ORDERS] All statuses: []
-     ```
-   - **Root Cause Found**: **No orders exist for this user** (API working correctly - returns empty array)
-   - Expected behavior (200 OK with [] is correct when no data)
-   - Frontend shows "No orders yet" as designed
-
-**NO CODE BUG** - Feature working as designed!
-
-### 3. [PENDING] Database Check (if no data)
-   - Connect MongoDB Atlas/RenderDB
-   - Query: `db.orders.find({user: <USER_ID>, orderStatus: 'completed'})`
-
-### 4. [PENDING] Fix Based on Logs
-   - If no data: Complete order lifecycle (admin → 'completed')
-   - If role bug: Fix case sensitivity
-   - If frontend: Fix display logic
-
-### 5. [PENDING] Remove Logs & Test
-   - Clean up console.logs
-   - Full E2E test
-   - Deploy to Render
-
-### 6. [PENDING] Completion
-   - Update README/ docs
-   - Close issue
-
-**Progress**: 1/6 steps complete → **Ready for testing!**
-
-**Next**: Test profile page and share logs → Step 2 complete → proceed to diagnosis/fix
+**Current Step: 1/6 - Edit Order.js model**

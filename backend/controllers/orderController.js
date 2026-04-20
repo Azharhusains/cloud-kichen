@@ -43,8 +43,15 @@ const getOrder = async (req, res) => {
 const createOrder = async (req, res) => {
   try {
     const { items, deliveryAddress, saveAddress, orderType, tableNumber, paymentMethod } = req.body;
-    if (paymentMethod === 'online') {
-      return res.status(400).json({ message: 'Online payments must use /api/payment/create-session. Use COD for direct order creation.' });
+    
+    // Normalize paymentMethod: map 'cod' to 'cash' for internal logic, store original for display
+    let normalizedPaymentMethod = paymentMethod;
+    if (paymentMethod === 'cod') {
+      normalizedPaymentMethod = 'cash';
+    }
+    
+    if (normalizedPaymentMethod === 'online') {
+      return res.status(400).json({ message: 'Online payments must use /api/payment/create-session. Use COD or Cash for direct order creation.' });
     }
     console.log('=== CREATE ORDER DEBUG ===');
     console.log('orderType:', orderType);
@@ -182,6 +189,7 @@ const createOrder = async (req, res) => {
     }
 
     // Create order with orderNumber and charge breakdown
+    // Store original paymentMethod for user-facing display, use normalized for logic
     const order = new Order({
       user: req.user._id,
       orderNumber,
@@ -193,7 +201,7 @@ const createOrder = async (req, res) => {
       taxRate,
       taxAmount,
       totalAmount,
-      paymentMethod: paymentMethod,
+      paymentMethod: paymentMethod, // Original value ('cod' or 'cash')
       deliveryAddress: orderType === 'delivery' ? deliveryAddress : null,
       profit,
     });
