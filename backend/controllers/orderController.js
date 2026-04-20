@@ -400,34 +400,75 @@ const createOrder = async (req, res) => {
   }
 };
 
+const VALID_STATUSES = ['received', 'preparing', 'ready', 'delivered', 'completed', 'cancelled'];
+
 const updateOrderStatus = async (req, res) => {
   try {
+    // Validate and normalize status
+    let newStatus = (req.body.status || '').toLowerCase().trim();
+    if (!VALID_STATUSES.includes(newStatus)) {
+      return res.status(400).json({ 
+        message: `Invalid status: ${req.body.status}. Must be one of: ${VALID_STATUSES.join(', ')}`
+      });
+    }
+
     // Check if this is a sub order
     const subOrder = await SubOrder.findById(req.params.id);
     
     if (subOrder) {
       // Update sub order status
-      subOrder.status = req.body.status;
+      subOrder.status = newStatus;
       const updatedSubOrder = await subOrder.save();
+
       
       // Populate sub order
       const populatedSubOrder = await SubOrder.findById(updatedSubOrder._id)
         .populate({
           path: 'mainOrderId',
-          select: 'orderNumber tableNumber user orderType',
+          select: 'orderNumber tableNumber user orderType subOrders status',
           populate: { path: 'user', select: 'name email' }
         })
         .populate('items.menuItem');
+
+      // 🚀 NEW: Auto-complete mainOrder if ALL non-cancelled subOrders are 'completed'
+      if (newStatus === 'completed' && populatedSubOrder.mainOrderId) {
+        const mainOrderId = populatedSubOrder.mainOrderId._id;
+        const mainOrder = await Order.findById(mainOrderId);
+        
+        if (mainOrder && mainOrder.status === 'active') {
+          // Check ALL non-cancelled subOrders
+          const remainingSubOrders = await SubOrder.countDocuments({
+            mainOrderId: mainOrderId,
+            isCancelled: false,
+            status: { $ne: 'completed' }
+          });
+
+          if (remainingSubOrders === 0) {
+            // ALL subOrders completed → complete mainOrder
+            mainOrder.status = 'completed';
+            await mainOrder.save();
+
+            // Emit mainOrder completion
+            const io = req.app.get('io');
+            io.to('adminRoom').emit('mainOrderCompleted', mainOrder);
+            io.to(`order_${mainOrderId.toString()}`).emit('mainOrderCompleted', mainOrder);
+            io.emit('mainOrderCompletedBroadcast', mainOrder);
+
+            console.log(`✅ Auto-completed mainOrder ${mainOrder.orderNumber} (all subOrders done)`);
+          }
+        }
+      }
       
       // Emit events
       const io = req.app.get('io');
       io.to('adminRoom').emit('subOrderUpdated', populatedSubOrder);
-      io.to(`order_${subOrder.mainOrderId.toString()}`).emit('subOrderUpdated', populatedSubOrder);
+      io.to(`order_${populatedSubOrder.mainOrderId.toString()}`).emit('subOrderUpdated', populatedSubOrder);
       io.emit('subOrderUpdatedBroadcast', populatedSubOrder);
       
-       res.json(populatedSubOrder);
-       return;
+      res.json(populatedSubOrder);
+      return;
     }
+
     
     // Regular main order update
     const order = await Order.findById(req.params.id);
@@ -438,10 +479,11 @@ const updateOrderStatus = async (req, res) => {
     console.log('=== UPDATE ORDER STATUS DEBUG ===');
     console.log('Order ID:', req.params.id);
     console.log('Order _id:', order._id.toString());
-    console.log('New Status:', req.body.status);
+    console.log('New Status:', req.body.status, '→ Normalized:', newStatus);
     
-    order.orderStatus = req.body.status;
+    order.orderStatus = newStatus;
     const updatedOrder = await order.save();
+
 
     // For dine-in orders, when status is 'completed', set table back to available
     // 'completed' means customer has finished eating and left the table

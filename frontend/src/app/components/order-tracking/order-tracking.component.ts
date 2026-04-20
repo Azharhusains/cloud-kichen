@@ -73,12 +73,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     
     // If main order is cancelled or completed, use that
     if (this.order.orderStatus === 'cancelled' || this.order.orderStatus === 'completed') {
-      return this.order.orderStatus;
+      return this.order.orderStatus.toLowerCase();
     }
     
     // If no suborders, use main order status
     if (!this.order.subOrders || this.order.subOrders.length === 0) {
-      return this.order.orderStatus;
+      return this.order.orderStatus?.toLowerCase() || 'received';
     }
 
     // Get all non-cancelled suborders
@@ -88,12 +88,13 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       return 'cancelled';
     }
 
-    // Get the most advanced status from active suborders
+    // Get the most advanced status from active suborders - NORMALIZED
     const statusPriority = ['received', 'preparing', 'ready', 'delivered', 'completed'];
     let maxStatusIndex = 0;
     
     for (const subOrder of activeSubOrders) {
-      const index = statusPriority.indexOf(subOrder.status);
+      const normalizedStatus = (subOrder.status || '').toLowerCase().trim();
+      const index = statusPriority.indexOf(normalizedStatus);
       if (index > maxStatusIndex) {
         maxStatusIndex = index;
       }
@@ -101,6 +102,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     return statusPriority[maxStatusIndex];
   }
+
 
   constructor(
     private route: ActivatedRoute,
@@ -346,11 +348,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     switch (step) {
       case 'preparing': return '~15-20 mins';
       case 'ready': return '~25-30 mins';
-      case 'delivered': return '~35-45 mins';
-      case 'completed': return '~25-30 mins';
+      case 'delivered': return this.order?.orderType === 'dine-in' ? '~30 mins' : '~35-45 mins';
+      case 'completed': return this.order?.orderType === 'dine-in' ? 'Enjoy your meal!' : 'Order complete';
       default: return '';
     }
   }
+
 
   getStatusMessageIcon(status: string): string {
     switch (status) {
@@ -365,12 +368,22 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
   getStatusMessage(status: string): string {
-    switch (status) {
+    const normalizedStatus = status.toLowerCase();
+    
+    switch (normalizedStatus) {
       case 'received': return 'Your order has been received and is being processed.';
       case 'preparing': return 'Our chefs are preparing your delicious food with care.';
-      case 'ready': return 'Your order is ready and will be picked up by our delivery partner.';
-      case 'delivered': return 'Your order has been delivered successfully. Enjoy your meal!';
-      case 'completed': return 'Thank you for dining with us! We hope you enjoyed your meal.';
+      case 'ready': return 'Your order is ready for pickup/dining.';
+      case 'delivered': 
+        if (this.order?.orderType === 'dine-in') {
+          return `Food delivered to Table ${this.order.tableNumber}! Enjoy your meal!`;
+        }
+        return 'Your order has been delivered successfully. Enjoy your meal!';
+      case 'completed': 
+        if (this.order?.orderType === 'dine-in') {
+          return `Thank you for dining with us at Table ${this.order.tableNumber}! Please inform staff when finished.`;
+        }
+        return 'Order fully completed. Thank you!';
       case 'cancelled': 
         if (this.order?.refundStatus === 'succeeded') {
           return `Order cancelled - Full refund processed (₹${this.order.refundAmount?.toFixed(2)}). Check your payment method.`;
@@ -379,11 +392,11 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         } else if (this.order?.refundStatus === 'failed') {
           return `Order cancelled (${this.order.refundNotes || 'reason'}). Contact support for refund.`;
         }
-        console.log('order', this.order)
         return 'Your order has been cancelled.';
       default: return 'Order status unknown.';
     }
   }
+
 
   goBack(): void {
     this.router.navigate(['/profile']);
