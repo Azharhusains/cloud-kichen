@@ -422,7 +422,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
    */
   canShowInvoice(): boolean {
     if (!this.order) return false;
-    return ['delivered', 'completed'].includes(this.order.orderStatus);
+    return ['delivered', 'completed'].includes(this.effectiveOrderStatus);
   }
 
   /**
