@@ -1,5 +1,89 @@
 const mongoose = require('mongoose');
 
+const subOrderSchema = new mongoose.Schema({
+  mainOrderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    required: true,
+  },
+  items: [{
+    menuItem: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MenuItem',
+      required: true,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    quantityType: {
+      type: String,
+      enum: ['FULL', 'HALF'],
+      default: 'FULL'
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    costPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  }],
+  subtotal: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  taxRate: {
+    type: Number,
+    default: 0.05,
+  },
+  taxAmount: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  totalAmount: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  status: {
+    type: String,
+    enum: ['received', 'preparing', 'ready', 'delivered', 'completed', 'cancelled'],
+    default: 'received',
+  },
+  isCancelled: {
+    type: Boolean,
+    default: false,
+  },
+  cancelReason: {
+    type: String,
+    default: null,
+  },
+  cancelledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  cancelledAt: {
+    type: Date,
+    default: null,
+  },
+  cancellationReasonUser: {
+    type: String,
+    default: null,
+  },
+  cancellationReasonAdmin: {
+    type: String,
+    default: null,
+  },
+}, { timestamps: true });
+
 const orderSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -22,6 +106,45 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  // Main order status
+  status: {
+    type: String,
+    enum: ['active', 'completed'],
+    default: 'active',
+  },
+  // Sub orders array
+  subOrders: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SubOrder',
+  }],
+  // Legacy fields for backward compatibility
+  items: [{
+    menuItem: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MenuItem',
+      required: true,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    quantityType: {
+      type: String,
+      enum: ['FULL', 'HALF'],
+      default: 'FULL'
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    costPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  }],
   items: [{
     menuItem: {
       type: mongoose.Schema.Types.ObjectId,
@@ -61,7 +184,7 @@ const orderSchema = new mongoose.Schema({
   },
   taxRate: {
     type: Number,
-    default: 0.18,
+    default: 0.05,
   },
   taxAmount: {
     type: Number,
@@ -114,7 +237,7 @@ const orderSchema = new mongoose.Schema({
   // Payment fields
   paymentMethod: {
     type: String,
-    enum: ['cash', 'cod', 'online'],
+    enum: ['cash', 'online', 'cod'],
     default: 'cash'
   },
   paymentStatus: {
@@ -173,4 +296,7 @@ const orderSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-module.exports = mongoose.model('Order', orderSchema);
+const Order = mongoose.model('Order', orderSchema);
+const SubOrder = mongoose.model('SubOrder', subOrderSchema);
+
+module.exports = { Order, SubOrder };

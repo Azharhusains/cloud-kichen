@@ -45,8 +45,8 @@
   <div class="menu-items-grid" @staggerList [class.kitchen-closed]="kitchenStatus?.status === 'closed'">
     <mat-card *ngFor="let item of filteredItems" class="menu-item-card" [class.unavailable]="!item.isAvailable || kitchenStatus?.status === 'closed'">
       <div class="item-image-section" [class.has-image]="item.image">
-        <img *ngIf="item.image" [src]="getImageUrl(item.image)" crossorigin="anonymous" alt="{{ item.name }}">
-        <mat-icon *ngIf="!item.image" class="food-icon">restaurant</mat-icon>
+        <img *ngIf="item.image && !item._imageFailed" [src]="getImageUrl(item.image)" crossorigin="anonymous" alt="{{ item.name }}" (error)="handleImageError($event, item)">
+        <mat-icon *ngIf="!item.image || item._imageFailed" class="food-icon">restaurant</mat-icon>
 <span class="unavailable-badge" *ngIf="!item.isAvailable">Unavailable</span>
       </div>
       
@@ -126,7 +126,7 @@
   <!-- Floating Cart Summary -->
   <div class="cart-fab" *ngIf="cart.length > 0" @slideIn>
     <mat-card class="cart-summary-card">
-      <div class="cart-info" (click)="router.navigate(['/cart'])">
+      <div class="cart-info">
         <mat-icon>shopping_cart</mat-icon>
         <span class="cart-count">{{ cartItemCount }} items</span>
         <span class="cart-total">₹{{ getTotalPrice().toFixed(2) }}</span>

@@ -128,4 +128,38 @@ export class OrderService {
       responseType: 'blob' 
     });
   }
+
+  /**
+   * Add more items to existing main order
+   * @param mainOrderId - Main order ID
+   * @param items - Items to add
+   */
+  addMoreToOrder(mainOrderId: string, items: any[]): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/orders/${mainOrderId}/add-more`, { items });
+  }
+
+  /**
+   * Get main order with all sub orders
+   * @param mainOrderId - Main order ID
+   */
+  getMainOrderWithSubOrders(mainOrderId: string): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/orders/${mainOrderId}/details`);
+  }
+
+  /**
+   * Cancel a sub order
+   * @param subOrderId - Sub order ID
+   * @param reason - Cancellation reason
+   */
+  cancelSubOrder(subOrderId: string, reason: string): Observable<any> {
+    return this.http.patch(`${environment.apiUrl}/orders/sub-orders/${subOrderId}/cancel`, { reason });
+  }
+
+  /**
+   * Complete main order (admin only)
+   * @param mainOrderId - Main order ID
+   */
+  completeMainOrder(mainOrderId: string): Observable<any> {
+    return this.http.patch(`${environment.apiUrl}/orders/${mainOrderId}/complete`, {});
+  }
 }

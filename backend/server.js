@@ -188,8 +188,17 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Static files with cache control for images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '1d', // 1 day cache
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    // Allow cross-origin requests for images
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
 
 // ================= ✅ ROOT HEALTH (Render PaaS) =================
 app.head('/', (req, res) => {

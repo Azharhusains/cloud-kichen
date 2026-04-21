@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
 // Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
@@ -105,12 +105,15 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   // NEW: Order type (delivery or dine-in)
   orderType: 'delivery' | 'dine-in' = 'delivery';
   tableInfo: any = null;
+  mainOrderId: string | null = null;
+  isAddMoreMode: boolean = false;
 
   constructor(
     private fb: FormBuilder,
     private orderService: OrderService,
     private authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     public cartService: CartService,
     private toastService: ToastService
   ) {
@@ -128,6 +131,20 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.loadCart();
     this.loadAddresses();
     this.loadTableInfo();
+    
+    // Check for add more mode query params
+    this.route.queryParams.subscribe(params => {
+      if (params['addMore'] === 'true' && params['mainOrderId']) {
+        this.isAddMoreMode = true;
+        this.mainOrderId = params['mainOrderId'];
+        this.orderType = 'dine-in';
+        
+        // Set table info from params
+        if (params['tableNumber']) {
+          this.tableInfo = { tableNumber: params['tableNumber'] };
+        }
+      }
+    });
   }
 
   applyCoupon(): void {
@@ -295,22 +312,39 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
     
     if (this.paymentMethod === 'cod') {
-      // COD - create order directly
-      this.orderService.createOrder(orderData).subscribe({
-        next: (order: any) => {
-          this.loading = false;
-          this.cartService.clearCart();
-          if (this.orderType === 'dine-in') {
-            this.cartService.clearTableInfo();
+      if (this.isAddMoreMode && this.mainOrderId) {
+        // Add more items to existing order
+        this.orderService.addMoreToOrder(this.mainOrderId, orderData.items).subscribe({
+          next: (subOrder: any) => {
+            this.loading = false;
+            this.cartService.clearCart();
+            this.toastService.success('Items added to your order successfully');
+            this.router.navigate(['/order-tracking', this.mainOrderId]);
+          },
+          error: (error: any) => {
+            console.error('Add more error:', error);
+            this.toastService.show('Failed to add items: ' + (error.error?.message || 'Try again'), 'error');
+            this.loading = false;
           }
-          this.router.navigate(['/order-confirmation', order._id]);
-        },
-        error: (error: any) => {
-          console.error('Order error:', error);
-          this.toastService.show('Order failed: ' + (error.error?.message || 'Try again'), 'error');
-          this.loading = false;
-        }
-      });
+        });
+      } else {
+        // COD - create order directly
+        this.orderService.createOrder(orderData).subscribe({
+          next: (order: any) => {
+            this.loading = false;
+            this.cartService.clearCart();
+            if (this.orderType === 'dine-in') {
+              this.cartService.clearTableInfo();
+            }
+            this.router.navigate(['/order-confirmation', order._id]);
+          },
+          error: (error: any) => {
+            console.error('Order error:', error);
+            this.toastService.show('Order failed: ' + (error.error?.message || 'Try again'), 'error');
+            this.loading = false;
+          }
+        });
+      }
     } else {
       // Online payment - Razorpay
       this.orderService.createPaymentSession(orderData).subscribe({

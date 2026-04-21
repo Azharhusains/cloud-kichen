@@ -389,6 +389,47 @@ export class SocketService {
       });
     });
   }
+
+  // Sub order events
+  onSubOrderCreated(): Observable<any> {
+    console.log('SocketService: Listening for subOrderCreated events');
+    return new Observable(observer => {
+      this.socket.on('subOrderCreated', (data) => {
+        console.log('SocketService: Received subOrderCreated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  onSubOrderCancelled(): Observable<any> {
+    console.log('SocketService: Listening for subOrderCancelled events');
+    return new Observable(observer => {
+      this.socket.on('subOrderCancelled', (data) => {
+        console.log('SocketService: Received subOrderCancelled:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  onSubOrderUpdated(): Observable<any> {
+    console.log('SocketService: Listening for subOrderUpdated events');
+    return new Observable(observer => {
+      this.socket.on('subOrderUpdated', (data) => {
+        console.log('SocketService: Received subOrderUpdated:', data);
+        observer.next(data);
+      });
+    });
+  }
+
+  onMainOrderCompleted(): Observable<any> {
+    console.log('SocketService: Listening for mainOrderCompleted events');
+    return new Observable(observer => {
+      this.socket.on('mainOrderCompleted', (data) => {
+        console.log('SocketService: Received mainOrderCompleted:', data);
+        observer.next(data);
+      });
+    });
+  }
 }
 
 

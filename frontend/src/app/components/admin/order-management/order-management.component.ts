@@ -151,7 +151,48 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
           this.calculateStatistics();
           this.applyFilters();
           this.cdr.detectChanges();
-          this.toastService.info(`Order #${updatedOrder.orderNumber} updated to ${updatedOrder.orderStatus}`);
+        }
+      },
+      error: (err: any) => console.error('Socket error:', err)
+    });
+
+    // Listen for new sub orders
+    this.socketService.onSubOrderCreated().subscribe({
+      next: (subOrder: any) => {
+        this.orders.unshift(subOrder);
+        this.calculateStatistics();
+        this.applyFilters();
+        this.cdr.detectChanges();
+        this.toastService.success(`New items added to order!`);
+        this.audioService.playOrderNotification();
+      },
+      error: (err: any) => console.error('Socket error:', err)
+    });
+
+    // Listen for sub order updates
+    this.socketService.onSubOrderUpdated().subscribe({
+      next: (updatedSubOrder: any) => {
+        const index = this.orders.findIndex(o => o._id === updatedSubOrder._id);
+        if (index !== -1) {
+          this.orders[index] = { ...updatedSubOrder };
+          this.calculateStatistics();
+          this.applyFilters();
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err: any) => console.error('Socket error:', err)
+    });
+
+    // Listen for sub order cancellation
+    this.socketService.onSubOrderCancelled().subscribe({
+      next: (cancelledSubOrder: any) => {
+        const index = this.orders.findIndex(o => o._id === cancelledSubOrder._id);
+        if (index !== -1) {
+          this.orders[index] = { ...cancelledSubOrder };
+          this.calculateStatistics();
+          this.applyFilters();
+          this.cdr.detectChanges();
+          this.toastService.warning(`Sub order has been cancelled`);
         }
       },
       error: (err: any) => console.error('Socket error:', err)
@@ -204,7 +245,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   calculateStatistics(): void {
     this.totalOrders = this.orders.length;
     
-    // Calculate status counts
+    // Calculate status counts - include sub order statuses
     this.statusCounts = {
       received: 0,
       preparing: 0,
@@ -220,11 +261,19 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     this.totalRevenue = 0;
     
     this.orders.forEach((order: any) => {
+      // Handle sub order status mapping
+      let status = order.orderStatus || order.status;
+      
       // Count by status
-      if (this.statusCounts[order.orderStatus] !== undefined) {
-        this.statusCounts[order.orderStatus]++;
-      } else if (order.orderStatus === 'cancelled') {
+      if (this.statusCounts[status] !== undefined) {
+        this.statusCounts[status]++;
+      } else if (status === 'cancelled') {
         this.statusCounts['cancelled']++;
+      }
+      
+      // Calculate revenue
+      if (status !== 'cancelled' && order.totalAmount) {
+        this.totalRevenue += order.totalAmount;
       }
       
       // Pending = received + preparing
@@ -360,12 +409,20 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
 
   updateOrderStatus(orderId: string, newStatus: string): void {
     this.orderService.updateOrderStatus(orderId, newStatus).subscribe({
-      next: () => {
-        this.loadOrders();
+      next: (updatedOrder) => {
+        // Find and update the order locally immediately
+        const index = this.orders.findIndex(o => o._id === orderId);
+        if (index !== -1) {
+          this.orders[index] = { ...this.orders[index], ...updatedOrder, orderStatus: newStatus, status: newStatus };
+          this.calculateStatistics();
+          this.applyFilters();
+          this.cdr.detectChanges();
+        }
+        this.toastService.success('Order status updated successfully');
       },
       error: (error: any) => {
         console.error('Error updating order status:', error);
-        this.toastService.error('Error updating order status');
+        this.toastService.error(error.error?.message || 'Error updating order status');
       }
     });
   }
