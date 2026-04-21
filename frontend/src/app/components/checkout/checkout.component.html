@@ -75,159 +75,158 @@
           </div>
         </mat-card-content>
       </mat-card>
-    </div>
-
-    <!-- Delivery Address (only for delivery orders) -->
-    <div class="delivery-section" *ngIf="orderType === 'delivery'">
-      <mat-card class="delivery-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon>location_on</mat-icon>
-            Delivery Address
-          </mat-card-title>
-        </mat-card-header>
-        
-        <mat-card-content>
-          <!-- Saved Addresses -->
-          <div class="saved-addresses" *ngIf="addresses.length > 0">
-            <h4>Saved Addresses</h4>
-            <mat-radio-group [(ngModel)]="selectedAddressIndex">
-              <div *ngFor="let address of addresses; let i = index" class="address-option" (click)="selectAddress(i)">
-                <mat-radio-button [value]="i" [checked]="selectedAddressIndex === i">
-
-                  <div class="address-details">
-                    <p class="street">{{ address.street }}</p>
-                    <p>{{ address.city }}, {{ address.state }} {{ address.zipCode }}</p>
-                    <p>{{ address.country }}</p>
-                  </div>
-                </mat-radio-button>
-              </div>
-            </mat-radio-group>
-            <button mat-stroked-button (click)="clearSelection()" class="add-new-btn">
-              <mat-icon>add</mat-icon> Add New Address
-            </button>
-          </div>
+      <!-- Delivery Address (only for delivery orders) -->
+      <div class="delivery-section" *ngIf="orderType === 'delivery'">
+        <mat-card class="delivery-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>location_on</mat-icon>
+              Delivery Address
+            </mat-card-title>
+          </mat-card-header>
           
-          <!-- New Address Form -->
-          <form [formGroup]="checkoutForm" class="address-form" *ngIf="newAddressActive || addresses.length === 0">
-            <mat-form-field appearance="outline" class="full-width" floatLabel="always">
-              <mat-label>Street Address</mat-label>
-              <input matInput formControlName="street" placeholder="Enter your street address">
-              <mat-icon matPrefix>home</mat-icon>
-              <mat-error *ngIf="checkoutForm.get('street')?.invalid">Street address is required</mat-error>
-            </mat-form-field>
-
-            <div class="form-row">
-              <mat-form-field appearance="outline" class="half-width" floatLabel="always">
-                <mat-label>City</mat-label>
-                <input matInput formControlName="city"  placeholder="Enter your city">
-                <mat-error *ngIf="checkoutForm.get('city')?.invalid">City is required</mat-error>
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="half-width" floatLabel="always">
-                <mat-label>State</mat-label>
-                <input matInput formControlName="state"  placeholder="Enter your state">
-                <mat-error *ngIf="checkoutForm.get('state')?.invalid">State is required</mat-error>
-              </mat-form-field>
+          <mat-card-content>
+            <!-- Saved Addresses -->
+            <div class="saved-addresses" *ngIf="addresses.length > 0">
+              <h4>Saved Addresses</h4>
+              <mat-radio-group [(ngModel)]="selectedAddressIndex">
+                <div *ngFor="let address of addresses; let i = index" class="address-option" (click)="selectAddress(i)">
+                  <mat-radio-button [value]="i" [checked]="selectedAddressIndex === i">
+  
+                    <div class="address-details">
+                      <p class="street">{{ address.street }}</p>
+                      <p>{{ address.city }}, {{ address.state }} {{ address.zipCode }}</p>
+                      <p>{{ address.country }}</p>
+                    </div>
+                  </mat-radio-button>
+                </div>
+              </mat-radio-group>
+              <button mat-stroked-button (click)="clearSelection()" class="add-new-btn">
+                <mat-icon>add</mat-icon> Add New Address
+              </button>
             </div>
-
-            <div class="form-row">
-              <mat-form-field appearance="outline" class="half-width" floatLabel="always">
-                <mat-label>ZIP Code</mat-label>
-                <input matInput formControlName="zipCode" placeholder="Enter your zipcode">
-                <mat-error *ngIf="checkoutForm.get('zipCode')?.invalid">ZIP code is required</mat-error>
+            
+            <!-- New Address Form -->
+            <form [formGroup]="checkoutForm" class="address-form" *ngIf="newAddressActive || addresses.length === 0">
+              <mat-form-field appearance="outline" class="full-width" floatLabel="always">
+                <mat-label>Street Address</mat-label>
+                <input matInput formControlName="street" placeholder="Enter your street address">
+                <mat-icon matPrefix>home</mat-icon>
+                <mat-error *ngIf="checkoutForm.get('street')?.invalid">Street address is required</mat-error>
               </mat-form-field>
-              <mat-form-field appearance="outline" class="half-width" floatLabel="always">
-                <mat-label>Country</mat-label>
-                <input matInput formControlName="country"  placeholder="Enter your country">
-                <mat-error *ngIf="checkoutForm.get('country')?.invalid">Country is required</mat-error>
-              </mat-form-field>
-            </div>
-
-            <mat-checkbox [(ngModel)]="saveAddressForFuture" [ngModelOptions]="{standalone: true}">
-              Save this address for future orders
-            </mat-checkbox>
-          </form>
-
-          <!-- Payment for Delivery -->
-          <div class="payment-section" *ngIf="isAddressSelected()">
-            <h4><mat-icon>payment</mat-icon> Payment Method</h4>
-            <mat-radio-group [(ngModel)]="paymentMethod" class="payment-options">
-              <div class="payment-option" (click)="paymentMethod = 'online'">
-                <mat-radio-button value="online" [checked]="paymentMethod === 'online'">
-                  <mat-icon>credit_card</mat-icon> Pay Online (UPI/Card/Net Banking)
-                </mat-radio-button>
-
+  
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width" floatLabel="always">
+                  <mat-label>City</mat-label>
+                  <input matInput formControlName="city"  placeholder="Enter your city">
+                  <mat-error *ngIf="checkoutForm.get('city')?.invalid">City is required</mat-error>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half-width" floatLabel="always">
+                  <mat-label>State</mat-label>
+                  <input matInput formControlName="state"  placeholder="Enter your state">
+                  <mat-error *ngIf="checkoutForm.get('state')?.invalid">State is required</mat-error>
+                </mat-form-field>
               </div>
-              <div class="payment-option" (click)="paymentMethod = 'cod'">
-                <mat-radio-button value="cod" [checked]="paymentMethod === 'cod'">
-                  <mat-icon>payments</mat-icon> Cash on Delivery
-                </mat-radio-button>
-
+  
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width" floatLabel="always">
+                  <mat-label>ZIP Code</mat-label>
+                  <input matInput formControlName="zipCode" placeholder="Enter your zipcode">
+                  <mat-error *ngIf="checkoutForm.get('zipCode')?.invalid">ZIP code is required</mat-error>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half-width" floatLabel="always">
+                  <mat-label>Country</mat-label>
+                  <input matInput formControlName="country"  placeholder="Enter your country">
+                  <mat-error *ngIf="checkoutForm.get('country')?.invalid">Country is required</mat-error>
+                </mat-form-field>
               </div>
-            </mat-radio-group>
-
-            <div class="form-actions">
-              <button mat-stroked-button (click)="goBack()">
-                <mat-icon>arrow_back</mat-icon> Back to Cart
-              </button>
-              <button mat-raised-button color="primary" (click)="onSubmit()" 
-                      [disabled]="!isAddressSelected() || loading || loadingPayment">
-                <mat-spinner diameter="20" *ngIf="loading || loadingPayment"></mat-spinner>
-                {{ loading ? 'Placing Order...' : (loadingPayment ? 'Processing Payment...' : 'Place Order') }}
-              </button>
+  
+              <mat-checkbox [(ngModel)]="saveAddressForFuture" [ngModelOptions]="{standalone: true}">
+                Save this address for future orders
+              </mat-checkbox>
+            </form>
+  
+            <!-- Payment for Delivery -->
+            <div class="payment-section" *ngIf="isAddressSelected()">
+              <h4><mat-icon>payment</mat-icon> Payment Method</h4>
+              <mat-radio-group [(ngModel)]="paymentMethod" class="payment-options">
+                <div class="payment-option" (click)="paymentMethod = 'online'">
+                  <mat-radio-button value="online" [checked]="paymentMethod === 'online'">
+                    <mat-icon>credit_card</mat-icon> Pay Online (UPI/Card/Net Banking)
+                  </mat-radio-button>
+  
+                </div>
+                <div class="payment-option" (click)="paymentMethod = 'cod'">
+                  <mat-radio-button value="cod" [checked]="paymentMethod === 'cod'">
+                    <mat-icon>payments</mat-icon> Cash on Delivery
+                  </mat-radio-button>
+  
+                </div>
+              </mat-radio-group>
+  
+              <div class="form-actions">
+                <button mat-stroked-button (click)="goBack()">
+                  <mat-icon>arrow_back</mat-icon> Back to Cart
+                </button>
+                <button mat-raised-button color="primary" (click)="onSubmit()" 
+                        [disabled]="!isAddressSelected() || loading || loadingPayment">
+                  <mat-spinner diameter="20" *ngIf="loading || loadingPayment"></mat-spinner>
+                  {{ loading ? 'Placing Order...' : (loadingPayment ? 'Processing Payment...' : 'Place Order') }}
+                </button>
+              </div>
             </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-
-    <!-- Dine-in Section -->
-    <div class="dinein-section" *ngIf="orderType === 'dine-in'">
-      <mat-card class="dinein-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon>restaurant</mat-icon> Dine-in Order - Table {{ tableInfo?.tableNumber }}
-          </mat-card-title>
-        </mat-card-header>
-        
-        <mat-card-content>
-          <div class="table-info-display">
-            <div class="table-icon">
-              <mat-icon>table_bar</mat-icon>
+          </mat-card-content>
+        </mat-card>
+      </div>
+  
+      <!-- Dine-in Section -->
+      <div class="dinein-section" *ngIf="orderType === 'dine-in'">
+        <mat-card class="dinein-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>restaurant</mat-icon> Dine-in Order - Table {{ tableInfo?.tableNumber }}
+            </mat-card-title>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <div class="table-info-display">
+              <div class="table-icon">
+                <mat-icon>table_bar</mat-icon>
+              </div>
+              <div class="table-details">
+                <h3>Table {{ tableInfo?.tableNumber }}</h3>
+                <p *ngIf="tableInfo?.capacity">Capacity: {{ tableInfo.capacity }} seats</p>
+                <p *ngIf="tableInfo?.location">Location: {{ tableInfo.location }}</p>
+              </div>
             </div>
-            <div class="table-details">
-              <h3>Table {{ tableInfo?.tableNumber }}</h3>
-              <p *ngIf="tableInfo?.capacity">Capacity: {{ tableInfo.capacity }} seats</p>
-              <p *ngIf="tableInfo?.location">Location: {{ tableInfo.location }}</p>
+  
+            <div class="dinein-notice">
+              <mat-icon color="primary">info</mat-icon>
+              <p>Your order will be delivered directly to your table. <strong>No delivery charges apply.</strong></p>
             </div>
-          </div>
-
-          <div class="dinein-notice">
-            <mat-icon color="primary">info</mat-icon>
-            <p>Your order will be delivered directly to your table. <strong>No delivery charges apply.</strong></p>
-          </div>
-
-          <div class="payment-section">
-            <h4><mat-icon>payment</mat-icon> Payment Method</h4>
-            <mat-divider></mat-divider>
-            <mat-radio-group [(ngModel)]="paymentMethod" class="payment-options">
-              <mat-radio-button value="cod" checked>
-                <mat-icon>payments</mat-icon> Pay at Table (Cash/QR)
-              </mat-radio-button>
-            </mat-radio-group>
-
-            <div class="form-actions">
-              <button mat-stroked-button (click)="goBack()">
-                <mat-icon>arrow_back</mat-icon> Back to Menu
-              </button>
-              <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="loading">
-                {{ loading ? 'Placing Order...' : 'Place Order' }}
-              </button>
+  
+            <div class="payment-section">
+              <h4><mat-icon>payment</mat-icon> Payment Method</h4>
+              <mat-divider></mat-divider>
+              <mat-radio-group [(ngModel)]="paymentMethod" class="payment-options">
+                <mat-radio-button value="cod" checked>
+                  <mat-icon>payments</mat-icon> Pay at Table (Cash/QR)
+                </mat-radio-button>
+              </mat-radio-group>
+  
+              <div class="form-actions">
+                <button mat-stroked-button (click)="goBack()">
+                  <mat-icon>arrow_back</mat-icon> Back to Menu
+                </button>
+                <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="loading">
+                  {{ loading ? 'Placing Order...' : 'Place Order' }}
+                </button>
+              </div>
             </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
   </div>
 
   <!-- Empty Cart State -->
