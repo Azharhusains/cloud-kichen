@@ -13,7 +13,7 @@
     </div>
 
     <!-- Order Summary -->
-    <!-- <div class="order-summary-section"> -->
+    <div class="order-summary-section">
       <mat-card class="summary-card">
         <mat-card-header>
           <mat-card-title>
@@ -75,7 +75,9 @@
           </div>
         </mat-card-content>
       </mat-card>
-      <!-- Delivery Address (only for delivery orders) -->
+    </div>
+
+        <!-- Delivery Address (only for delivery orders) -->
       <div class="delivery-section" *ngIf="orderType === 'delivery'">
         <mat-card class="delivery-card">
           <mat-card-header>
@@ -225,8 +227,7 @@
             </div>
           </mat-card-content>
         </mat-card>
-      </div>
-
+       </div>
   </div>
 
   <!-- Empty Cart State -->
