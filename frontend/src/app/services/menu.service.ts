@@ -17,6 +17,7 @@ export interface MenuItem {
   price?: number; // virtual backward compat
   costPrice: number;
   image: string | null;
+  _imageFailed?: boolean;
   isAvailable: boolean;
   createdAt?: Date;
   updatedAt?: Date;

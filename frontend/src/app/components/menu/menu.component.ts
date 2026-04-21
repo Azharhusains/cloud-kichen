@@ -148,7 +148,32 @@ export class MenuComponent implements OnInit, OnDestroy {
       const index = this.menuItems.findIndex(item => item._id === updatedItem._id);
       if (index > -1) {
         this.menuItems[index] = { ...this.menuItems[index], ...updatedItem };
+        // Reset image failed flag when item is updated
+        this.menuItems[index]._imageFailed = false;
         console.log('MenuComponent: Updated menu item at index', index);
+      } else {
+        // Add new item if not found
+        this.menuItems.push(updatedItem);
+        console.log('MenuComponent: Added new menu item');
+      }
+      // Refresh filtered items
+      if (this.selectedCategory === 'all') {
+        this.filteredItems = [...this.menuItems];
+      } else {
+        this.filteredItems = this.menuItems.filter(item => item.category === this.selectedCategory);
+      }
+      this.applySearch(); // Re-apply search filter if active
+    });
+
+    // Subscribe to full menu item updates (for image changes, price changes, etc.)
+    this.socketService.onMenuItemUpdated().subscribe((updatedItem: MenuItem) => {
+      console.log('MenuComponent: Full menu item update received:', updatedItem.name);
+      const index = this.menuItems.findIndex(item => item._id === updatedItem._id);
+      if (index > -1) {
+        this.menuItems[index] = { ...this.menuItems[index], ...updatedItem };
+        // Reset image failed flag when item is updated
+        this.menuItems[index]._imageFailed = false;
+        console.log('MenuComponent: Fully updated menu item at index', index);
       } else {
         // Add new item if not found
         this.menuItems.push(updatedItem);
@@ -400,6 +425,11 @@ export class MenuComponent implements OnInit, OnDestroy {
       return `${baseUrl}${imagePath}`;
     }
     return imagePath;
+  }
+
+  handleImageError(event: any, item: any): void {
+    // Hide broken image and show fallback icon
+    item._imageFailed = true;
   }
 }
 
