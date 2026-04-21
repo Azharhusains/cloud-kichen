@@ -331,7 +331,7 @@
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-
+    
     &:hover {
       border-color: #667eea;
     }
@@ -422,6 +422,7 @@
       border: 2px solid #e0e0e0;
       border-radius: 12px;
       transition: all 0.3s ease;
+      width: 100%;
 
       &:hover {
         border-color: #667eea;
@@ -433,6 +434,10 @@
       }
     }
   }
+
+::ng-deep mat-radio-button * {
+  pointer-events: none;
+}
 
   .coupon-input {
     margin: 16px 0;

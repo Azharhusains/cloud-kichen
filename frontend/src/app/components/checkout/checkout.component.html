@@ -13,7 +13,7 @@
     </div>
 
     <!-- Order Summary -->
-    <div class="order-summary-section">
+    <!-- <div class="order-summary-section"> -->
       <mat-card class="summary-card">
         <mat-card-header>
           <mat-card-title>
@@ -92,8 +92,9 @@
           <div class="saved-addresses" *ngIf="addresses.length > 0">
             <h4>Saved Addresses</h4>
             <mat-radio-group [(ngModel)]="selectedAddressIndex">
-              <div *ngFor="let address of addresses; let i = index" class="address-option">
-                <mat-radio-button [value]="i" (change)="selectAddress($event.value)">
+              <div *ngFor="let address of addresses; let i = index" class="address-option" (click)="selectAddress(i)">
+                <mat-radio-button [value]="i" [checked]="selectedAddressIndex === i">
+
                   <div class="address-details">
                     <p class="street">{{ address.street }}</p>
                     <p>{{ address.city }}, {{ address.state }} {{ address.zipCode }}</p>
@@ -151,12 +152,18 @@
           <div class="payment-section" *ngIf="isAddressSelected()">
             <h4><mat-icon>payment</mat-icon> Payment Method</h4>
             <mat-radio-group [(ngModel)]="paymentMethod" class="payment-options">
-              <mat-radio-button value="online">
-                <mat-icon>credit_card</mat-icon> Pay Online (UPI/Card/Net Banking)
-              </mat-radio-button>
-              <mat-radio-button value="cod">
-                <mat-icon>payments</mat-icon> Cash on Delivery
-              </mat-radio-button>
+              <div class="payment-option" (click)="paymentMethod = 'online'">
+                <mat-radio-button value="online" [checked]="paymentMethod === 'online'">
+                  <mat-icon>credit_card</mat-icon> Pay Online (UPI/Card/Net Banking)
+                </mat-radio-button>
+
+              </div>
+              <div class="payment-option" (click)="paymentMethod = 'cod'">
+                <mat-radio-button value="cod" [checked]="paymentMethod === 'cod'">
+                  <mat-icon>payments</mat-icon> Cash on Delivery
+                </mat-radio-button>
+
+              </div>
             </mat-radio-group>
 
             <div class="form-actions">
@@ -232,7 +239,6 @@
       <button mat-raised-button color="primary" (click)="goBack()">
         <mat-icon>restaurant_menu</mat-icon> Browse Menu
       </button>
-    </mat-card>
-  </div>
+      </mat-card>
 </div>
 
