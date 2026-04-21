@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, interval } from 'rxjs';
+import { Observable, BehaviorSubject, interval, distinctUntilChanged } from 'rxjs';
 import { switchMap, catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
@@ -21,7 +21,9 @@ export class NetworkService {
   public healthStatus$ = this.healthSubject.asObservable();
 
   private onlineStatusSubject = new BehaviorSubject<boolean>(navigator.onLine);
-  public onlineStatus$ = this.onlineStatusSubject.asObservable();
+  public onlineStatus$ = this.onlineStatusSubject.asObservable().pipe(
+    distinctUntilChanged()
+  );
 
   private readonly HEALTH_ENDPOINT = `${environment.apiUrl}/health`;
 

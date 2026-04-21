@@ -7,7 +7,7 @@ import { FooterComponent } from './components/navigation/footer.component';
 import { NetworkService, HealthStatus } from './services/network.service';
 import { SocketService } from './services/socket.service';
 import { ToastService } from './services/toast.service';
-import { Subscription } from 'rxjs';
+import { Subscription, skip } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -29,9 +29,15 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    // Set initial online status without triggering toast
+    this.isOnline = this.networkService.isOnline();
+    
     // Online status
     this.subscriptions.add(
-      this.networkService.onlineStatus$.subscribe(status => {
+      this.networkService.onlineStatus$.pipe(
+        // Skip initial value to avoid toast on page load/refresh
+        skip(1)
+      ).subscribe(status => {
         this.isOnline = status;
         this.showNetworkStatus = true;
         if (!status) {
@@ -39,6 +45,11 @@ export class AppComponent implements OnInit, OnDestroy {
         } else {
           this.toastService.show('Back online!', 'success');
         }
+        
+        // Auto hide network indicator after 5 seconds
+        setTimeout(() => {
+          this.showNetworkStatus = false;
+        }, 5000);
       })
     );
 
