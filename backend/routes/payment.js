@@ -7,8 +7,8 @@ const router = express.Router();
 // Create payment session for checkout (requires auth)
 router.post('/create-session', protect, createPaymentSession);
 
-// Razorpay verify (public - signature verified in controller)
-router.post('/verify', express.json(), verifyPayment);
+// Razorpay verify (requires auth - creates order for authenticated user)
+router.post('/verify', protect, verifyPayment);
 
 module.exports = router;
 

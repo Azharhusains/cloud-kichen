@@ -425,10 +425,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   onRazorpayPayment(response: any): void {
     // Verify payment with backend
+    const deliveryAddress = this.orderType === 'delivery' ? this.checkoutForm.value : null;
     this.orderService.verifyPayment(
       response.razorpay_order_id,
       response.razorpay_payment_id,
-      response.razorpay_signature
+      response.razorpay_signature,
+      deliveryAddress
     ).subscribe({
       next: (result) => {
         this.loadingPayment = false;

@@ -94,12 +94,18 @@ export class OrderService {
   /**
    * Verify Razorpay payment and create order
    */
-  verifyPayment(orderId: string, paymentId: string, signature: string): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/payment/verify`, { 
+  verifyPayment(orderId: string, paymentId: string, signature: string, deliveryAddress?: any): Observable<any> {
+    const body: any = { 
       razorpay_order_id: orderId, 
       razorpay_payment_id: paymentId, 
       razorpay_signature: signature 
-    });
+    };
+    
+    if (deliveryAddress) {
+      body.deliveryAddress = deliveryAddress;
+    }
+    
+    return this.http.post(`${environment.apiUrl}/payment/verify`, body);
   }
 
   /**
