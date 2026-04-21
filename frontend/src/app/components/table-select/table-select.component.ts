@@ -59,6 +59,15 @@ export class TableSelectComponent implements OnInit, OnDestroy {
       clearInterval(this.lockTimer);
     }
     this.clearTable();
+    window.removeEventListener('beforeunload', this.handleBeforeUnload.bind(this));
+  }
+
+  private handleBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.previousTableNumber) {
+      // Use sendBeacon for reliable unlock on page refresh/close
+      navigator.sendBeacon(`${this.tableService.apiUrl}/${this.previousTableNumber}/unlock`);
+      console.log('Before unload: sent unlock beacon for table', this.previousTableNumber);
+    }
   }
 
 
@@ -112,6 +121,9 @@ export class TableSelectComponent implements OnInit, OnDestroy {
         console.log('Table status changed:', data);
         this.refreshTables();
       });
+
+    // Handle page refresh/close to unlock table
+    window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
   }
 
   private refreshTables(): void {
@@ -222,6 +234,16 @@ export class TableSelectComponent implements OnInit, OnDestroy {
         this.cartService.clearTableInfo();
         this.snackBar.open('Table lock expired', 'OK', { duration: 3000 });
         this.refreshTables();
+        this.tableForm.reset();
+        
+        // Call unlock API when timer expires
+        if (this.previousTableNumber) {
+          this.tableService.unlockTable(this.previousTableNumber).subscribe({
+            next: () => console.log('Timer expired, table unlocked:', this.previousTableNumber),
+            error: (err) => console.log('Timer unlock ignored:', err)
+          });
+          this.previousTableNumber = null;
+        }
       }
       // Update selectedTable with time left for UI
       if (this.selectedTable) {

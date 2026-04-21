@@ -19,7 +19,7 @@ export interface Table {
   providedIn: 'root'
 })
 export class TableService {
-  private apiUrl = `${environment.apiUrl}/tables`;
+  public apiUrl = `${environment.apiUrl}/tables`;
   
   // Reactive tables for real-time updates
   private tablesSubject = new BehaviorSubject<Table[]>([]);

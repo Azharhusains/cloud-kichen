@@ -111,18 +111,19 @@ const autoUnlockTables = async () => {
     }).lean();
 
     for (const table of expiredLocks) {
-      await Table.findByIdAndUpdate(table._id, {
+      const updatedTable = await Table.findByIdAndUpdate(table._id, {
         status: 'available',
         lockedBy: null,
         lockExpiresAt: null
-      });
+      }, { new: true });
 
       io?.emit('table_unlocked', {
         tableId: table._id,
         tableNumber: table.tableNumber
       });
 
-      io?.to('adminRoom').emit('tableStatusChanged', table);
+      io?.emit('tableStatusBroadcast', updatedTable);
+      io?.to('adminRoom').emit('tableStatusChanged', updatedTable);
     }
     
     if (expiredLocks.length > 0) {
