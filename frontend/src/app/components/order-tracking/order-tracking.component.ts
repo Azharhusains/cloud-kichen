@@ -209,6 +209,19 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       error: (err: any) => console.error('OrderTrackingComponent: Sub order cancel socket error:', err)
     });
 
+    // Listen for sub order updates
+    this.socketService.onSubOrderUpdated().subscribe({
+      next: (updatedSubOrder) => {
+        console.log('OrderTrackingComponent: Received subOrderUpdated:', updatedSubOrder);
+        if (this.order && updatedSubOrder.mainOrderId && 
+            (updatedSubOrder.mainOrderId === this.order._id || updatedSubOrder.mainOrderId.toString() === this.order._id)) {
+          // Reload the full order with sub orders to get updated status
+          this.loadOrder(this.orderId!);
+        }
+      },
+      error: (err: any) => console.error('OrderTrackingComponent: Sub order update socket error:', err)
+    });
+
     // Listen for main order completion
     this.socketService.onMainOrderCompleted().subscribe({
       next: (mainOrder) => {

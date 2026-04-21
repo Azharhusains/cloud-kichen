@@ -413,7 +413,17 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
         // Find and update the order locally immediately
         const index = this.orders.findIndex(o => o._id === orderId);
         if (index !== -1) {
-          this.orders[index] = { ...this.orders[index], ...updatedOrder, orderStatus: newStatus, status: newStatus };
+          // Preserve existing user and delivery address data if they're not in the response
+          const existingOrder = this.orders[index];
+          const mergedOrder = {
+            ...existingOrder,
+            ...updatedOrder,
+            user: updatedOrder.user || existingOrder.user,
+            deliveryAddress: updatedOrder.deliveryAddress || existingOrder.deliveryAddress,
+            orderStatus: newStatus,
+            status: newStatus
+          };
+          this.orders[index] = mergedOrder;
           this.calculateStatistics();
           this.applyFilters();
           this.cdr.detectChanges();

@@ -24,14 +24,14 @@ const getOrders = async (req, res) => {
     
     if (isAdmin) {
       // For admin, get all sub orders as separate kitchen tickets
-      const subOrders = await SubOrder.find({})
-        .populate({
-          path: 'mainOrderId',
-          select: 'orderNumber tableNumber user orderType subOrders',
-          populate: { path: 'user', select: 'name email' }
-        })
-        .populate('items.menuItem')
-        .sort({ createdAt: -1 });
+       const subOrders = await SubOrder.find({})
+         .populate({
+           path: 'mainOrderId',
+           select: 'orderNumber tableNumber user orderType subOrders deliveryAddress',
+           populate: { path: 'user', select: 'name email phone addresses' }
+         })
+         .populate('items.menuItem')
+         .sort({ createdAt: -1 });
       
       // Format sub orders to look like standard orders for backward compatibility
       const mainOrderSubOrderCounts = new Map();
@@ -49,29 +49,31 @@ const getOrders = async (req, res) => {
            const counter = mainOrderSubOrderCounts.get(mainOrderId) + 1;
            mainOrderSubOrderCounts.set(mainOrderId, counter);
            
-           return {
-             ...subOrder.toObject(),
-             _id: subOrder._id,
-             orderNumber: `${subOrder.mainOrderId.orderNumber}-${counter}`,
-             user: subOrder.mainOrderId.user,
-             tableNumber: subOrder.mainOrderId.tableNumber,
-             orderType: subOrder.mainOrderId.orderType,
-             orderStatus: subOrder.status,
-             isSubOrder: true,
-             mainOrderId: subOrder.mainOrderId._id
-           };
+            return {
+              ...subOrder.toObject(),
+              _id: subOrder._id,
+              orderNumber: `${subOrder.mainOrderId.orderNumber}-${counter}`,
+              user: subOrder.mainOrderId.user,
+              tableNumber: subOrder.mainOrderId.tableNumber,
+              orderType: subOrder.mainOrderId.orderType,
+              deliveryAddress: subOrder.mainOrderId.deliveryAddress,
+              orderStatus: subOrder.status,
+              isSubOrder: true,
+              mainOrderId: subOrder.mainOrderId._id
+            };
          });
       
       res.json(formattedOrders);
     } else {
       // For customers, get main orders with sub orders
-      const orders = await Order.find(query)
-        .populate('user', 'name email')
-        .populate({
-          path: 'subOrders',
-          populate: { path: 'items.menuItem' }
-        })
-        .sort({ createdAt: -1 });
+       const orders = await Order.find(query)
+         .populate('user', 'name email')
+         .populate('items.menuItem')
+         .populate({
+           path: 'subOrders',
+           populate: { path: 'items.menuItem' }
+         })
+         .sort({ createdAt: -1 });
       res.json(orders);
     }
   } catch (error) {
@@ -81,7 +83,7 @@ const getOrders = async (req, res) => {
 
 const getOrder = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate('user', 'name email').populate('items.menuItem');
+    const order = await Order.findById(req.params.id).populate('user', 'name email phone addresses').populate('items.menuItem');
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
@@ -367,31 +369,32 @@ const createOrder = async (req, res) => {
       }
     }
 
-    // Populate the order for Socket.IO emission
-    const populatedOrder = await Order.findById(createdOrder._id)
-      .populate('user', 'name email')
-      .populate('items.menuItem');
+     // Populate the order for Socket.IO emission
+     const populatedOrder = await Order.findById(createdOrder._id)
+       .populate('user', 'name email phone addresses')
+       .populate('items.menuItem');
 
-    // Populate initial sub order
-    const populatedSubOrder = await SubOrder.findById(initialSubOrder._id)
-      .populate({
-        path: 'mainOrderId',
-        select: 'orderNumber tableNumber user orderType',
-        populate: { path: 'user', select: 'name email' }
-      })
-      .populate('items.menuItem');
+     // Populate initial sub order
+     const populatedSubOrder = await SubOrder.findById(initialSubOrder._id)
+       .populate({
+         path: 'mainOrderId',
+         select: 'orderNumber tableNumber user orderType deliveryAddress',
+         populate: { path: 'user', select: 'name email phone addresses' }
+       })
+       .populate('items.menuItem');
 
-    // Format sub order for admin
-    const formattedSubOrder = {
-      ...populatedSubOrder.toObject(),
-      orderNumber: `${populatedOrder.orderNumber}-1`,
-      user: populatedSubOrder.mainOrderId.user,
-      tableNumber: populatedSubOrder.mainOrderId.tableNumber,
-      orderType: populatedSubOrder.mainOrderId.orderType,
-      orderStatus: populatedSubOrder.status,
-      isSubOrder: true,
-      mainOrderId: populatedSubOrder.mainOrderId._id
-    };
+     // Format sub order for admin
+     const formattedSubOrder = {
+       ...populatedSubOrder.toObject(),
+       orderNumber: `${populatedOrder.orderNumber}-1`,
+       user: populatedSubOrder.mainOrderId.user,
+       tableNumber: populatedSubOrder.mainOrderId.tableNumber,
+       orderType: populatedSubOrder.mainOrderId.orderType,
+       deliveryAddress: populatedSubOrder.mainOrderId.deliveryAddress,
+       orderStatus: populatedSubOrder.status,
+       isSubOrder: true,
+       mainOrderId: populatedSubOrder.mainOrderId._id
+     };
 
     console.log('Emitting newOrder and subOrderCreated events to adminRoom');
     
@@ -429,14 +432,14 @@ const updateOrderStatus = async (req, res) => {
       const updatedSubOrder = await subOrder.save();
 
       
-      // Populate sub order
-      const populatedSubOrder = await SubOrder.findById(updatedSubOrder._id)
-        .populate({
-          path: 'mainOrderId',
-          select: 'orderNumber tableNumber user orderType subOrders status',
-          populate: { path: 'user', select: 'name email' }
-        })
-        .populate('items.menuItem');
+       // Populate sub order
+       const populatedSubOrder = await SubOrder.findById(updatedSubOrder._id)
+         .populate({
+           path: 'mainOrderId',
+           select: 'orderNumber tableNumber user orderType subOrders status deliveryAddress',
+           populate: { path: 'user', select: 'name email phone addresses' }
+         })
+         .populate('items.menuItem');
 
       // 🚀 NEW: Auto-complete mainOrder if ALL non-cancelled subOrders are 'completed'
       if (newStatus === 'completed' && populatedSubOrder.mainOrderId) {
@@ -467,13 +470,20 @@ const updateOrderStatus = async (req, res) => {
         }
       }
       
-      // Emit events
-      const io = req.app.get('io');
-      io.to('adminRoom').emit('subOrderUpdated', populatedSubOrder);
-      io.to(`order_${populatedSubOrder.mainOrderId.toString()}`).emit('subOrderUpdated', populatedSubOrder);
-      io.emit('subOrderUpdatedBroadcast', populatedSubOrder);
-      
-      res.json(populatedSubOrder);
+       // Add user and delivery address from main order
+       const responseOrder = {
+         ...populatedSubOrder.toObject(),
+         user: populatedSubOrder.mainOrderId.user,
+         deliveryAddress: populatedSubOrder.mainOrderId.deliveryAddress
+       };
+       
+       // Emit events
+       const io = req.app.get('io');
+       io.to('adminRoom').emit('subOrderUpdated', responseOrder);
+       io.to(`order_${populatedSubOrder.mainOrderId._id.toString()}`).emit('subOrderUpdated', responseOrder);
+       io.emit('subOrderUpdatedBroadcast', responseOrder);
+       
+       res.json(responseOrder);
       return;
     }
 
@@ -506,7 +516,7 @@ const updateOrderStatus = async (req, res) => {
 
     // Populate the order for Socket.IO emission
     const populatedOrder = await Order.findById(updatedOrder._id)
-      .populate('user', 'name email')
+      .populate('user', 'name email phone addresses')
       .populate('items.menuItem');
 
     const orderRoom = `order_${order._id.toString()}`;
@@ -1009,12 +1019,12 @@ const getMainOrderWithSubOrders = async (req, res) => {
   try {
     const { mainOrderId } = req.params;
     
-    const mainOrder = await Order.findById(mainOrderId)
-      .populate('user', 'name email')
-      .populate({
-        path: 'subOrders',
-        populate: { path: 'items.menuItem' }
-      });
+     const mainOrder = await Order.findById(mainOrderId)
+       .populate('user', 'name email phone addresses')
+       .populate({
+         path: 'subOrders',
+         populate: { path: 'items.menuItem' }
+       });
 
     if (!mainOrder) {
       return res.status(404).json({ message: 'Main order not found' });

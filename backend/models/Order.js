@@ -145,33 +145,6 @@ const orderSchema = new mongoose.Schema({
       min: 0,
     },
   }],
-  items: [{
-    menuItem: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'MenuItem',
-      required: true,
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-    quantityType: {
-      type: String,
-      enum: ['FULL', 'HALF'],
-      default: 'FULL'
-    },
-    price: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    costPrice: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-  }],
   subtotal: {
     type: Number,
     required: true,

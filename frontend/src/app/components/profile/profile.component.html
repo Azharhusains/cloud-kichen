@@ -202,8 +202,10 @@
               </div>
 
               <div class="order-items">
-                <div *ngFor="let item of order.items" class="order-item">
-                  {{ item.menuItem.name || 'Item unavailable' }} x {{ item.quantity || 0 }}
+                <div *ngFor="let subOrder of order.subOrders" class="order-item-group">
+                  <div *ngFor="let item of subOrder.items" class="order-item">
+                    {{ item.menuItem.name || 'Item unavailable' }} x {{ item.quantity || 0 }}
+                  </div>
                 </div>
               </div>
 

@@ -43,12 +43,19 @@ interface OrderItem {
   quantity: number;
 }
 
+interface SubOrder {
+  items: OrderItem[];
+  isCancelled: boolean;
+  status: string;
+}
+
 interface Order {
   _id: string;
   orderNumber?: string;
   orderStatus: string;
   createdAt: string;
   items: OrderItem[];
+  subOrders: SubOrder[];
   totalAmount: number;
   refundStatus?: string;
   refundAmount?: number;
