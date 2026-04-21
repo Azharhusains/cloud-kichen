@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 // Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
@@ -60,6 +61,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   dineInStatusSteps: string[] = ['received', 'preparing', 'ready', 'delivered', 'completed'];
   private orderId: string | null = null;
   private socketConnected: boolean = false;
+  private subscriptions: Subscription[] = [];
 
   // Get status steps based on order type
   get statusSteps(): string[] {
@@ -131,8 +133,15 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     // Don't disconnect socket here as it's a singleton service
-    // Just leave the order room
-    console.log('OrderTrackingComponent: ngOnDestroy called, leaving order room');
+    console.log('OrderTrackingComponent: ngOnDestroy called, cleaning up subscriptions');
+    
+    // Clean up all socket subscriptions
+    this.subscriptions.forEach(sub => {
+      if (sub && !sub.closed) {
+        sub.unsubscribe();
+      }
+    });
+    this.subscriptions = [];
   }
 
   setupSocketListeners(): void {
@@ -140,115 +149,156 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     console.log('OrderTrackingComponent: Setting up socket listeners for order:', this.orderId);
     
+    // Clear existing subscriptions first to avoid duplicates
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions = [];
+    
     // Join specific order room for real-time status updates
     this.socketService.joinOrderRoom(this.orderId);
 
     // Listen for order status changes via room
-    this.socketService.onOrderStatusChanged().subscribe({
+    const statusSub = this.socketService.onOrderStatusChanged().subscribe({
       next: (updatedOrder) => {
         console.log('OrderTrackingComponent: Received orderStatusChanged:', updatedOrder);
         console.log('OrderTrackingComponent: Comparing IDs - received:', updatedOrder._id, 'current:', this.orderId);
         
         if (updatedOrder._id === this.orderId || updatedOrder._id === this.orderId?.toString()) {
-          this.order = { ...updatedOrder };
-          this.cdr.detectChanges();
+          console.log('✅ Updating order object in UI');
+          // Force full object replacement to break reference and trigger change detection
+          this.order = null;
+          setTimeout(() => {
+            this.order = { ...updatedOrder };
+            this.cdr.markForCheck();
+            this.cdr.detectChanges();
+            console.log('✅ Order updated in UI, new status:', this.order.orderStatus);
+          }, 0);
         }
       },
       error: (err: any) => console.error('OrderTrackingComponent: Socket error:', err)
     });
+    this.subscriptions.push(statusSub);
 
     // Listen for broadcast (fallback)
-    this.socketService.onOrderStatusBroadcast().subscribe({
+    const broadcastSub = this.socketService.onOrderStatusBroadcast().subscribe({
       next: (updatedOrder) => {
         console.log('OrderTrackingComponent: Received orderStatusBroadcast:', updatedOrder);
         console.log('OrderTrackingComponent: Comparing IDs - received:', updatedOrder._id, 'current:', this.orderId);
         
         if (updatedOrder._id === this.orderId || updatedOrder._id === this.orderId?.toString()) {
-          this.order = { ...updatedOrder };
-          this.cdr.detectChanges();
+          console.log('✅ Updating order object in UI (broadcast)');
+          // Force full object replacement to break reference and trigger change detection
+          this.order = null;
+          setTimeout(() => {
+            this.order = { ...updatedOrder };
+            this.cdr.markForCheck();
+            this.cdr.detectChanges();
+            console.log('✅ Order updated in UI, new status:', this.order.orderStatus);
+          }, 0);
         }
       },
       error: (err: any) => console.error('OrderTrackingComponent: Broadcast Socket error:', err)
     });
+    this.subscriptions.push(broadcastSub);
 
     // Listen for order cancellation
-    this.socketService.onOrderCancelledBroadcast().subscribe({
+    const cancelSub = this.socketService.onOrderCancelledBroadcast().subscribe({
       next: (cancelledOrder) => {
         console.log('OrderTrackingComponent: Received orderCancelledBroadcast:', cancelledOrder);
         
         if (cancelledOrder._id === this.orderId || cancelledOrder._id === this.orderId?.toString()) {
           this.order = { ...cancelledOrder };
+          this.cdr.markForCheck();
           this.cdr.detectChanges();
           this.toastService.warning(`Your order #${this.order.orderNumber} has been cancelled`);
         }
       },
       error: (err: any) => console.error('OrderTrackingComponent: Cancellation Socket error:', err)
     });
+    this.subscriptions.push(cancelSub);
 
     // Listen for new sub orders
-    this.socketService.onSubOrderCreated().subscribe({
+    const subOrderCreatedSub = this.socketService.onSubOrderCreated().subscribe({
       next: (subOrder) => {
         console.log('OrderTrackingComponent: Received subOrderCreated:', subOrder);
-        if (this.order && subOrder.mainOrderId === this.order._id) {
+        if (this.order && subOrder.mainOrderId === this.order._id || 
+            subOrder.mainOrderId?.toString() === this.order?._id?.toString()) {
           this.loadOrder(this.orderId!);
           this.toastService.success('New items added to your order');
         }
       },
       error: (err: any) => console.error('OrderTrackingComponent: Sub order socket error:', err)
     });
+    this.subscriptions.push(subOrderCreatedSub);
 
     // Listen for sub order cancellation
-    this.socketService.onSubOrderCancelled().subscribe({
+    const subOrderCancelSub = this.socketService.onSubOrderCancelled().subscribe({
       next: (subOrder) => {
         console.log('OrderTrackingComponent: Received subOrderCancelled:', subOrder);
-        if (this.order && subOrder.mainOrderId === this.order._id) {
+        if (this.order && (subOrder.mainOrderId === this.order._id || 
+            subOrder.mainOrderId?.toString() === this.order._id?.toString())) {
           this.loadOrder(this.orderId!);
           this.toastService.warning('A sub order has been cancelled');
         }
       },
       error: (err: any) => console.error('OrderTrackingComponent: Sub order cancel socket error:', err)
     });
+    this.subscriptions.push(subOrderCancelSub);
 
     // Listen for sub order updates
-    this.socketService.onSubOrderUpdated().subscribe({
+    const subOrderUpdateSub = this.socketService.onSubOrderUpdated().subscribe({
       next: (updatedSubOrder) => {
         console.log('OrderTrackingComponent: Received subOrderUpdated:', updatedSubOrder);
         if (this.order && updatedSubOrder.mainOrderId && 
-            (updatedSubOrder.mainOrderId === this.order._id || updatedSubOrder.mainOrderId.toString() === this.order._id)) {
+            (updatedSubOrder.mainOrderId === this.order._id || updatedSubOrder.mainOrderId.toString() === this.order._id?.toString())) {
           // Reload the full order with sub orders to get updated status
           this.loadOrder(this.orderId!);
         }
       },
       error: (err: any) => console.error('OrderTrackingComponent: Sub order update socket error:', err)
     });
+    this.subscriptions.push(subOrderUpdateSub);
 
     // Listen for main order completion
-    this.socketService.onMainOrderCompleted().subscribe({
+    const mainOrderCompleteSub = this.socketService.onMainOrderCompleted().subscribe({
       next: (mainOrder) => {
         console.log('OrderTrackingComponent: Received mainOrderCompleted:', mainOrder);
         if (mainOrder._id === this.orderId || mainOrder._id === this.orderId?.toString()) {
           this.order = { ...mainOrder };
+          this.cdr.markForCheck();
           this.cdr.detectChanges();
           this.toastService.success('Your order has been completed');
         }
       },
       error: (err: any) => console.error('OrderTrackingComponent: Main order complete socket error:', err)
     });
+    this.subscriptions.push(mainOrderCompleteSub);
   }
 
   loadOrder(orderId: string): void {
     this.orderService.getMainOrderWithSubOrders(orderId).subscribe({
       next: (order: any) => {
-        this.order = order;
         console.log('OrderTrackingComponent: Loaded order with sub orders:', order);
+        // Force full object replacement
+        this.order = null;
+        setTimeout(() => {
+          this.order = order;
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+          console.log('✅ Order loaded and UI updated');
+        }, 0);
       },
       error: (error: any) => {
         console.error('OrderTrackingComponent: Error loading order:', error);
         // Fallback to original endpoint for backward compatibility
         this.orderService.getOrder(orderId).subscribe({
           next: (order: any) => {
-            this.order = order;
             console.log('OrderTrackingComponent: Loaded order (fallback):', order);
+            this.order = null;
+            setTimeout(() => {
+              this.order = order;
+              this.cdr.markForCheck();
+              this.cdr.detectChanges();
+            }, 0);
           }
         });
       }

@@ -80,10 +80,12 @@ io.on('connection', (socket) => {
 
   socket.on('joinAdmin', () => {
     socket.join('adminRoom');
+    console.log(`Socket ${socket.id} joined adminRoom`);
   });
 
   socket.on('joinOrder', (orderId) => {
     socket.join(`order_${orderId}`);
+    console.log(`Socket ${socket.id} joined order_${orderId}`);
   });
 
   socket.on('disconnect', () => {

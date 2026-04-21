@@ -398,13 +398,17 @@ const createOrder = async (req, res) => {
 
     console.log('Emitting newOrder and subOrderCreated events to adminRoom');
     
-    // Emit real-time event to admin
-    const io = req.app.get('io');
-    io.to('adminRoom').emit('newOrder', populatedOrder);
-    io.to('adminRoom').emit('subOrderCreated', formattedSubOrder);
-    io.to('adminRoom').emit('revenueUpdated', populatedOrder);
-    
-    res.status(201).json(createdOrder);
+     // Emit real-time event to admin
+     const io = req.app.get('io');
+     io.to('adminRoom').emit('newOrder', populatedOrder);
+     io.to('adminRoom').emit('subOrderCreated', formattedSubOrder);
+     io.to('adminRoom').emit('revenueUpdated', populatedOrder);
+     
+     // Also emit to the order room for customer tracking
+     io.to(`order_${populatedOrder._id.toString()}`).emit('orderStatusChanged', populatedOrder);
+     io.to(`order_${populatedOrder._id.toString()}`).emit('subOrderCreated', formattedSubOrder);
+     
+     res.status(201).json(createdOrder);
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({ message: error.message });
@@ -482,6 +486,19 @@ const updateOrderStatus = async (req, res) => {
        io.to('adminRoom').emit('subOrderUpdated', responseOrder);
        io.to(`order_${populatedSubOrder.mainOrderId._id.toString()}`).emit('subOrderUpdated', responseOrder);
        io.emit('subOrderUpdatedBroadcast', responseOrder);
+       
+       // Also emit the full updated main order to the order room for customer tracking
+       const mainOrder = await Order.findById(populatedSubOrder.mainOrderId._id)
+         .populate('user', 'name email phone addresses')
+         .populate({
+           path: 'subOrders',
+           populate: { path: 'items.menuItem' }
+         });
+         
+       if (mainOrder) {
+         io.to(`order_${populatedSubOrder.mainOrderId._id.toString()}`).emit('orderStatusChanged', mainOrder);
+         io.emit('orderStatusBroadcast', mainOrder);
+       }
        
        res.json(responseOrder);
       return;

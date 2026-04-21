@@ -107,7 +107,8 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.socketService.disconnect();
+    // Don't disconnect socket here as it's a singleton service
+    console.log('OrderManagement: ngOnDestroy called');
   }
 
   setupVisibilityListener(): void {
@@ -126,18 +127,11 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     // Join admin room for real-time updates
     this.socketService.joinAdminRoom();
 
-    // Listen for new orders
+    // Listen for new orders - but we actually listen to subOrderCreated which has the correct format
     this.socketService.onNewOrder().subscribe({
       next: (order: any) => {
-        this.orders.unshift(order);
-        this.calculateStatistics();
-        this.applyFilters();
-        this.cdr.detectChanges();
-        this.toastService.success(`New order received! Order #${order.orderNumber}`);
-        // Play sound notification for new order
-        setTimeout(() => {
-          this.audioService.playOrderNotification();
-        }, 2000);
+        console.log('OrderManagement: Received newOrder event but will ignore (using subOrderCreated instead)');
+        // Ignore this, we use subOrderCreated which provides properly formatted sub orders
       },
       error: (err: any) => console.error('Socket error:', err)
     });
@@ -159,12 +153,34 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
     // Listen for new sub orders
     this.socketService.onSubOrderCreated().subscribe({
       next: (subOrder: any) => {
-        this.orders.unshift(subOrder);
-        this.calculateStatistics();
-        this.applyFilters();
-        this.cdr.detectChanges();
-        this.toastService.success(`New items added to order!`);
-        this.audioService.playOrderNotification();
+        console.log('OrderManagement: Received subOrderCreated:', subOrder);
+        
+        // Format the sub order properly for admin display (same as loadOrders format)
+        const formattedSubOrder = {
+          ...subOrder,
+          _id: subOrder._id,
+          orderNumber: subOrder.mainOrderId 
+            ? `${subOrder.mainOrderId.orderNumber || subOrder.mainOrderId}-1` 
+            : subOrder.orderNumber || 'NEW',
+          user: subOrder.mainOrderId?.user || subOrder.user,
+          tableNumber: subOrder.mainOrderId?.tableNumber || subOrder.tableNumber,
+          orderType: subOrder.mainOrderId?.orderType || subOrder.orderType,
+          deliveryAddress: subOrder.mainOrderId?.deliveryAddress || subOrder.deliveryAddress,
+          orderStatus: subOrder.status,
+          isSubOrder: true,
+          mainOrderId: subOrder.mainOrderId?._id || subOrder.mainOrderId
+        };
+        
+        // Only add if not already present
+        const existingIndex = this.orders.findIndex(o => o._id === formattedSubOrder._id);
+        if (existingIndex === -1) {
+          this.orders.unshift(formattedSubOrder);
+          this.calculateStatistics();
+          this.applyFilters();
+          this.cdr.detectChanges();
+          this.toastService.success(`New order received! Order #${formattedSubOrder.orderNumber}`);
+          this.audioService.playOrderNotification();
+        }
       },
       error: (err: any) => console.error('Socket error:', err)
     });

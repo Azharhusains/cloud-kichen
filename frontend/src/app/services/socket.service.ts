@@ -30,28 +30,36 @@ export class SocketService {
     });
 
     this.socket.on('connect', () => {
-      console.log('SocketService: Connected with ID:', this.socket.id);
-      // Rejoin admin room on connect if it was previously joined
-      if (this.isAdminRoomJoined) {
-        this.joinAdminRoom();
-      }
+      this.ngZone.run(() => {
+        console.log('SocketService: Connected with ID:', this.socket.id);
+        // Rejoin admin room on connect if it was previously joined
+        if (this.isAdminRoomJoined) {
+          this.joinAdminRoom();
+        }
+      });
     });
 
     this.socket.on('disconnect', () => {
-      console.log('SocketService: Disconnected');
+      this.ngZone.run(() => {
+        console.log('SocketService: Disconnected');
+      });
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('SocketService: Connection error:', error);
+      this.ngZone.run(() => {
+        console.error('SocketService: Connection error:', error);
+      });
     });
     
     // Handle socket reconnection
     this.socket.on('reconnect', () => {
-      console.log('SocketService: Reconnected with ID:', this.socket.id);
-      // Rejoin admin room on reconnect
-      if (this.isAdminRoomJoined) {
-        this.joinAdminRoom();
-      }
+      this.ngZone.run(() => {
+        console.log('SocketService: Reconnected with ID:', this.socket.id);
+        // Rejoin admin room on reconnect
+        if (this.isAdminRoomJoined) {
+          this.joinAdminRoom();
+        }
+      });
     });
     
     // Set up Page Visibility API handling
@@ -108,10 +116,19 @@ export class SocketService {
   onNewOrder(): Observable<any> {
     console.log('SocketService: Listening for newOrder events');
     return new Observable(observer => {
-      this.socket.on('newOrder', (data) => {
+      const handler = (data: any) => {
         console.log('SocketService: Received newOrder:', data);
-        observer.next(data);
-      });
+        this.ngZone.run(() => {
+          observer.next(data);
+        });
+      };
+      
+      this.socket.on('newOrder', handler);
+      
+      // Cleanup on unsubscribe
+      return () => {
+        this.socket.off('newOrder', handler);
+      };
     });
   }
 
@@ -119,10 +136,19 @@ export class SocketService {
   onOrderUpdated(): Observable<any> {
     console.log('SocketService: Listening for orderUpdated events');
     return new Observable(observer => {
-      this.socket.on('orderUpdated', (data) => {
+      const handler = (data: any) => {
         console.log('SocketService: Received orderUpdated:', data);
-        observer.next(data);
-      });
+        this.ngZone.run(() => {
+          observer.next(data);
+        });
+      };
+      
+      this.socket.on('orderUpdated', handler);
+      
+      // Cleanup on unsubscribe
+      return () => {
+        this.socket.off('orderUpdated', handler);
+      };
     });
   }
 
@@ -132,8 +158,15 @@ export class SocketService {
     return new Observable(observer => {
       this.socket.on('orderStatusChanged', (data) => {
         console.log('SocketService: Received orderStatusChanged:', data);
-        observer.next(data);
+        this.ngZone.run(() => {
+          observer.next(data);
+        });
       });
+      
+      // Cleanup on unsubscribe
+      return () => {
+        this.socket.off('orderStatusChanged');
+      };
     });
   }
 
@@ -394,40 +427,72 @@ export class SocketService {
   onSubOrderCreated(): Observable<any> {
     console.log('SocketService: Listening for subOrderCreated events');
     return new Observable(observer => {
-      this.socket.on('subOrderCreated', (data) => {
+      const handler = (data: any) => {
         console.log('SocketService: Received subOrderCreated:', data);
-        observer.next(data);
-      });
+        this.ngZone.run(() => {
+          observer.next(data);
+        });
+      };
+      
+      this.socket.on('subOrderCreated', handler);
+      
+      return () => {
+        this.socket.off('subOrderCreated', handler);
+      };
     });
   }
 
   onSubOrderCancelled(): Observable<any> {
     console.log('SocketService: Listening for subOrderCancelled events');
     return new Observable(observer => {
-      this.socket.on('subOrderCancelled', (data) => {
+      const handler = (data: any) => {
         console.log('SocketService: Received subOrderCancelled:', data);
-        observer.next(data);
-      });
+        this.ngZone.run(() => {
+          observer.next(data);
+        });
+      };
+      
+      this.socket.on('subOrderCancelled', handler);
+      
+      return () => {
+        this.socket.off('subOrderCancelled', handler);
+      };
     });
   }
 
   onSubOrderUpdated(): Observable<any> {
     console.log('SocketService: Listening for subOrderUpdated events');
     return new Observable(observer => {
-      this.socket.on('subOrderUpdated', (data) => {
+      const handler = (data: any) => {
         console.log('SocketService: Received subOrderUpdated:', data);
-        observer.next(data);
-      });
+        this.ngZone.run(() => {
+          observer.next(data);
+        });
+      };
+      
+      this.socket.on('subOrderUpdated', handler);
+      
+      return () => {
+        this.socket.off('subOrderUpdated', handler);
+      };
     });
   }
 
   onMainOrderCompleted(): Observable<any> {
     console.log('SocketService: Listening for mainOrderCompleted events');
     return new Observable(observer => {
-      this.socket.on('mainOrderCompleted', (data) => {
+      const handler = (data: any) => {
         console.log('SocketService: Received mainOrderCompleted:', data);
-        observer.next(data);
-      });
+        this.ngZone.run(() => {
+          observer.next(data);
+        });
+      };
+      
+      this.socket.on('mainOrderCompleted', handler);
+      
+      return () => {
+        this.socket.off('mainOrderCompleted', handler);
+      };
     });
   }
 }
