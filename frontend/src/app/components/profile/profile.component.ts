@@ -207,9 +207,43 @@ loadOrders(): void {
     this.filteredOrders = this.orders.filter(order =>
       // Search by MongoDB _id
       order._id.toLowerCase().includes(searchLower) ||
-      // Search by order status
-      order.orderStatus.toLowerCase().includes(searchLower)
+      // Search by effective order status
+      this.getEffectiveOrderStatus(order).toLowerCase().includes(searchLower)
     );
+  }
+
+  // Calculate effective order status from suborders (same logic as order tracking)
+  getEffectiveOrderStatus(order: Order): string {
+    // If main order is cancelled or completed, use that
+    if (order.orderStatus === 'cancelled' || order.orderStatus === 'completed') {
+      return order.orderStatus.toLowerCase();
+    }
+    
+    // If no suborders, use main order status
+    if (!order.subOrders || order.subOrders.length === 0) {
+      return order.orderStatus?.toLowerCase() || 'received';
+    }
+
+    // Get all non-cancelled suborders
+    const activeSubOrders = order.subOrders.filter((sub: SubOrder) => !sub.isCancelled);
+    
+    if (activeSubOrders.length === 0) {
+      return 'cancelled';
+    }
+
+    // Get the most advanced status from active suborders - NORMALIZED
+    const statusPriority = ['received', 'preparing', 'ready', 'delivered', 'completed'];
+    let maxStatusIndex = 0;
+    
+    for (const subOrder of activeSubOrders) {
+      const normalizedStatus = (subOrder.status || '').toLowerCase().trim();
+      const index = statusPriority.indexOf(normalizedStatus);
+      if (index > maxStatusIndex) {
+        maxStatusIndex = index;
+      }
+    }
+
+    return statusPriority[maxStatusIndex];
   }
 
   logout(): void {
@@ -301,7 +335,7 @@ loadOrders(): void {
    * Check if invoice is available for order
    */
   canShowInvoice(order: Order): boolean {
-    return ['delivered', 'completed'].includes(order.orderStatus);
+    return ['delivered', 'completed'].includes(this.getEffectiveOrderStatus(order));
   }
 
   /**
