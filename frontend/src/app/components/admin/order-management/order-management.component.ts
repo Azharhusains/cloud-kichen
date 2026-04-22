@@ -167,6 +167,7 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
           orderType: subOrder.mainOrderId?.orderType || subOrder.orderType,
           deliveryAddress: subOrder.mainOrderId?.deliveryAddress || subOrder.deliveryAddress,
           orderStatus: subOrder.status,
+          status: subOrder.status,
           isSubOrder: true,
           mainOrderId: subOrder.mainOrderId?._id || subOrder.mainOrderId
         };
@@ -190,7 +191,16 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       next: (updatedSubOrder: any) => {
         const index = this.orders.findIndex(o => o._id === updatedSubOrder._id);
         if (index !== -1) {
-          this.orders[index] = { ...updatedSubOrder };
+          // Preserve existing user and delivery address, and ensure orderStatus is set
+          const existingOrder = this.orders[index];
+          this.orders[index] = {
+            ...existingOrder,
+            ...updatedSubOrder,
+            user: updatedSubOrder.user || existingOrder.user,
+            deliveryAddress: updatedSubOrder.deliveryAddress || existingOrder.deliveryAddress,
+            orderStatus: updatedSubOrder.status || updatedSubOrder.orderStatus || existingOrder.orderStatus,
+            status: updatedSubOrder.status || existingOrder.status
+          };
           this.calculateStatistics();
           this.applyFilters();
           this.cdr.detectChanges();
@@ -204,7 +214,16 @@ export class OrderManagementComponent implements OnInit, OnDestroy {
       next: (cancelledSubOrder: any) => {
         const index = this.orders.findIndex(o => o._id === cancelledSubOrder._id);
         if (index !== -1) {
-          this.orders[index] = { ...cancelledSubOrder };
+          // Preserve existing user and delivery address, and ensure orderStatus is set
+          const existingOrder = this.orders[index];
+          this.orders[index] = {
+            ...existingOrder,
+            ...cancelledSubOrder,
+            user: cancelledSubOrder.user || existingOrder.user,
+            deliveryAddress: cancelledSubOrder.deliveryAddress || existingOrder.deliveryAddress,
+            orderStatus: cancelledSubOrder.status || cancelledSubOrder.orderStatus || existingOrder.orderStatus,
+            status: cancelledSubOrder.status || existingOrder.status
+          };
           this.calculateStatistics();
           this.applyFilters();
           this.cdr.detectChanges();

@@ -478,7 +478,8 @@ const updateOrderStatus = async (req, res) => {
        const responseOrder = {
          ...populatedSubOrder.toObject(),
          user: populatedSubOrder.mainOrderId.user,
-         deliveryAddress: populatedSubOrder.mainOrderId.deliveryAddress
+         deliveryAddress: populatedSubOrder.mainOrderId.deliveryAddress,
+         orderStatus: populatedSubOrder.status
        };
        
        // Emit events
@@ -486,6 +487,8 @@ const updateOrderStatus = async (req, res) => {
        io.to('adminRoom').emit('subOrderUpdated', responseOrder);
        io.to(`order_${populatedSubOrder.mainOrderId._id.toString()}`).emit('subOrderUpdated', responseOrder);
        io.emit('subOrderUpdatedBroadcast', responseOrder);
+       // Also emit orderStatusChanged for consistency
+       io.to('adminRoom').emit('orderStatusChanged', responseOrder);
        
        // Also emit the full updated main order to the order room for customer tracking
        const mainOrder = await Order.findById(populatedSubOrder.mainOrderId._id)
@@ -535,6 +538,12 @@ const updateOrderStatus = async (req, res) => {
     const populatedOrder = await Order.findById(updatedOrder._id)
       .populate('user', 'name email phone addresses')
       .populate('items.menuItem');
+    
+    // Ensure both status fields exist for consistency
+    const responseOrder = {
+      ...populatedOrder.toObject(),
+      status: populatedOrder.orderStatus
+    };
 
     const orderRoom = `order_${order._id.toString()}`;
     console.log('Emitting to room:', orderRoom);
@@ -544,16 +553,16 @@ const updateOrderStatus = async (req, res) => {
     const io = req.app.get('io');
     
     // 1. Emit to admin room
-    io.to('adminRoom').emit('orderUpdated', populatedOrder);
-    io.to('adminRoom').emit('revenueUpdated', populatedOrder);
+    io.to('adminRoom').emit('orderUpdated', responseOrder);
+    io.to('adminRoom').emit('revenueUpdated', responseOrder);
     
     // 2. Emit to specific order room
-    io.to(orderRoom).emit('orderStatusChanged', populatedOrder);
+    io.to(orderRoom).emit('orderStatusChanged', responseOrder);
     
      // 3. BROADCAST to all clients as fallback (for debugging)
-     io.emit('orderStatusBroadcast', populatedOrder);
+     io.emit('orderStatusBroadcast', responseOrder);
      
-     res.json(populatedOrder);
+     res.json(responseOrder);
   } catch (error) {
     console.error('Error updating order status:', error);
     res.status(500).json({ message: error.message });

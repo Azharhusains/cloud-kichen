@@ -15,6 +15,7 @@ export interface Order {
   _id: string;
   orderNumber: number;
   orderStatus: string;
+  status?: string; // Added for sub-order compatibility
   orderType: string;
   tableNumber?: string;
   totalAmount: number;
@@ -48,7 +49,13 @@ export class OrderService {
       const currentOrders = this.recentOrdersSubject.value;
       const index = currentOrders.findIndex(o => o._id === order._id);
       if (index > -1) {
-        currentOrders[index] = { ...currentOrders[index], ...order };
+        // Ensure consistent field mapping for both orders and sub-orders
+        currentOrders[index] = { 
+          ...currentOrders[index], 
+          ...order,
+          orderStatus: order.orderStatus || order.status || currentOrders[index].orderStatus,
+          status: order.status || order.orderStatus || currentOrders[index].status
+        };
         this.recentOrdersSubject.next([...currentOrders]);
       }
     });
