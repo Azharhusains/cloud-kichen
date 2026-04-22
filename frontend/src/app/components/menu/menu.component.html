@@ -41,87 +41,99 @@
     </mat-chip-listbox>
   </div>
 
-  <!-- Menu Items Grid -->
-  <div class="menu-items-grid" @staggerList [class.kitchen-closed]="kitchenStatus?.status === 'closed'">
-    <mat-card *ngFor="let item of filteredItems" class="menu-item-card" [class.unavailable]="!item.isAvailable || kitchenStatus?.status === 'closed'">
-      <div class="item-image-section" [class.has-image]="item.image">
-        <img *ngIf="item.image && !item._imageFailed" [src]="getImageUrl(item.image)" crossorigin="anonymous" alt="{{ item.name }}" (error)="handleImageError($event, item)">
-        <mat-icon *ngIf="!item.image || item._imageFailed" class="food-icon">restaurant</mat-icon>
-<span class="unavailable-badge" *ngIf="!item.isAvailable">Unavailable</span>
-      </div>
-      
-      <mat-card-content>
-        <div class="item-header">
-          <h3>{{ item.name }}</h3>
-          <span class="category-label">{{ getCategoryDisplayName(item.category) }}</span>
-        </div>
-        
-        <p class="item-description">{{ item.description }}</p>
+   <!-- Menu Items Grid -->
+   <div class="menu-items-grid" @staggerList [class.kitchen-closed]="kitchenStatus?.status === 'closed'">
+     <!-- Loading State -->
+     <div class="search-loading" *ngIf="isSearching$ | async">
+       <mat-icon class="spinner">refresh</mat-icon>
+       <span>Searching...</span>
+     </div>
+     
+     <ng-container *ngIf="filteredResults$ | async as filteredResults">
+       <mat-card 
+         *ngFor="let result of filteredResults; trackBy: trackByMenuItemId" 
+         class="menu-item-card" 
+         [class.unavailable]="!result.item.isAvailable || kitchenStatus?.status === 'closed'">
+       <div class="item-image-section" [class.has-image]="result.item.image">
+         <img *ngIf="result.item.image && !result.item._imageFailed" [src]="getImageUrl(result.item.image)" crossorigin="anonymous" alt="{{ result.item.name }}" (error)="handleImageError($event, result.item)">
+         <mat-icon *ngIf="!result.item.image || result.item._imageFailed" class="food-icon">restaurant</mat-icon>
+<span class="unavailable-badge" *ngIf="!result.item.isAvailable">Unavailable</span>
+       </div>
+       
+       <mat-card-content>
+         <div class="item-header">
+           <h3 [innerHTML]="result.item.name | highlight: searchTerm"></h3>
+           <span class="category-label">{{ getCategoryDisplayName(result.item.category) }}</span>
+         </div>
+         
+         <p class="item-description" [innerHTML]="result.item.description | highlight: searchTerm"></p>
         
         <div class="item-footer">          
           <!-- Enhanced Add to Cart Button -->
           <div class="add-to-cart-container">
             <!-- Portion Selector (Swiggy/Zomato style) -->
-            <div class="portion-selector" *ngIf="item.supportsHalf">
-              <button 
-                class="portion-btn half-btn"
-                [class.active]="getCurrentPortionType(item) === 'HALF'"
-                (click)="selectPortion(item, 'HALF'); $event.stopPropagation()"
-                mat-stroked-button
-                size="small"
-                [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
-                Half<br><small>₹{{ item.halfPrice | number:'1.0-0' }}</small>
-              </button>
-              <button 
-                class="portion-btn full-btn active"
-                [class.active]="getCurrentPortionType(item) === 'FULL'"
-                (click)="selectPortion(item, 'FULL'); $event.stopPropagation()"
-                mat-stroked-button
-                size="small"
-                [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
-                Full<br><small>₹{{ item.fullPrice | number:'1.0-0' }}</small>
-              </button>
-            </div>
-            <!-- Qty/Add Wrapper -->
-            <div class="qty-add-wrapper">
-              <!-- Quantity for current portion -->
-              <div class="quantity-controls" *ngIf="getCurrentQuantity(item) > 0">
-                <button mat-mini-fab class="qty-btn qty-decrease" (click)="decreaseQuantity(item); $event.stopPropagation()" [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
-                  <mat-icon>remove</mat-icon>
-                </button>
-                <span class="qty-badge">{{ getCurrentQuantity(item) }}</span>
-                <button mat-mini-fab class="qty-btn qty-increase" (click)="increaseQuantity(item); $event.stopPropagation()" [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
-                  <mat-icon>add</mat-icon>
-                </button>
-              </div>
-              <!-- Add current portion -->
-              <button 
-                mat-raised-button 
-                class="add-btn" 
-                *ngIf="getCurrentQuantity(item) === 0"
-                (click)="addCurrentPortion(item); $event.stopPropagation()"
-                [disabled]="!item.isAvailable || kitchenStatus?.status === 'closed'">
-                <mat-icon class="cart-icon">add_shopping_cart</mat-icon>
-                Add
-                <span class="btn-price">₹{{ getItemPrice(item, getCurrentPortionType(item)) | number:'1.0-0' }}</span>
-              </button>
-            </div>
+             <div class="portion-selector" *ngIf="result.item.supportsHalf">
+               <button 
+                 class="portion-btn half-btn"
+                 [class.active]="getCurrentPortionType(result.item) === 'HALF'"
+                 (click)="selectPortion(result.item, 'HALF'); $event.stopPropagation()"
+                 mat-stroked-button
+                 size="small"
+                 [disabled]="!result.item.isAvailable || kitchenStatus?.status === 'closed'">
+                 Half<br><small>₹{{ result.item.halfPrice | number:'1.0-0' }}</small>
+               </button>
+               <button 
+                 class="portion-btn full-btn active"
+                 [class.active]="getCurrentPortionType(result.item) === 'FULL'"
+                 (click)="selectPortion(result.item, 'FULL'); $event.stopPropagation()"
+                 mat-stroked-button
+                 size="small"
+                 [disabled]="!result.item.isAvailable || kitchenStatus?.status === 'closed'">
+                 Full<br><small>₹{{ result.item.fullPrice | number:'1.0-0' }}</small>
+               </button>
+             </div>
+             <!-- Qty/Add Wrapper -->
+             <div class="qty-add-wrapper">
+               <!-- Quantity for current portion -->
+               <div class="quantity-controls" *ngIf="getCurrentQuantity(result.item) > 0">
+                 <button mat-mini-fab class="qty-btn qty-decrease" (click)="decreaseQuantity(result.item); $event.stopPropagation()" [disabled]="!result.item.isAvailable || kitchenStatus?.status === 'closed'">
+                   <mat-icon>remove</mat-icon>
+                 </button>
+                 <span class="qty-badge">{{ getCurrentQuantity(result.item) }}</span>
+                 <button mat-mini-fab class="qty-btn qty-increase" (click)="increaseQuantity(result.item); $event.stopPropagation()" [disabled]="!result.item.isAvailable || kitchenStatus?.status === 'closed'">
+                   <mat-icon>add</mat-icon>
+                 </button>
+               </div>
+               <!-- Add current portion -->
+               <button 
+                 mat-raised-button 
+                 class="add-btn" 
+                 *ngIf="getCurrentQuantity(result.item) === 0"
+                 (click)="addCurrentPortion(result.item); $event.stopPropagation()"
+                 [disabled]="!result.item.isAvailable || kitchenStatus?.status === 'closed'">
+                 <mat-icon class="cart-icon">add_shopping_cart</mat-icon>
+                 Add
+                 <span class="btn-price">₹{{ getItemPrice(result.item, getCurrentPortionType(result.item)) | number:'1.0-0' }}</span>
+               </button>
+             </div>
           </div>
         </div>
       </mat-card-content>
       
-      <button mat-icon-button class="details-btn" (click)="openItemDetails(item)" [disabled]="kitchenStatus?.status === 'closed'">
-        <mat-icon>visibility</mat-icon>
-      </button>
-    </mat-card>
-  </div>
+       <button mat-icon-button class="details-btn" (click)="openItemDetails(result.item)" [disabled]="kitchenStatus?.status === 'closed'">
+         <mat-icon>visibility</mat-icon>
+       </button>
+     </mat-card>
+     </ng-container>
+   </div>
 
 <!-- Empty State -->
-  <div class="empty-state" *ngIf="filteredItems.length === 0">
-    <mat-icon>no_meals</mat-icon>
-    <h3>No items found</h3>
-    <p>Try selecting a different category</p>
-  </div>
+   <ng-container *ngIf="filteredResults$ | async as filteredResults">
+     <div class="empty-state" *ngIf="filteredResults.length === 0 && !(isSearching$ | async)">
+       <mat-icon>no_meals</mat-icon>
+       <h3>{{ searchTerm ? 'No search results found' : 'No items found' }}</h3>
+     </div>
+   </ng-container>
 
   <!-- Floating Cart Summary -->
   <div class="cart-fab" *ngIf="cart.length > 0" @slideIn>

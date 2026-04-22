@@ -1,9 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, BehaviorSubject, Observable, combineLatest, map, shareReplay, startWith } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { SearchService } from '../../services/search.service';
+import { SearchResult } from '../../models/search.model';
+import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 
 // Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
@@ -48,9 +51,11 @@ import { SocketService } from '../../services/socket.service';
     MatDialogModule,
     MatSnackBarModule,
     MatTooltipModule,
+    HighlightPipe
   ],
   templateUrl: './menu.component.html',
   styleUrls: ['./menu.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
     trigger('fadeInUp', [
       transition(':enter', [
@@ -79,7 +84,6 @@ import { SocketService } from '../../services/socket.service';
 export class MenuComponent implements OnInit, OnDestroy {
   categories: any[] = [];
   menuItems: MenuItem[] = [];
-  filteredItems: MenuItem[] = [];
   selectedCategory: string = 'all';
   cart: any[] = [];
   cartItemCount: number = 0;
@@ -87,9 +91,17 @@ export class MenuComponent implements OnInit, OnDestroy {
   searchTerm: string = '';
   kitchenStatus: KitchenStatus | null = null;
   kitchenOpenHours = { open: '11:00 AM', close: '10:00 PM' };
+  
+  // Reactive state
+  private menuItems$ = new BehaviorSubject<MenuItem[]>([]);
+  private selectedCategory$ = new BehaviorSubject<string>('all');
+  filteredResults$!: Observable<SearchResult<MenuItem>[]>;
+  isSearching$!: Observable<boolean>;
+  
   private cartSubscription!: Subscription;
   private kitchenSub!: Subscription;
   private menuSocketSub!: Subscription;
+  private searchSubscription!: Subscription;
 
   mainOrderId: string | null = null;
   isAddMoreMode: boolean = false;
@@ -101,6 +113,8 @@ export class MenuComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private kitchenService: KitchenService,
     private socketService: SocketService,
+    private searchService: SearchService,
+    private cdr: ChangeDetectorRef,
     public router: Router,
     private route: ActivatedRoute,
     private dialog: MatDialog,
@@ -113,6 +127,12 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.loadMenuItems();
     this.loadCart();
     this.isLoggedIn = this.authService.isAuthenticated();
+    
+    // Setup reactive search stream
+    this.setupSearchStream();
+    
+    // Get loading state from search service
+    this.isSearching$ = this.searchService.isLoading$;
 
     // Check for add more mode query params
     this.route.queryParams.subscribe(params => {
@@ -156,13 +176,8 @@ export class MenuComponent implements OnInit, OnDestroy {
         this.menuItems.push(updatedItem);
         console.log('MenuComponent: Added new menu item');
       }
-      // Refresh filtered items
-      if (this.selectedCategory === 'all') {
-        this.filteredItems = [...this.menuItems];
-      } else {
-        this.filteredItems = this.menuItems.filter(item => item.category === this.selectedCategory);
-      }
-      this.applySearch(); // Re-apply search filter if active
+      // Update reactive stream
+      this.menuItems$.next([...this.menuItems]);
     });
 
     // Subscribe to full menu item updates (for image changes, price changes, etc.)
@@ -179,13 +194,8 @@ export class MenuComponent implements OnInit, OnDestroy {
         this.menuItems.push(updatedItem);
         console.log('MenuComponent: Added new menu item');
       }
-      // Refresh filtered items
-      if (this.selectedCategory === 'all') {
-        this.filteredItems = [...this.menuItems];
-      } else {
-        this.filteredItems = this.menuItems.filter(item => item.category === this.selectedCategory);
-      }
-      this.applySearch(); // Re-apply search filter if active
+      // Update reactive stream
+      this.menuItems$.next([...this.menuItems]);
     });
   }
 
@@ -193,9 +203,17 @@ export class MenuComponent implements OnInit, OnDestroy {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
     }
+    if (this.kitchenSub) {
+      this.kitchenSub.unsubscribe();
+    }
     if (this.menuSocketSub) {
       this.menuSocketSub.unsubscribe();
     }
+    if (this.searchSubscription) {
+      this.searchSubscription.unsubscribe();
+    }
+    // Clear search cache when component is destroyed
+    this.searchService.clearCache();
   }
 
   loadCategories(): void {
@@ -211,7 +229,7 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.menuService.getMenuItems().subscribe({
       next: (response: any) => {
         this.menuItems = response.menuItems || [];
-        this.filteredItems = [...this.menuItems];
+        this.menuItems$.next(this.menuItems);
       },
       error: (error: any) => console.error('Error loading menu items:', error)
     });
@@ -224,46 +242,46 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   selectCategory(categoryName: string): void {
     this.selectedCategory = categoryName;
-    if (categoryName === 'all') {
-      this.filteredItems = [...this.menuItems];
-    } else {
-      this.filteredItems = this.menuItems.filter((item: MenuItem) => item.category === categoryName);
-    }
-    this.applySearch();
+    this.selectedCategory$.next(categoryName);
   }
 
   searchMenuItems(): void {
-    this.applySearch();
+    this.searchService.setSearchTerm(this.searchTerm);
   }
 
   clearSearch(): void {
     this.searchTerm = '';
-    this.applySearch();
+    this.searchService.clearSearch();
   }
 
-  private applySearch(): void {
-    if (!this.searchTerm.trim()) {
-      if (this.selectedCategory === 'all') {
-        this.filteredItems = [...this.menuItems];
-      } else {
-        this.filteredItems = this.menuItems.filter((item: MenuItem) => item.category === this.selectedCategory);
-      }
-      return;
-    }
-
-    const searchLower = this.searchTerm.toLowerCase().trim();
-    let baseItems: MenuItem[];
-
-    if (this.selectedCategory === 'all') {
-      baseItems = this.menuItems;
-    } else {
-      baseItems = this.menuItems.filter((item: MenuItem) => item.category === this.selectedCategory);
-    }
-
-    this.filteredItems = baseItems.filter((item: MenuItem) =>
-      item.name.toLowerCase().includes(searchLower) ||
-      item.description.toLowerCase().includes(searchLower)
+  private setupSearchStream(): void {
+    // Combine category filter with menu items
+    const filteredByCategory$ = combineLatest([
+      this.menuItems$,
+      this.selectedCategory$
+    ]).pipe(
+      map(([items, category]) => {
+        if (category === 'all') {
+          return items;
+        }
+        return items.filter(item => item.category === category);
+      }),
+      shareReplay(1)
     );
+
+    // Apply search filtering on top of category filter
+    this.filteredResults$ = this.searchService.filter(
+      filteredByCategory$,
+      ['name', 'description'],
+      { debounceMs: 350, minLength: 1 }
+    );
+  }
+
+  /**
+   * TrackBy function for ngFor to optimize rendering
+   */
+  trackByMenuItemId(index: number, result: SearchResult<MenuItem>): string {
+    return result.item._id;
   }
 
   getCategoryDisplayName(categoryName: string): string {
