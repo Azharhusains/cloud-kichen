@@ -472,11 +472,22 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
-  .order-header {
+.order-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      text-align: left;
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      gap: 12px;
+    }
 
     .order-id {
       display: flex;
@@ -577,6 +588,37 @@
     gap: 12px;
     flex-wrap: wrap;
 
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      
+      .order-total {
+        font-size: 1.1rem;
+        text-align: center;
+        order: 1;
+        margin-bottom: 8px;
+      }
+      
+      button {
+        width: 100%;
+        flex: none;
+        font-size: 0.95rem;
+        padding: 12px;
+        min-height: 48px;
+        
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      gap: 16px;
+    }
+
     button {
       transition: all 0.3s ease;
       border-radius: 8px;
@@ -592,31 +634,6 @@
       color: #667eea;
       font-weight: 600;
       flex-shrink: 0;
-    }
-
-    @media (max-width: 600px) {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 8px;
-      
-      .order-total {
-        font-size: 1rem;
-        text-align: center;
-        order: 2;
-      }
-      
-      button {
-        flex: 1;
-        min-width: auto;
-        font-size: 0.85rem;
-        padding: 8px 12px;
-        
-        mat-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
-        }
-      }
     }
   }
 
