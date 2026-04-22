@@ -136,7 +136,6 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUserProfile();
-    this.loadOrders();
     // Load kitchen status for admin
     this.kitchenService.getStatus().subscribe({
       next: status => {
@@ -168,6 +167,8 @@ export class ProfileComponent implements OnInit {
       next: (profile) => {
         this.user = profile;
         this.addresses = profile.addresses || [];
+        // Load orders only after user profile is available to check role
+        this.loadOrders();
       },
       error: (error) => {
         console.error('Error loading profile:', error);
@@ -176,6 +177,13 @@ export class ProfileComponent implements OnInit {
   }
 
 loadOrders(): void {
+    // Don't load orders for admin or super admin users
+    if (this.user && (this.user.role === 'ADMIN' || this.user.role === 'SUPER_ADMIN')) {
+      this.orders = [];
+      this.filteredOrders = [];
+      return;
+    }
+    
     this.orderService.getOrders().subscribe({
       next: (orders) => {
         this.orders = orders;

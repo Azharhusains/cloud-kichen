@@ -147,8 +147,8 @@
       </mat-card>
     </div>
 
-    <!-- Orders Section -->
-    <div class="section">
+    <!-- Orders Section - Only show for customers -->
+    <div class="section" *ngIf="user?.role === 'CUSTOMER'">
       <mat-card class="section-card">
         <mat-card-header>
           <mat-card-title>
