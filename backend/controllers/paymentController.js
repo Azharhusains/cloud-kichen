@@ -1,6 +1,6 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const Order = require('../models/Order');
+const { Order } = require('../models/Order');
 const Coupon = require('../models/Coupon');
 
 const rzp = new Razorpay({
